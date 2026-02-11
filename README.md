@@ -1,7 +1,3 @@
-This is a fork of Spoolman where I am trying to improve the label printing features.
-adding .AML export for lablife printer app
-adding filament printing option
-and maybe more.
 <br/>
 
 <picture>
