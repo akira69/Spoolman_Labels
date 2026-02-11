@@ -1,3 +1,9 @@
+This is a fork of Spoolman where I am trying to improve the label printing features.
+adding .AML export for lablife printer app
+adding filament printing option
+and maybe more.
+<br/>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/Donkie/Spoolman/assets/2332094/4e6e80ac-c7be-4ad2-9a33-dedc1b5ba30e">
   <source media="(prefers-color-scheme: light)" srcset="https://github.com/Donkie/Spoolman/assets/2332094/3c120b3a-1422-42f6-a16b-8d5a07c33000">
