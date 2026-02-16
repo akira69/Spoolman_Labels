@@ -12,6 +12,7 @@ import { ISpool } from "../spools/model";
 import {
   SpoolQRCodePrintSettings,
   renderLabelContents,
+  renderTemplateText,
   useGetPrintSettings as useGetPrintPresets,
   useSetPrintSettings as useSetPrintPresets,
 } from "./printing";
@@ -152,6 +153,8 @@ Spool Weight: {filament.spool_weight} g
 {{comment}}
 {filament.comment}
 {filament.vendor.comment}`;
+  const filenameTemplate =
+    curPreset.filenameTemplate ?? `{filament.vendor.name}-{filament.material}-{filament.name}-{id}`;
 
   const spoolTags = [
     { tag: "id" },
@@ -234,6 +237,7 @@ Spool Weight: {filament.spool_weight} g
           default: "WEB+SPOOLMAN:S-{id}",
           url: `${baseUrlRoot}/spool/show/{id}`,
         }}
+        zipFileTypeName="spool"
         extraSettingsStart={
           <>
             <Form.Item label={t("printing.generic.spoolImagePresets")}>
@@ -294,7 +298,7 @@ Spool Weight: {filament.spool_weight} g
         }
         items={items.map((spool) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/spool/show/${spool.id}` : `WEB+SPOOLMAN:S-${spool.id}`,
-          amlName: `spool-${spool.id}`,
+          amlName: renderTemplateText(filenameTemplate, spool),
           label: (
             <p
               style={{
@@ -336,6 +340,19 @@ Spool Weight: {filament.spool_weight} g
                 {t("actions.show")}
               </Button>
             </Text>
+            <Form.Item
+              label={t("printing.qrcode.filenameTemplate")}
+              tooltip={t("printing.qrcode.filenameTemplateTooltipSpool")}
+              style={{ marginTop: 12 }}
+            >
+              <Input
+                value={filenameTemplate}
+                onChange={(newValue) => {
+                  curPreset.filenameTemplate = newValue.target.value;
+                  updateCurrentPreset(curPreset);
+                }}
+              />
+            </Form.Item>
           </>
         }
         extraButtons={

@@ -786,7 +786,7 @@ const PrintingDialog = ({
           </Form>
         </Col>
       </Row>
-      <Row justify={"end"}>
+      <Row justify={"end"} style={{ paddingRight: 72 }}>
         <Col>
           <Space>
             {extraButtons}

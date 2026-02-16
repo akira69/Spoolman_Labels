@@ -25,6 +25,7 @@ interface QRCodeExportDialogProps {
   useHTTPUrl: boolean;
   setUseHTTPUrl: (value: boolean) => void;
   previewValues?: { default: string; url: string };
+  zipFileTypeName: string;
 }
 
 const QRCodeExportDialog = ({
@@ -38,6 +39,7 @@ const QRCodeExportDialog = ({
   useHTTPUrl,
   setUseHTTPUrl,
   previewValues,
+  zipFileTypeName,
 }: QRCodeExportDialogProps) => {
   const t = useTranslate();
 
@@ -80,6 +82,7 @@ const QRCodeExportDialog = ({
         setPrintSettings(printSettings);
       }}
       extraButtons={extraButtons}
+      zipFileTypeName={zipFileTypeName}
       extraSettingsStart={extraSettingsStart}
       extraSettings={
         <>

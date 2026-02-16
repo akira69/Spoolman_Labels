@@ -2,6 +2,7 @@ import { DownloadOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
 import { Button, Checkbox, Col, Collapse, Divider, Form, InputNumber, Radio, Row, Slider, Space } from "antd";
 import * as htmlToImage from "html-to-image";
+import JSZip from "jszip";
 import { ReactElement, useRef } from "react";
 import { useSavedState } from "../../utils/saveload";
 import { PrintSettings } from "./printing";
@@ -14,6 +15,7 @@ interface ExportDialogProps {
   extraSettings?: ReactElement;
   extraSettingsStart?: ReactElement;
   extraButtons?: ReactElement;
+  zipFileTypeName: string;
 }
 
 const ExportDialog = ({
@@ -24,6 +26,7 @@ const ExportDialog = ({
   extraSettings,
   extraSettingsStart,
   extraButtons,
+  zipFileTypeName,
 }: ExportDialogProps) => {
   const t = useTranslate();
 
@@ -35,7 +38,7 @@ const ExportDialog = ({
   const customPaperSize = printSettings?.customPaperSize || { width: 40, height: 30 };
   const exportDpi = printSettings?.exportDpi || 300;
   const exportFormat = printSettings?.exportFormat || "aml";
-  const exportAmlAsPages = printSettings?.exportAmlAsPages ?? false;
+  const exportAsZip = printSettings?.exportAsZip ?? false;
 
   const paperWidth = customPaperSize.width;
   const paperHeight = customPaperSize.height;
@@ -109,11 +112,6 @@ const ExportDialog = ({
     return Array.from(root.getElementsByClassName("print-qrcode-item"));
   };
 
-  const getPrintPages = () => {
-    const root = contentRef.current ?? document;
-    return Array.from(root.getElementsByClassName("print-page"));
-  };
-
   const downloadTextFile = (filename: string, content: string, mimeType: string) => {
     const blob = new Blob([content], { type: mimeType });
     const link = document.createElement("a");
@@ -123,44 +121,27 @@ const ExportDialog = ({
     URL.revokeObjectURL(link.href);
   };
 
-  const buildAmlXml = (name: string, widthMm: number, heightMm: number, base64Png: string) => {
-    const width = Number.isFinite(widthMm) ? widthMm : 0;
-    const height = Number.isFinite(heightMm) ? heightMm : 0;
-    const validBoundsWidth = Math.max(width - 2, 0);
-    const validBoundsHeight = Math.max(height - 2, 0);
-    const widthIn = width / 25.4;
-    const heightIn = height / 25.4;
+  const downloadBlobFile = (filename: string, blob: Blob) => {
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const escapeXml = (value: string) => {
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  };
+
+  const buildAmlPageXml = (width: number, height: number, base64Png: string) => {
     const id = Math.floor(Math.random() * 2 ** 31);
     const objectId = Math.floor(Math.random() * 2 ** 31);
-
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<LPAPI version="1.6">
-      <labelName>${name}</labelName>
-      <paperName>Custom Label</paperName>
-      <isPrintHorizontal>0</isPrintHorizontal>
-      <labelHeight>${height.toFixed(3)}</labelHeight>
-      <labelWidth>${width.toFixed(3)}</labelWidth>
-      <validBoundsX>1</validBoundsX>
-      <validBoundsY>1</validBoundsY>
-      <validBoundsWidth>${validBoundsWidth.toFixed(0)}</validBoundsWidth>
-      <validBoundsHeight>${validBoundsHeight.toFixed(0)}</validBoundsHeight>
-      <paperType>0</paperType>
-      <paperBackground>#ffffff</paperBackground>
-      <paperForeground>#000000</paperForeground>
-      <DisplaySize_mm>${width.toFixed(2)}mm * ${height.toFixed(2)}mm</DisplaySize_mm>
-      <DisplaySize_in>${widthIn.toFixed(3)}inch * ${heightIn.toFixed(3)}inch</DisplaySize_in>
-      <isRotate180>0</isRotate180>
-      <isBannerMode>0</isBannerMode>
-      <isCustomSize>0</isCustomSize>
-      <leftBlank>0</leftBlank>
-      <rightBlank>0</rightBlank>
-      <upBlank>0</upBlank>
-      <downBlank>0</downBlank>
-      <typeName>Custom</typeName>
-      <showDisplayMm>${width.toFixed(1)} * ${height.toFixed(1)} mm</showDisplayMm>
-      <showDisplayIn>${widthIn.toFixed(2)} * ${heightIn.toFixed(2)} in</showDisplayIn>
-      <contents>
-          <WdPage>
+    return `<WdPage>
               <masksToBoundsType>0</masksToBoundsType>
               <borderDisplay>0</borderDisplay>
               <isAutoHeight>0</isAutoHeight>
@@ -191,7 +172,45 @@ const ExportDialog = ({
                 </Image></contents>
               <columnCount>0</columnCount>
                             <isRibbonLabel>0</isRibbonLabel>
-          </WdPage>
+          </WdPage>`;
+  };
+
+  const buildAmlXml = (name: string, widthMm: number, heightMm: number, base64Pages: string[]) => {
+    const width = Number.isFinite(widthMm) ? widthMm : 0;
+    const height = Number.isFinite(heightMm) ? heightMm : 0;
+    const validBoundsWidth = Math.max(width - 2, 0);
+    const validBoundsHeight = Math.max(height - 2, 0);
+    const widthIn = width / 25.4;
+    const heightIn = height / 25.4;
+
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LPAPI version="1.6">
+      <labelName>${escapeXml(name)}</labelName>
+      <paperName>Custom Label</paperName>
+      <isPrintHorizontal>0</isPrintHorizontal>
+      <labelHeight>${height.toFixed(3)}</labelHeight>
+      <labelWidth>${width.toFixed(3)}</labelWidth>
+      <validBoundsX>1</validBoundsX>
+      <validBoundsY>1</validBoundsY>
+      <validBoundsWidth>${validBoundsWidth.toFixed(0)}</validBoundsWidth>
+      <validBoundsHeight>${validBoundsHeight.toFixed(0)}</validBoundsHeight>
+      <paperType>0</paperType>
+      <paperBackground>#ffffff</paperBackground>
+      <paperForeground>#000000</paperForeground>
+      <DisplaySize_mm>${width.toFixed(2)}mm * ${height.toFixed(2)}mm</DisplaySize_mm>
+      <DisplaySize_in>${widthIn.toFixed(3)}inch * ${heightIn.toFixed(3)}inch</DisplaySize_in>
+      <isRotate180>0</isRotate180>
+      <isBannerMode>0</isBannerMode>
+      <isCustomSize>0</isCustomSize>
+      <leftBlank>0</leftBlank>
+      <rightBlank>0</rightBlank>
+      <upBlank>0</upBlank>
+      <downBlank>0</downBlank>
+      <typeName>Custom</typeName>
+      <showDisplayMm>${width.toFixed(1)} * ${height.toFixed(1)} mm</showDisplayMm>
+      <showDisplayIn>${widthIn.toFixed(2)} * ${heightIn.toFixed(2)} in</showDisplayIn>
+      <contents>
+          ${base64Pages.map((base64Png) => buildAmlPageXml(width, height, base64Png)).join("\n")}
     </contents>
   </LPAPI>
 `;
@@ -206,10 +225,22 @@ const ExportDialog = ({
     };
   };
 
-  const saveAsImage = async () => {
+  const sanitizeFilename = (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed === "") {
+      return "";
+    }
+    return trimmed
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
+      .replace(/\s+/g, " ")
+      .replace(/\.+$/g, "");
+  };
+
+  const getUniqueExportItems = () => {
     const hasPrinted: Element[] = [];
     const itemsToPrint = getPrintItems();
     const usedNames = new Set<string>();
+    const uniqueItems: { item: Element; safeName: string }[] = [];
     let idx = 1;
 
     for (const item of itemsToPrint) {
@@ -227,79 +258,76 @@ const ExportDialog = ({
       hasPrinted.push(item);
 
       const rawName = (item as HTMLElement).dataset.amlName || `label-${idx}`;
-      const safeName = rawName.replace(/[^a-zA-Z0-9-_]+/g, "-");
-      if (usedNames.has(safeName)) {
-        continue;
+      const baseName = sanitizeFilename(rawName) || `label-${idx}`;
+      let safeName = baseName;
+      let nameSuffix = 1;
+      while (usedNames.has(safeName)) {
+        safeName = `${baseName}${String(nameSuffix).padStart(2, "0")}`;
+        nameSuffix += 1;
       }
       usedNames.add(safeName);
+      uniqueItems.push({ item, safeName });
+      idx += 1;
+    }
+    return uniqueItems;
+  };
 
+  const saveAsImage = async () => {
+    const uniqueItems = getUniqueExportItems();
+    for (const { item, safeName } of uniqueItems) {
       const url = await htmlToImage.toPng(item as HTMLElement, getExportImageOptions());
       const link = document.createElement("a");
       link.href = url;
       link.download = `${safeName}.png`;
       link.click();
-      idx += 1;
     }
   };
 
   const saveAsAmlLabels = async () => {
-    const hasPrinted: Element[] = [];
-    const itemsToPrint = getPrintItems();
-    const usedNames = new Set<string>();
-    let idx = 1;
-
-    for (const item of itemsToPrint) {
-      // Prevent printing copies
-      let isDuplicate = false;
-      for (let i = 0; i < hasPrinted.length; i += 1) {
-        if (item.isEqualNode(hasPrinted[i])) {
-          isDuplicate = true;
-          break;
-        }
-      }
-      if (isDuplicate) {
-        continue;
-      }
-      hasPrinted.push(item);
-
-      const rawName = (item as HTMLElement).dataset.amlName || `label-${idx}`;
-      const safeName = rawName.replace(/[^a-zA-Z0-9-_]+/g, "-");
-      if (usedNames.has(safeName)) {
-        continue;
-      }
-      usedNames.add(safeName);
-
+    const uniqueItems = getUniqueExportItems();
+    for (const { item, safeName } of uniqueItems) {
       const url = await htmlToImage.toPng(item as HTMLElement, getExportImageOptions());
       const base64 = url.split(",")[1] ?? "";
-      const aml = buildAmlXml(safeName, paperWidth, paperHeight, base64);
+      const aml = buildAmlXml(safeName, paperWidth, paperHeight, [base64]);
       downloadTextFile(`${safeName}.aml`, aml, "application/xml");
-      idx += 1;
     }
   };
 
-  const saveAsAmlPages = async () => {
-    const pagesToPrint = getPrintPages();
-    let pageIdx = 1;
-
-    for (const page of pagesToPrint) {
-      const url = await htmlToImage.toPng(page as HTMLElement, getExportImageOptions());
-      const base64 = url.split(",")[1] ?? "";
-      const name = `labels-page-${pageIdx}`;
-      const aml = buildAmlXml(name, paperWidth, paperHeight, base64);
-      downloadTextFile(`${name}.aml`, aml, "application/xml");
-      pageIdx += 1;
+  const saveAsZip = async () => {
+    const uniqueItems = getUniqueExportItems();
+    if (uniqueItems.length === 0) {
+      return;
     }
+
+    const zip = new JSZip();
+    for (const { item, safeName } of uniqueItems) {
+      const url = await htmlToImage.toPng(item as HTMLElement, getExportImageOptions());
+      if (exportFormat === "png") {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        zip.file(`${safeName}.png`, blob);
+      } else {
+        const base64 = url.split(",")[1] ?? "";
+        const aml = buildAmlXml(safeName, paperWidth, paperHeight, [base64]);
+        zip.file(`${safeName}.aml`, aml);
+      }
+    }
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    downloadBlobFile(`${exportFormat.toUpperCase()} ${zipFileTypeName} labels.zip`, blob);
   };
 
   const handleExport = async () => {
+    if (exportAsZip) {
+      await saveAsZip();
+      return;
+    }
+
     if (exportFormat === "png") {
       await saveAsImage();
       return;
     }
-    if (exportAmlAsPages) {
-      await saveAsAmlPages();
-      return;
-    }
+
     await saveAsAmlLabels();
   };
 
@@ -367,17 +395,15 @@ const ExportDialog = ({
                     optionType="button"
                     buttonStyle="solid"
                   />
-                  {exportFormat === "aml" && (
-                    <Checkbox
-                      checked={exportAmlAsPages}
-                      onChange={(event) => {
-                        printSettings.exportAmlAsPages = event.target.checked;
-                        setPrintSettings(printSettings);
-                      }}
-                    >
-                      {t("printing.generic.exportAmlPages")}
-                    </Checkbox>
-                  )}
+                  <Checkbox
+                    checked={exportAsZip}
+                    onChange={(event) => {
+                      printSettings.exportAsZip = event.target.checked;
+                      setPrintSettings(printSettings);
+                    }}
+                  >
+                    {t("printing.generic.exportAsZip")}
+                  </Checkbox>
                 </div>
               </Form.Item>
               <Form.Item label={t("printing.generic.exportDpi")} help={t("printing.generic.exportDpiHelp")}>
@@ -742,7 +768,7 @@ const ExportDialog = ({
           </div>
         </Col>
       </Row>
-      <Row justify={"end"}>
+      <Row justify={"end"} style={{ paddingRight: 72 }}>
         <Col>
           <Space>
             {extraButtons}

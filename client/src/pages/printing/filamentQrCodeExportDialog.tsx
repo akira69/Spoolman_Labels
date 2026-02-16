@@ -12,6 +12,7 @@ import { IFilament } from "../filaments/model";
 import {
   SpoolQRCodePrintSettings,
   renderLabelContents,
+  renderTemplateText,
   useGetPrintSettings as useGetPrintPresets,
   useSetPrintSettings as useSetPrintPresets,
 } from "./printing";
@@ -154,6 +155,7 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
 {{comment}}
 {comment}
 {vendor.comment}`;
+  const filenameTemplate = curPreset.filenameTemplate ?? `{vendor.name}-{material}-{name}`;
 
   const filamentTags = [
     { tag: "id" },
@@ -213,6 +215,7 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
           default: "WEB+SPOOLMAN:F-{id}",
           url: `${baseUrlRoot}/filament/show/{id}`,
         }}
+        zipFileTypeName="filament"
         extraSettingsStart={
           <>
             <Form.Item label={t("printing.generic.filamentImagePresets")}>
@@ -273,7 +276,7 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
         }
         items={items.map((filament) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/filament/show/${filament.id}` : `WEB+SPOOLMAN:F-${filament.id}`,
-          amlName: `filament-${filament.id}`,
+          amlName: renderTemplateText(filenameTemplate, filament),
           label: (
             <p
               style={{
@@ -315,6 +318,19 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
                 {t("actions.show")}
               </Button>
             </Text>
+            <Form.Item
+              label={t("printing.qrcode.filenameTemplate")}
+              tooltip={t("printing.qrcode.filenameTemplateTooltipFilament")}
+              style={{ marginTop: 12 }}
+            >
+              <Input
+                value={filenameTemplate}
+                onChange={(newValue) => {
+                  curPreset.filenameTemplate = newValue.target.value;
+                  updateCurrentPreset(curPreset);
+                }}
+              />
+            </Form.Item>
           </>
         }
         extraButtons={

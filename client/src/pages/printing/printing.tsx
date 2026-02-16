@@ -18,7 +18,7 @@ export interface PrintSettings {
   amlLabelSize?: { width: number; height: number };
   exportDpi?: number;
   exportFormat?: "png" | "aml";
-  exportAmlAsPages?: boolean;
+  exportAsZip?: boolean;
 }
 
 export interface QRCodePrintSettings {
@@ -30,6 +30,7 @@ export interface QRCodePrintSettings {
 
 export interface SpoolQRCodePrintSettings {
   template?: string;
+  filenameTemplate?: string;
   labelSettings: QRCodePrintSettings;
 }
 
@@ -104,29 +105,33 @@ function applyTextFormatting(text: string): ReactElement[] {
   return elements;
 }
 
-export function renderLabelContents(template: string, obj: GenericObject): ReactElement {
+export function renderTemplateText(template: string, obj: GenericObject): string {
   // Find all {tags} in the template string and loop over them
   const matches = [...template.matchAll(/{(?:[^}{]|{[^}{]*})*}/gs)];
-  let label_text = template;
+  let renderedText = template;
   matches.forEach((match) => {
     if ((match[0].match(/{/g) || []).length == 1) {
       const tag = match[0].replace(/[{}]/g, "");
       const tagValue = getTagValue(tag, obj);
-      label_text = label_text.replace(match[0], tagValue);
+      renderedText = renderedText.replace(match[0], String(tagValue));
     } else if ((match[0].match(/{/g) || []).length == 2) {
       const structure = match[0].match(/{(.*?){(.*?)}(.*?)}/);
       if (structure != null) {
         const tag = structure[2];
         const tagValue = getTagValue(tag, obj);
-        if (tagValue == "?") {
-          label_text = label_text.replace(match[0], "");
+        if (tagValue === "?") {
+          renderedText = renderedText.replace(match[0], "");
         } else {
-          label_text = label_text.replace(match[0], structure[1] + tagValue + structure[3]);
+          renderedText = renderedText.replace(match[0], structure[1] + tagValue + structure[3]);
         }
       }
     }
   });
+  return renderedText;
+}
 
+export function renderLabelContents(template: string, obj: GenericObject): ReactElement {
+  const renderedText = renderTemplateText(template, obj);
   // Split string on \n into individual lines
-  return <>{applyTextFormatting(label_text)}</>;
+  return <>{applyTextFormatting(renderedText)}</>;
 }

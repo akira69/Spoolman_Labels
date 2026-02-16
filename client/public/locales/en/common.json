@@ -77,7 +77,7 @@
                 "png": "PNG",
                 "aml": "AML"
             },
-            "exportAmlPages": "Export as multiple page AML",
+            "exportAsZip": "Export as .zip",
             "exportDpi": "Export DPI",
             "exportDpiHelp": "Higher DPI makes sharper PNG/AML exports but increases file size and export time.",
             "showBorder": "Show Border",
@@ -115,8 +115,7 @@
             "settingsName": "Preset Name",
             "saveSetting": "Save Presets",
             "saveAsImage": "Save as Image",
-            "saveAsAmlLabels": "Save as AML (Labels)",
-            "saveAsAmlPages": "Save as AML (Pages)"
+            "saveAsAmlLabels": "Save as AML (Labels)"
         },
         "qrcode": {
             "button": "Print Labels",
@@ -125,6 +124,9 @@
             "selectTitle": "Export / Print Labels",
             "title": "Label Printing",
             "template": "Label Template",
+            "filenameTemplate": "Filename Template",
+            "filenameTemplateTooltipSpool": "Use {} to insert values of the spool object as text. Refer to the label template rules and available tags for more details.",
+            "filenameTemplateTooltipFilament": "Use {} to insert values of the filament object as text. Refer to the label template rules and available tags for more details.",
             "templateHelp": "Use {} to insert values of the spool object as text. For example, {id} will be replaced with the spool id, or {filament.material} will be replaced with the material of the spool. if a value is missing it will be replaced with \"?\". A second set of {} can be used to remove this. In addition, any text between the sets of {} will be removed if the value is missing. For example, {Lot Nr: {lot_nr}} will only show the label if the spool has a lot number. Enclose text with double asterix ** to make it bold. Click the button to view a list of all available tags.",
             "templateHelpFilament": "Use {} to insert values of the filament object as text. For example, {id} will be replaced with the filament id, or {vendor.name} will be replaced with the vendor name. If a value is missing it will be replaced with \"?\". A second set of {} can be used to remove this. In addition, any text between the sets of {} will be removed if the value is missing. For example, {Article: {article_number}} will only show the label if a filament has an article number. Enclose text with double asterix ** to make it bold. Click the button to view a list of all available tags.",
             "textSize": "Label Text Size",
