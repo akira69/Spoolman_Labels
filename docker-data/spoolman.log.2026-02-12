@@ -1,0 +1,1612 @@
+2026-02-12 00:39:35:INFO:Syncing external DB.
+2026-02-12 00:39:36:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 00:39:36:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 00:39:36:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 00:43:13:INFO:172.29.0.1:55890 - "GET /vendor HTTP/1.1" 200
+2026-02-12 00:43:13:INFO:172.29.0.1:55890 - "GET /config.js HTTP/1.1" 200
+2026-02-12 00:43:13:INFO:172.29.0.1:49971 - "GET /registerSW.js HTTP/1.1" 200
+2026-02-12 00:43:13:INFO:172.29.0.1:28059 - "GET /assets/index-B6snAd4S.css HTTP/1.1" 200
+2026-02-12 00:43:13:INFO:172.29.0.1:44252 - "GET /assets/index-C6URjCZu.js HTTP/1.1" 200
+2026-02-12 00:43:13:INFO:172.29.0.1:44252 - "GET /locales/en/common.json HTTP/1.1" 200
+2026-02-12 00:43:14:INFO:172.29.0.1:44252 - "GET /assets/en-C3A9Fwdz.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:28059 - "GET /favicon.ico HTTP/1.1" 200
+2026-02-12 00:43:14:INFO:172.29.0.1:63910 - "GET /manifest.webmanifest HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:28059 - "GET /pwa-192x192.png HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:44252 - "GET /assets/list-BpTiFMtt.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:28059 - "GET /assets/utc-lJcx-r2Y.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:49971 - "GET /assets/column-CJzL2HTo.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:55890 - "GET /assets/filtering-CY1b-XQk.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:42936 - "GET /assets/parsing-CTPBLsf8.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:37866 - "GET /assets/queryFields-OLM5L9zX.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:37866 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-12 00:43:14:INFO:172.29.0.1:44252 - "GET /assets/spoolIcon-CaFR4IZq.css HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:28059 - "GET /assets/numberField-BI0qvDc6.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:55890 - "GET /assets/spoolIcon-D8-1cC-T.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:42936 - "GET /assets/liveify-D14Z2Xx7.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:49971 - "GET /assets/saveload-v4BoMzC1.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:37866 - "GET /assets/Table-BKPbSm75.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:55890 - "GET /assets/useBubbleLock-R8Hzhysf.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:44252 - "GET /assets/index-NWypBtN3.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:28059 - "GET /assets/Tree-Co7edQhj.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:42936 - "GET /assets/SearchOutlined-ihkX-KMG.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:49971 - "GET /assets/index-JMsxBinL.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:37866 - "GET /assets/index-CIhCLKZQ.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:55890 - "GET /assets/Pagination-CLNpux47.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:49971 - "GET /assets/en_GB-C6mO1eqO.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:55890 - "GET /kofi_s_logo_nolabel.png HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:28059 - "GET /assets/EyeOutlined-DAauouLV.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:42936 - "GET /assets/zh_CN-cwSELhhy.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:44252 - "GET /assets/Pagination-D80HQ6J6.js HTTP/1.1" 304
+2026-02-12 00:43:14:INFO:172.29.0.1:37866 - "GET /favicon.svg HTTP/1.1" 304
+2026-02-12 00:43:15:INFO:172.29.0.1:37866 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-12 00:43:15:INFO:172.29.0.1:37866 - "GET /api/v1/field/vendor HTTP/1.1" 200
+2026-02-12 00:43:15:INFO:172.29.0.1:20363 - "WebSocket /api/v1/vendor" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:44252 - "GET /api/v1/vendor?limit=20&offset=0&sort=id:asc HTTP/1.1" 200
+2026-02-12 00:43:15:INFO:172.29.0.1:26119 - "WebSocket /api/v1/vendor/1" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,1
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:47226 - "WebSocket /api/v1/vendor/2" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,2
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:30185 - "WebSocket /api/v1/vendor/3" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,3
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:16238 - "WebSocket /api/v1/vendor/4" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,4
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:22694 - "WebSocket /api/v1/vendor/5" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,5
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:46301 - "WebSocket /api/v1/vendor/6" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,6
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:20769 - "WebSocket /api/v1/vendor/7" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,7
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:56513 - "WebSocket /api/v1/vendor/8" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,8
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:36567 - "WebSocket /api/v1/vendor/10" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,10
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:23587 - "WebSocket /api/v1/vendor/9" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,9
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:15:INFO:172.29.0.1:35498 - "WebSocket /api/v1/vendor/11" [accepted]
+2026-02-12 00:43:15:INFO:Client 172.29.0.1 is now listening on pool vendor,11
+2026-02-12 00:43:15:INFO:connection open
+2026-02-12 00:43:16:INFO:172.29.0.1:59212 - "WebSocket /api/v1/vendor/12" [accepted]
+2026-02-12 00:43:16:INFO:Client 172.29.0.1 is now listening on pool vendor,12
+2026-02-12 00:43:16:INFO:connection open
+2026-02-12 00:43:16:INFO:172.29.0.1:39691 - "WebSocket /api/v1/vendor/13" [accepted]
+2026-02-12 00:43:16:INFO:Client 172.29.0.1 is now listening on pool vendor,13
+2026-02-12 00:43:16:INFO:connection open
+2026-02-12 00:43:16:INFO:172.29.0.1:21139 - "WebSocket /api/v1/vendor/14" [accepted]
+2026-02-12 00:43:16:INFO:Client 172.29.0.1 is now listening on pool vendor,14
+2026-02-12 00:43:16:INFO:connection open
+2026-02-12 00:43:16:INFO:172.29.0.1:64797 - "WebSocket /api/v1/vendor/15" [accepted]
+2026-02-12 00:43:16:INFO:Client 172.29.0.1 is now listening on pool vendor,15
+2026-02-12 00:43:16:INFO:connection open
+2026-02-12 00:43:17:INFO:172.29.0.1:62174 - "WebSocket /api/v1/vendor/16" [accepted]
+2026-02-12 00:43:17:INFO:Client 172.29.0.1 is now listening on pool vendor,16
+2026-02-12 00:43:17:INFO:connection open
+2026-02-12 00:43:17:INFO:172.29.0.1:38143 - "WebSocket /api/v1/vendor/20" [accepted]
+2026-02-12 00:43:17:INFO:Client 172.29.0.1 is now listening on pool vendor,20
+2026-02-12 00:43:17:INFO:connection open
+2026-02-12 00:43:17:INFO:172.29.0.1:53235 - "WebSocket /api/v1/vendor/19" [accepted]
+2026-02-12 00:43:17:INFO:Client 172.29.0.1 is now listening on pool vendor,19
+2026-02-12 00:43:17:INFO:connection open
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,1
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,2
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,3
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,4
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,6
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,8
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,5
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,7
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,9
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,10
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,12
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,20
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,14
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,11
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,13
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,19
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,16
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 has stopped listening on pool vendor,15
+2026-02-12 00:43:19:INFO:connection closed
+2026-02-12 00:43:19:INFO:172.29.0.1:20090 - "GET /assets/list-DYfcziuN.js HTTP/1.1" 304
+2026-02-12 00:43:19:INFO:172.29.0.1:48120 - "GET /assets/otherModels-BIq96kpR.js HTTP/1.1" 304
+2026-02-12 00:43:19:INFO:172.29.0.1:20232 - "GET /assets/querySettings-CbKy-Tgy.js HTTP/1.1" 304
+2026-02-12 00:43:19:INFO:172.29.0.1:37592 - "GET /assets/settings-DD-kejQZ.js HTTP/1.1" 304
+2026-02-12 00:43:19:INFO:172.29.0.1:65212 - "GET /assets/PrinterOutlined-XIT9Fet7.js HTTP/1.1" 304
+2026-02-12 00:43:19:INFO:172.29.0.1:65212 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-12 00:43:19:INFO:172.29.0.1:39699 - "WebSocket /api/v1/filament" [accepted]
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 is now listening on pool filament
+2026-02-12 00:43:19:INFO:connection open
+2026-02-12 00:43:19:INFO:172.29.0.1:48120 - "GET /api/v1/setting/currency HTTP/1.1" 200
+2026-02-12 00:43:19:INFO:172.29.0.1:20090 - "GET /api/v1/setting/round_prices HTTP/1.1" 200
+2026-02-12 00:43:19:INFO:172.29.0.1:20232 - "GET /api/v1/filament?limit=20&offset=0&sort=vendor.name:desc&name=%22Basic+Texture+Silver%22 HTTP/1.1" 200
+2026-02-12 00:43:19:INFO:172.29.0.1:33954 - "WebSocket /api/v1/filament/350" [accepted]
+2026-02-12 00:43:19:INFO:Client 172.29.0.1 is now listening on pool filament,350
+2026-02-12 00:43:19:INFO:connection open
+2026-02-12 00:43:20:INFO:Client 172.29.0.1 has stopped listening on pool filament
+2026-02-12 00:43:20:INFO:connection closed
+2026-02-12 00:43:20:INFO:Client 172.29.0.1 has stopped listening on pool filament,350
+2026-02-12 00:43:20:INFO:connection closed
+2026-02-12 00:43:20:INFO:172.29.0.1:50202 - "GET /assets/index-C515SR0x.js HTTP/1.1" 304
+2026-02-12 00:43:20:INFO:172.29.0.1:37592 - "GET /assets/generalSettings-CDuJG64M.js HTTP/1.1" 200
+2026-02-12 00:43:20:INFO:172.29.0.1:20232 - "GET /assets/index-DW_FwePs.js HTTP/1.1" 200
+2026-02-12 00:43:20:INFO:172.29.0.1:65212 - "GET /assets/Trans-DNG4VZIG.js HTTP/1.1" 200
+2026-02-12 00:43:20:INFO:172.29.0.1:50202 - "GET /assets/index-ma02Pmjv.js HTTP/1.1" 304
+2026-02-12 00:43:20:INFO:172.29.0.1:20090 - "GET /assets/extraFieldsSettings-tpjz8fBf.js HTTP/1.1" 200
+2026-02-12 00:43:20:INFO:172.29.0.1:37592 - "GET /assets/index-BR2zFCno.js HTTP/1.1" 304
+2026-02-12 00:43:20:INFO:172.29.0.1:48120 - "GET /assets/inputNumberRange-uSAohvDa.js HTTP/1.1" 200
+2026-02-12 00:43:20:INFO:172.29.0.1:48120 - "GET /api/v1/setting/ HTTP/1.1" 200
+2026-02-12 00:43:23:INFO:172.29.0.1:32078 - "WebSocket /api/v1/filament" [accepted]
+2026-02-12 00:43:23:INFO:Client 172.29.0.1 is now listening on pool filament
+2026-02-12 00:43:23:INFO:connection open
+2026-02-12 00:43:23:INFO:172.29.0.1:62726 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-12 00:43:23:INFO:172.29.0.1:26349 - "WebSocket /api/v1/filament/350" [accepted]
+2026-02-12 00:43:23:INFO:Client 172.29.0.1 is now listening on pool filament,350
+2026-02-12 00:43:23:INFO:connection open
+2026-02-12 00:43:23:INFO:172.29.0.1:42978 - "GET /api/v1/setting/round_prices HTTP/1.1" 200
+2026-02-12 00:43:23:INFO:172.29.0.1:42462 - "GET /api/v1/setting/currency HTTP/1.1" 200
+2026-02-12 00:43:23:INFO:172.29.0.1:28301 - "GET /api/v1/filament?limit=20&offset=0&sort=vendor.name:desc&name=%22Basic+Texture+Silver%22 HTTP/1.1" 200
+2026-02-12 00:43:29:INFO:172.29.0.1:54753 - "GET /api/v1/filament?limit=20&offset=0&sort=settings_extruder_temp:asc HTTP/1.1" 200
+2026-02-12 00:43:29:INFO:Client 172.29.0.1 has stopped listening on pool filament,350
+2026-02-12 00:43:29:INFO:connection closed
+2026-02-12 00:43:29:INFO:172.29.0.1:42530 - "WebSocket /api/v1/filament/402" [accepted]
+2026-02-12 00:43:29:INFO:Client 172.29.0.1 is now listening on pool filament,402
+2026-02-12 00:43:29:INFO:connection open
+2026-02-12 00:43:29:INFO:172.29.0.1:20265 - "WebSocket /api/v1/filament/403" [accepted]
+2026-02-12 00:43:29:INFO:Client 172.29.0.1 is now listening on pool filament,403
+2026-02-12 00:43:29:INFO:connection open
+2026-02-12 00:43:29:INFO:172.29.0.1:55108 - "WebSocket /api/v1/filament/404" [accepted]
+2026-02-12 00:43:29:INFO:Client 172.29.0.1 is now listening on pool filament,404
+2026-02-12 00:43:29:INFO:connection open
+2026-02-12 00:43:29:INFO:172.29.0.1:28494 - "WebSocket /api/v1/filament/405" [accepted]
+2026-02-12 00:43:29:INFO:Client 172.29.0.1 is now listening on pool filament,405
+2026-02-12 00:43:29:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:17311 - "WebSocket /api/v1/filament/406" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,406
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:62246 - "WebSocket /api/v1/filament/408" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,408
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:50639 - "WebSocket /api/v1/filament/407" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,407
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:53889 - "WebSocket /api/v1/filament/409" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,409
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:56759 - "WebSocket /api/v1/filament/410" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,410
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:64191 - "WebSocket /api/v1/filament/411" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,411
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:23224 - "WebSocket /api/v1/filament/412" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,412
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:38714 - "WebSocket /api/v1/filament/414" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,414
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:18732 - "WebSocket /api/v1/filament/413" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,413
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:30:INFO:172.29.0.1:34660 - "WebSocket /api/v1/filament/415" [accepted]
+2026-02-12 00:43:30:INFO:Client 172.29.0.1 is now listening on pool filament,415
+2026-02-12 00:43:30:INFO:connection open
+2026-02-12 00:43:31:INFO:172.29.0.1:43645 - "WebSocket /api/v1/filament/416" [accepted]
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 is now listening on pool filament,416
+2026-02-12 00:43:31:INFO:connection open
+2026-02-12 00:43:31:INFO:172.29.0.1:55454 - "WebSocket /api/v1/filament/419" [accepted]
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 is now listening on pool filament,419
+2026-02-12 00:43:31:INFO:connection open
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,419
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,413
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,412
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,415
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,416
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,410
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,403
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,405
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,406
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,407
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,408
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,404
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,402
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,414
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,411
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:Client 172.29.0.1 has stopped listening on pool filament,409
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:connection closed
+2026-02-12 00:43:31:INFO:172.29.0.1:43044 - "GET /assets/filamentSelectModal-CZaPvKzU.js HTTP/1.1" 304
+2026-02-12 00:43:31:INFO:172.29.0.1:53520 - "GET /assets/index-DgGwbvvl.js HTTP/1.1" 304
+2026-02-12 00:43:32:INFO:172.29.0.1:43044 - "GET /api/v1/filament?limit=50&offset=0 HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:17662 - "GET /assets/printing-CTVpvrZb.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:31472 - "GET /assets/index-BF7mxSCW.js HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:18945 - "GET /assets/index-21mzQWqZ.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:54029 - "GET /assets/qrCodePrintingDialog-BWCpnSAq.js HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:61255 - "GET /assets/filamentQrCodePrintingDialog-lz199Oyk.js HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:19278 - "GET /assets/printingDialog-D8hHwfgl.js HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:17662 - "GET /assets/functions-DGtuZNcT.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:31472 - "GET /assets/functions-DWHBVsJv.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:54029 - "GET /assets/Slider-4uKZO7wA.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:61255 - "GET /assets/QRCodeSVG-BTHfkYMb.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:18945 - "GET /assets/useQueries-Bok3BiIj.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:31472 - "GET /assets/index-BedbIQq7.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:17662 - "GET /assets/index-BL55DVAe.js HTTP/1.1" 304
+2026-02-12 00:43:37:INFO:172.29.0.1:19278 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:61255 - "GET /api/v1/field/vendor HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:17662 - "GET /api/v1/setting/base_url HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:18945 - "GET /api/v1/setting/print_presets_filament HTTP/1.1" 200
+2026-02-12 00:43:37:INFO:172.29.0.1:31472 - "GET /api/v1/filament/1 HTTP/1.1" 200
+2026-02-12 00:43:42:INFO:172.29.0.1:23915 - "GET /api/v1/filament?limit=50&offset=0 HTTP/1.1" 200
+2026-02-12 00:43:47:INFO:172.29.0.1:33266 - "GET /assets/qrCodeExportDialog-DM9ZkvSR.js HTTP/1.1" 304
+2026-02-12 00:43:47:INFO:172.29.0.1:54557 - "GET /assets/index-BOMKz41S.js HTTP/1.1" 304
+2026-02-12 00:43:47:INFO:172.29.0.1:41964 - "GET /assets/exportDialog-8Hqgamv7.js HTTP/1.1" 304
+2026-02-12 00:43:47:INFO:172.29.0.1:23150 - "GET /assets/filamentQrCodeExportDialog-CeE0uMtT.js HTTP/1.1" 304
+2026-02-12 00:43:47:INFO:172.29.0.1:33266 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-12 00:43:47:INFO:172.29.0.1:56946 - "GET /api/v1/field/vendor HTTP/1.1" 200
+2026-02-12 00:43:48:INFO:172.29.0.1:54557 - "GET /api/v1/setting/image_presets_filament HTTP/1.1" 200
+2026-02-12 00:43:48:INFO:172.29.0.1:23150 - "GET /api/v1/setting/base_url HTTP/1.1" 200
+2026-02-12 00:43:48:INFO:172.29.0.1:41964 - "GET /api/v1/filament/1 HTTP/1.1" 200
+2026-02-12 00:48:52:INFO:Performing scheduled database backup.
+2026-02-12 00:48:53:INFO:Backing up SQLite database to /home/app/.local/share/spoolman/backups/spoolman.db
+2026-02-12 00:48:53:INFO:Copied 1 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 2 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 3 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 4 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 5 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 6 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 7 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 8 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 9 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 10 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 11 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 12 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 13 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 14 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 15 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 16 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 17 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 18 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 19 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 20 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 21 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 22 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 23 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 24 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 25 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 26 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 27 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 28 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 29 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 30 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 31 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 32 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 33 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 34 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 35 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 36 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 37 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 38 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 39 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 40 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 41 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 42 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 43 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 44 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 45 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 46 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 47 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 48 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 49 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 50 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 51 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 52 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 53 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 54 of 480 pages.
+2026-02-12 00:48:53:INFO:Copied 55 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 56 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 57 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 58 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 59 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 60 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 61 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 62 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 63 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 64 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 65 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 66 of 480 pages.
+2026-02-12 00:48:54:INFO:Copied 67 of 480 pages.
+2026-02-12 00:48:55:INFO:Copied 68 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 69 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 70 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 71 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 72 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 73 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 74 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 75 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 76 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 77 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 78 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 79 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 80 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 81 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 82 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 83 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 84 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 85 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 86 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 87 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 88 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 89 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 90 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 91 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 92 of 480 pages.
+2026-02-12 00:48:56:INFO:Copied 93 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 94 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 95 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 96 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 97 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 98 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 99 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 100 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 101 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 102 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 103 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 104 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 105 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 106 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 107 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 108 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 109 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 110 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 111 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 112 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 113 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 114 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 115 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 116 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 117 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 118 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 119 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 120 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 121 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 122 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 123 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 124 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 125 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 126 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 127 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 128 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 129 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 130 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 131 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 132 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 133 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 134 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 135 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 136 of 480 pages.
+2026-02-12 00:48:57:INFO:Copied 137 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 138 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 139 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 140 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 141 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 142 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 143 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 144 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 145 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 146 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 147 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 148 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 149 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 150 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 151 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 152 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 153 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 154 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 155 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 156 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 157 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 158 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 159 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 160 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 161 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 162 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 163 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 164 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 165 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 166 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 167 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 168 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 169 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 170 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 171 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 172 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 173 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 174 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 175 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 176 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 177 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 178 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 179 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 180 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 181 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 182 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 183 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 184 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 185 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 186 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 187 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 188 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 189 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 190 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 191 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 192 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 193 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 194 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 195 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 196 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 197 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 198 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 199 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 200 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 201 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 202 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 203 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 204 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 205 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 206 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 207 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 208 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 209 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 210 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 211 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 212 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 213 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 214 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 215 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 216 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 217 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 218 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 219 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 220 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 221 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 222 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 223 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 224 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 225 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 226 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 227 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 228 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 229 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 230 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 231 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 232 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 233 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 234 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 235 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 236 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 237 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 238 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 239 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 240 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 241 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 242 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 243 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 244 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 245 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 246 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 247 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 248 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 249 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 250 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 251 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 252 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 253 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 254 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 255 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 256 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 257 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 258 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 259 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 260 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 261 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 262 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 263 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 264 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 265 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 266 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 267 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 268 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 269 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 270 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 271 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 272 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 273 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 274 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 275 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 276 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 277 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 278 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 279 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 280 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 281 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 282 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 283 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 284 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 285 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 286 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 287 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 288 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 289 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 290 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 291 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 292 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 293 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 294 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 295 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 296 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 297 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 298 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 299 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 300 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 301 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 302 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 303 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 304 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 305 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 306 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 307 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 308 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 309 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 310 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 311 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 312 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 313 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 314 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 315 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 316 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 317 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 318 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 319 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 320 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 321 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 322 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 323 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 324 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 325 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 326 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 327 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 328 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 329 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 330 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 331 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 332 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 333 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 334 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 335 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 336 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 337 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 338 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 339 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 340 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 341 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 342 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 343 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 344 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 345 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 346 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 347 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 348 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 349 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 350 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 351 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 352 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 353 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 354 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 355 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 356 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 357 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 358 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 359 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 360 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 361 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 362 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 363 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 364 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 365 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 366 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 367 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 368 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 369 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 370 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 371 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 372 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 373 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 374 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 375 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 376 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 377 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 378 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 379 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 380 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 381 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 382 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 383 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 384 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 385 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 386 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 387 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 388 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 389 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 390 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 391 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 392 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 393 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 394 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 395 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 396 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 397 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 398 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 399 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 400 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 401 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 402 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 403 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 404 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 405 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 406 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 407 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 408 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 409 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 410 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 411 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 412 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 413 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 414 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 415 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 416 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 417 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 418 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 419 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 420 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 421 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 422 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 423 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 424 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 425 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 426 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 427 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 428 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 429 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 430 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 431 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 432 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 433 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 434 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 435 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 436 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 437 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 438 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 439 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 440 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 441 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 442 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 443 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 444 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 445 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 446 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 447 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 448 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 449 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 450 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 451 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 452 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 453 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 454 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 455 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 456 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 457 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 458 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 459 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 460 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 461 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 462 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 463 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 464 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 465 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 466 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 467 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 468 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 469 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 470 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 471 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 472 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 473 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 474 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 475 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 476 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 477 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 478 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 479 of 480 pages.
+2026-02-12 00:48:58:INFO:Copied 480 of 480 pages.
+2026-02-12 00:48:58:INFO:Backup complete.
+2026-02-12 00:52:24:INFO:Syncing external DB.
+2026-02-12 00:52:25:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 00:52:25:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 00:52:25:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 06:09:30:INFO:Syncing external DB.
+2026-02-12 06:09:31:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:32:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:32:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 06:09:32:INFO:Syncing external DB.
+2026-02-12 06:09:32:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:33:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:33:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 06:09:33:INFO:Syncing external DB.
+2026-02-12 06:09:33:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:33:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:33:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 06:09:33:INFO:Syncing external DB.
+2026-02-12 06:09:33:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:33:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:33:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 06:09:33:INFO:Syncing external DB.
+2026-02-12 06:09:33:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:33:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 06:09:33:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 10:16:47:INFO:Syncing external DB.
+2026-02-12 10:16:47:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 10:16:48:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 10:16:48:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 10:16:48:INFO:Syncing external DB.
+2026-02-12 10:16:48:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 10:16:48:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 10:16:48:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 10:16:48:INFO:Syncing external DB.
+2026-02-12 10:16:48:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 10:16:48:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 10:16:48:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 10:16:48:INFO:Syncing external DB.
+2026-02-12 10:16:48:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 10:16:49:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 10:16:49:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 13:27:20:INFO:Syncing external DB.
+2026-02-12 13:27:21:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 13:27:21:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 13:27:21:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 13:27:21:INFO:Syncing external DB.
+2026-02-12 13:27:21:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 13:27:21:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 13:27:21:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 13:27:21:INFO:Syncing external DB.
+2026-02-12 13:27:21:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 13:27:22:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 13:27:22:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 14:44:37:INFO:Syncing external DB.
+2026-02-12 14:44:43:ERROR:Unhandled exception in `scheduler.asyncio.job.Job(<JobType.CYCLIC: 1>, [datetime.timedelta(seconds=3600)], <function _sync at 0xffffafc677f0>, (), {}, 0, True, datetime.datetime(2026, 2, 11, 21, 51, 33, 885504), None, False, None, None)`!
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/scheduler/asyncio/job.py", line 64, in _exec
+    await coroutine
+  File "/home/app/spoolman/spoolman/externaldb.py", line 173, in _sync
+    filaments = _parse_filaments_from_bytes(await _download_file(urljoin(url, "filaments.json")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/spoolman/externaldb.py", line 138, in _download_file
+    response = await client.get(url)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/hishel/_async/_transports.py", line 161, in handle_async_request
+    revalidation_response = await self._transport.handle_async_request(revalidation_request)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectTimeout
+2026-02-12 15:13:26:INFO:172.29.0.1:50310 - "GET /api/v1/field/vendor HTTP/1.1" 200
+2026-02-12 15:13:26:INFO:172.29.0.1:31454 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-12 15:13:26:INFO:172.29.0.1:38221 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-12 15:13:27:INFO:172.29.0.1:26699 - "GET /api/v1/setting/base_url HTTP/1.1" 200
+2026-02-12 15:13:27:INFO:172.29.0.1:62581 - "GET /api/v1/setting/image_presets_filament HTTP/1.1" 200
+2026-02-12 15:13:27:INFO:172.29.0.1:62109 - "GET /api/v1/filament/1 HTTP/1.1" 200
+2026-02-12 15:16:54:INFO:Syncing external DB.
+2026-02-12 15:16:55:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 15:16:56:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 15:16:57:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 15:41:19:INFO:172.29.0.1:62831 - "GET /assets/ToTopOutlined-CfA1YY_E.js HTTP/1.1" 200
+2026-02-12 15:41:19:INFO:172.29.0.1:54847 - "GET /assets/functions-Du1hcMma.js HTTP/1.1" 200
+2026-02-12 15:41:19:INFO:172.29.0.1:56116 - "GET /assets/list-DOdQS3Iv.js HTTP/1.1" 200
+2026-02-12 15:41:20:INFO:172.29.0.1:22952 - "WebSocket /api/v1/spool" [accepted]
+2026-02-12 15:41:20:INFO:Client 172.29.0.1 is now listening on pool spool
+2026-02-12 15:41:20:INFO:connection open
+2026-02-12 15:41:20:INFO:172.29.0.1:56116 - "GET /api/v1/setting/currency HTTP/1.1" 200
+2026-02-12 15:41:20:INFO:172.29.0.1:54847 - "GET /api/v1/field/spool HTTP/1.1" 200
+2026-02-12 15:41:20:INFO:172.29.0.1:62831 - "GET /api/v1/setting/round_prices HTTP/1.1" 200
+2026-02-12 15:41:20:INFO:172.29.0.1:38688 - "GET /api/v1/spool?allow_archived=false&limit=20&offset=0&sort=id:asc HTTP/1.1" 200
+2026-02-12 15:41:20:INFO:172.29.0.1:44061 - "WebSocket /api/v1/spool/1" [accepted]
+2026-02-12 15:41:20:INFO:Client 172.29.0.1 is now listening on pool spool,1
+2026-02-12 15:41:20:INFO:connection open
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 has stopped listening on pool spool
+2026-02-12 15:41:23:INFO:connection closed
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 has stopped listening on pool spool,1
+2026-02-12 15:41:23:INFO:connection closed
+2026-02-12 15:41:23:INFO:172.29.0.1:38739 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-12 15:41:23:INFO:172.29.0.1:52422 - "WebSocket /api/v1/filament" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament
+2026-02-12 15:41:23:INFO:connection open
+2026-02-12 15:41:23:INFO:172.29.0.1:53738 - "GET /api/v1/setting/round_prices HTTP/1.1" 200
+2026-02-12 15:41:23:INFO:172.29.0.1:17062 - "GET /api/v1/setting/currency HTTP/1.1" 200
+2026-02-12 15:41:23:INFO:172.29.0.1:38739 - "GET /api/v1/filament?limit=20&offset=0&sort=settings_extruder_temp:asc HTTP/1.1" 200
+2026-02-12 15:41:23:INFO:172.29.0.1:32673 - "WebSocket /api/v1/filament/402" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament,402
+2026-02-12 15:41:23:INFO:connection open
+2026-02-12 15:41:23:INFO:172.29.0.1:39915 - "WebSocket /api/v1/filament/403" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament,403
+2026-02-12 15:41:23:INFO:connection open
+2026-02-12 15:41:23:INFO:172.29.0.1:47592 - "WebSocket /api/v1/filament/404" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament,404
+2026-02-12 15:41:23:INFO:connection open
+2026-02-12 15:41:23:INFO:172.29.0.1:49867 - "WebSocket /api/v1/filament/405" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament,405
+2026-02-12 15:41:23:INFO:connection open
+2026-02-12 15:41:23:INFO:172.29.0.1:56604 - "WebSocket /api/v1/filament/406" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament,406
+2026-02-12 15:41:23:INFO:connection open
+2026-02-12 15:41:23:INFO:172.29.0.1:27258 - "WebSocket /api/v1/filament/407" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament,407
+2026-02-12 15:41:23:INFO:connection open
+2026-02-12 15:41:23:INFO:172.29.0.1:32503 - "WebSocket /api/v1/filament/408" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament,408
+2026-02-12 15:41:23:INFO:connection open
+2026-02-12 15:41:23:INFO:172.29.0.1:18548 - "WebSocket /api/v1/filament/410" [accepted]
+2026-02-12 15:41:23:INFO:Client 172.29.0.1 is now listening on pool filament,410
+2026-02-12 15:41:24:INFO:connection open
+2026-02-12 15:41:24:INFO:172.29.0.1:54188 - "WebSocket /api/v1/filament/409" [accepted]
+2026-02-12 15:41:24:INFO:Client 172.29.0.1 is now listening on pool filament,409
+2026-02-12 15:41:24:INFO:connection open
+2026-02-12 15:41:24:INFO:172.29.0.1:63501 - "WebSocket /api/v1/filament/411" [accepted]
+2026-02-12 15:41:24:INFO:Client 172.29.0.1 is now listening on pool filament,411
+2026-02-12 15:41:24:INFO:connection open
+2026-02-12 15:41:24:INFO:172.29.0.1:37385 - "WebSocket /api/v1/filament/412" [accepted]
+2026-02-12 15:41:24:INFO:Client 172.29.0.1 is now listening on pool filament,412
+2026-02-12 15:41:24:INFO:connection open
+2026-02-12 15:41:24:INFO:172.29.0.1:18862 - "WebSocket /api/v1/filament/413" [accepted]
+2026-02-12 15:41:24:INFO:Client 172.29.0.1 is now listening on pool filament,413
+2026-02-12 15:41:24:INFO:connection open
+2026-02-12 15:41:24:INFO:172.29.0.1:25251 - "WebSocket /api/v1/filament/414" [accepted]
+2026-02-12 15:41:24:INFO:Client 172.29.0.1 is now listening on pool filament,414
+2026-02-12 15:41:24:INFO:connection open
+2026-02-12 15:41:24:INFO:172.29.0.1:21954 - "WebSocket /api/v1/filament/415" [accepted]
+2026-02-12 15:41:24:INFO:Client 172.29.0.1 is now listening on pool filament,415
+2026-02-12 15:41:24:INFO:connection open
+2026-02-12 15:41:24:INFO:172.29.0.1:39187 - "WebSocket /api/v1/filament/420" [accepted]
+2026-02-12 15:41:24:INFO:Client 172.29.0.1 is now listening on pool filament,420
+2026-02-12 15:41:24:INFO:connection open
+2026-02-12 15:41:25:INFO:172.29.0.1:48045 - "WebSocket /api/v1/filament/416" [accepted]
+2026-02-12 15:41:25:INFO:Client 172.29.0.1 is now listening on pool filament,416
+2026-02-12 15:41:25:INFO:connection open
+2026-02-12 15:41:26:INFO:172.29.0.1:63024 - "WebSocket /api/v1/filament/418" [accepted]
+2026-02-12 15:41:26:INFO:Client 172.29.0.1 is now listening on pool filament,418
+2026-02-12 15:41:26:INFO:connection open
+2026-02-12 15:41:26:INFO:172.29.0.1:49126 - "WebSocket /api/v1/filament/421" [accepted]
+2026-02-12 15:41:26:INFO:Client 172.29.0.1 is now listening on pool filament,421
+2026-02-12 15:41:26:INFO:connection open
+2026-02-12 15:41:27:INFO:172.29.0.1:48366 - "WebSocket /api/v1/filament/419" [accepted]
+2026-02-12 15:41:27:INFO:Client 172.29.0.1 is now listening on pool filament,419
+2026-02-12 15:41:27:INFO:connection open
+2026-02-12 15:41:27:INFO:172.29.0.1:58679 - "WebSocket /api/v1/filament/417" [accepted]
+2026-02-12 15:41:27:INFO:Client 172.29.0.1 is now listening on pool filament,417
+2026-02-12 15:41:27:INFO:connection open
+2026-02-12 15:51:33:INFO:Syncing external DB.
+2026-02-12 15:51:35:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 15:51:36:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 15:51:36:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,405
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,415
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,410
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,403
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,409
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,413
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,411
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,407
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,404
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,406
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,417
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,421
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,414
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,408
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,418
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,416
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,419
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,402
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,420
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 16:39:07:INFO:Client 172.29.0.1 has stopped listening on pool filament,412
+2026-02-12 16:39:07:INFO:connection closed
+2026-02-12 18:17:58:INFO:Syncing external DB.
+2026-02-12 18:18:04:ERROR:Unhandled exception in `scheduler.asyncio.job.Job(<JobType.CYCLIC: 1>, [datetime.timedelta(seconds=3600)], <function _sync at 0xffffafc677f0>, (), {}, 0, True, datetime.datetime(2026, 2, 11, 21, 51, 33, 885504), None, False, None, None)`!
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/scheduler/asyncio/job.py", line 64, in _exec
+    await coroutine
+  File "/home/app/spoolman/spoolman/externaldb.py", line 173, in _sync
+    filaments = _parse_filaments_from_bytes(await _download_file(urljoin(url, "filaments.json")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/spoolman/externaldb.py", line 138, in _download_file
+    response = await client.get(url)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/hishel/_async/_transports.py", line 161, in handle_async_request
+    revalidation_response = await self._transport.handle_async_request(revalidation_request)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectTimeout
+2026-02-12 18:18:04:INFO:Syncing external DB.
+2026-02-12 18:18:09:ERROR:Unhandled exception in `scheduler.asyncio.job.Job(<JobType.CYCLIC: 1>, [datetime.timedelta(seconds=3600)], <function _sync at 0xffffafc677f0>, (), {}, 0, True, datetime.datetime(2026, 2, 11, 21, 51, 33, 885504), None, False, None, None)`!
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/scheduler/asyncio/job.py", line 64, in _exec
+    await coroutine
+  File "/home/app/spoolman/spoolman/externaldb.py", line 173, in _sync
+    filaments = _parse_filaments_from_bytes(await _download_file(urljoin(url, "filaments.json")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/spoolman/externaldb.py", line 138, in _download_file
+    response = await client.get(url)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/hishel/_async/_transports.py", line 161, in handle_async_request
+    revalidation_response = await self._transport.handle_async_request(revalidation_request)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectTimeout
+2026-02-12 18:51:33:INFO:Syncing external DB.
+2026-02-12 18:51:39:ERROR:Unhandled exception in `scheduler.asyncio.job.Job(<JobType.CYCLIC: 1>, [datetime.timedelta(seconds=3600)], <function _sync at 0xffffafc677f0>, (), {}, 0, True, datetime.datetime(2026, 2, 11, 21, 51, 33, 885504), None, False, None, None)`!
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/scheduler/asyncio/job.py", line 64, in _exec
+    await coroutine
+  File "/home/app/spoolman/spoolman/externaldb.py", line 173, in _sync
+    filaments = _parse_filaments_from_bytes(await _download_file(urljoin(url, "filaments.json")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/spoolman/externaldb.py", line 138, in _download_file
+    response = await client.get(url)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/hishel/_async/_transports.py", line 161, in handle_async_request
+    revalidation_response = await self._transport.handle_async_request(revalidation_request)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectTimeout
+2026-02-12 19:51:33:INFO:Syncing external DB.
+2026-02-12 19:51:38:ERROR:Unhandled exception in `scheduler.asyncio.job.Job(<JobType.CYCLIC: 1>, [datetime.timedelta(seconds=3600)], <function _sync at 0xffffafc677f0>, (), {}, 0, True, datetime.datetime(2026, 2, 11, 21, 51, 33, 885504), None, False, None, None)`!
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/scheduler/asyncio/job.py", line 64, in _exec
+    await coroutine
+  File "/home/app/spoolman/spoolman/externaldb.py", line 173, in _sync
+    filaments = _parse_filaments_from_bytes(await _download_file(urljoin(url, "filaments.json")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/spoolman/externaldb.py", line 138, in _download_file
+    response = await client.get(url)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/hishel/_async/_transports.py", line 161, in handle_async_request
+    revalidation_response = await self._transport.handle_async_request(revalidation_request)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectTimeout
+2026-02-12 20:51:33:INFO:Syncing external DB.
+2026-02-12 20:51:38:ERROR:Unhandled exception in `scheduler.asyncio.job.Job(<JobType.CYCLIC: 1>, [datetime.timedelta(seconds=3600)], <function _sync at 0xffffafc677f0>, (), {}, 0, True, datetime.datetime(2026, 2, 11, 21, 51, 33, 885504), None, False, None, None)`!
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/scheduler/asyncio/job.py", line 64, in _exec
+    await coroutine
+  File "/home/app/spoolman/spoolman/externaldb.py", line 173, in _sync
+    filaments = _parse_filaments_from_bytes(await _download_file(urljoin(url, "filaments.json")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/spoolman/externaldb.py", line 138, in _download_file
+    response = await client.get(url)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/hishel/_async/_transports.py", line 161, in handle_async_request
+    revalidation_response = await self._transport.handle_async_request(revalidation_request)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectTimeout
+2026-02-12 21:51:33:INFO:Syncing external DB.
+2026-02-12 21:51:38:ERROR:Unhandled exception in `scheduler.asyncio.job.Job(<JobType.CYCLIC: 1>, [datetime.timedelta(seconds=3600)], <function _sync at 0xffffafc677f0>, (), {}, 0, True, datetime.datetime(2026, 2, 11, 21, 51, 33, 885504), None, False, None, None)`!
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/scheduler/asyncio/job.py", line 64, in _exec
+    await coroutine
+  File "/home/app/spoolman/spoolman/externaldb.py", line 173, in _sync
+    filaments = _parse_filaments_from_bytes(await _download_file(urljoin(url, "filaments.json")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/spoolman/externaldb.py", line 138, in _download_file
+    response = await client.get(url)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/hishel/_async/_transports.py", line 161, in handle_async_request
+    revalidation_response = await self._transport.handle_async_request(revalidation_request)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/app/spoolman/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectTimeout
+2026-02-12 23:52:45:INFO:Syncing external DB.
+2026-02-12 23:52:45:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 23:52:46:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 23:52:46:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-12 23:52:46:INFO:Syncing external DB.
+2026-02-12 23:52:46:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-12 23:52:46:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-12 23:52:46:INFO:External DB synced. Filaments: 6957, Materials: 33

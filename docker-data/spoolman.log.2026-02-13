@@ -1,0 +1,408 @@
+2026-02-13 09:04:18:INFO:Syncing external DB.
+2026-02-13 09:04:18:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 09:04:19:INFO:Syncing external DB.
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 09:04:19:INFO:Syncing external DB.
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 09:04:19:INFO:Syncing external DB.
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 09:04:19:INFO:Syncing external DB.
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 09:04:19:INFO:Syncing external DB.
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 09:04:19:INFO:Syncing external DB.
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 09:04:19:INFO:Syncing external DB.
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 09:04:19:INFO:Syncing external DB.
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 09:04:19:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 13:04:46:INFO:Syncing external DB.
+2026-02-13 13:04:46:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 13:04:47:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 13:04:47:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 13:04:47:INFO:Syncing external DB.
+2026-02-13 13:04:47:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 13:04:47:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 13:04:47:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 13:04:47:INFO:Syncing external DB.
+2026-02-13 13:04:47:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 13:04:47:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 13:04:47:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 13:04:47:INFO:Syncing external DB.
+2026-02-13 13:04:47:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 13:04:48:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 13:04:48:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 13:38:25:INFO:172.29.0.1:34848 - "GET /kofi_s_logo_nolabel.png HTTP/1.1" 304
+2026-02-13 13:38:25:INFO:172.29.0.1:34848 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:34848 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:16478 - "WebSocket /api/v1/filament" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:34848 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:39861 - "GET /api/v1/setting/round_prices HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:44353 - "GET /api/v1/setting/currency HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:39861 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:52449 - "WebSocket /api/v1/filament" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:connection closed
+2026-02-13 13:38:25:INFO:172.29.0.1:44353 - "GET /api/v1/setting/round_prices HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:34848 - "GET /api/v1/setting/currency HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:40257 - "GET /api/v1/filament?limit=20&offset=0&sort=settings_extruder_temp:asc HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:34848 - "GET /api/v1/filament?limit=20&offset=0&sort=settings_extruder_temp:asc HTTP/1.1" 200
+2026-02-13 13:38:25:INFO:172.29.0.1:33054 - "WebSocket /api/v1/filament/402" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,402
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:22067 - "WebSocket /api/v1/filament/403" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,403
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:24133 - "WebSocket /api/v1/filament/404" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,404
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:21046 - "WebSocket /api/v1/filament/405" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,405
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:25033 - "WebSocket /api/v1/filament/406" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,406
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:62447 - "WebSocket /api/v1/filament/407" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,407
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:46720 - "WebSocket /api/v1/filament/409" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,409
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:28412 - "WebSocket /api/v1/filament/408" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,408
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:58178 - "WebSocket /api/v1/filament/410" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,410
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:31636 - "WebSocket /api/v1/filament/411" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,411
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:25:INFO:172.29.0.1:38545 - "WebSocket /api/v1/filament/413" [accepted]
+2026-02-13 13:38:25:INFO:Client 172.29.0.1 is now listening on pool filament,413
+2026-02-13 13:38:25:INFO:connection open
+2026-02-13 13:38:26:INFO:172.29.0.1:34265 - "WebSocket /api/v1/filament/412" [accepted]
+2026-02-13 13:38:26:INFO:Client 172.29.0.1 is now listening on pool filament,412
+2026-02-13 13:38:26:INFO:connection open
+2026-02-13 13:38:26:INFO:172.29.0.1:29307 - "WebSocket /api/v1/filament/414" [accepted]
+2026-02-13 13:38:26:INFO:Client 172.29.0.1 is now listening on pool filament,414
+2026-02-13 13:38:26:INFO:connection open
+2026-02-13 13:38:26:INFO:Client 172.29.0.1 has stopped listening on pool filament
+2026-02-13 13:38:26:INFO:172.29.0.1:25272 - "WebSocket /api/v1/filament/416" [accepted]
+2026-02-13 13:38:26:INFO:Client 172.29.0.1 is now listening on pool filament,416
+2026-02-13 13:38:26:INFO:connection open
+2026-02-13 13:38:26:INFO:172.29.0.1:58978 - "WebSocket /api/v1/filament/415" [accepted]
+2026-02-13 13:38:26:INFO:Client 172.29.0.1 is now listening on pool filament,415
+2026-02-13 13:38:26:INFO:connection open
+2026-02-13 13:38:27:INFO:172.29.0.1:38043 - "WebSocket /api/v1/filament/420" [accepted]
+2026-02-13 13:38:27:INFO:Client 172.29.0.1 is now listening on pool filament,420
+2026-02-13 13:38:27:INFO:connection open
+2026-02-13 13:38:27:INFO:172.29.0.1:46254 - "WebSocket /api/v1/filament/418" [accepted]
+2026-02-13 13:38:27:INFO:Client 172.29.0.1 is now listening on pool filament,418
+2026-02-13 13:38:27:INFO:connection open
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /sw.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /workbox-8c29f6e4.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /index.html HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/zh_TW-md377yLc.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/zh_TW-ChYr3EiE.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/zh_HK-cD07ur0C.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/zh_CN-Cn_4Zd8T.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/zh-hk-BCJZUC8H.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/vi_VN-CRsIyXIq.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/uz_UZ-CBlEXEq5.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/utc-lJcx-r2Y.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/useQueries-Bok3BiIj.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/useBubbleLock-R8Hzhysf.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ur_PK-nsVjSxO1.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/uk_UA-Dvu5F_C3.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/uk-BeXwRUsI.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/tr_TR-DkDqXS-W.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/tk_TK-8dnsokbz.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/th_TH-DeTKqurk.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/th-BUJLk7S8.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ta_IN-D7H5zqHW.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ta-C6_ikIWw.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/sv_SE-CmN66jQU.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/sv-C0d2S8SZ.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/sr_RS-D85_rJ3O.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/spoolSelectModal-C6jRfQLs.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/spoolQrCodePrintingDialog-DDE0wwrX.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/spoolQrCodeExportDialog-C7FEHWFy.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/spoolIcon-D8-1cC-T.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/sk_SK-BPGYrqP-.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/si_LK-DZY2WZfv.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/show-DvnjLDmM.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/show-DpHwE1jg.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/show-BIn6XC0a.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/settings-DD-kejQZ.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/saveload-v4BoMzC1.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ru_RU-CVmzlUIv.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ru-Dm5rsrR_.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ro_RO-PiF3Z6IF.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ro-Ci6aLg3I.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/querySettings-CbKy-Tgy.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/queryFields-OLM5L9zX.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/qrCodePrintingDialog-BWCpnSAq.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/qrCodeExportDialog-DM9ZkvSR.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/pt_PT-vlu28al7.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/pt_BR-CadRmMku.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/pt-br-Duuuocn_.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/pt-Cg-24dhD.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/printingDialog-D8hHwfgl.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/printing-CTVpvrZb.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/pl_PL-Cbof7-OX.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/pl-BTQxG5Vc.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/parsing-CTPBLsf8.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/otherModels-BIq96kpR.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/numberField-BI0qvDc6.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/nl_NL-D2NNepyX.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/nl_BE-CeyEcta6.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/nl-Dh7_INYk.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ne_NP-De36Bmgo.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/nb_NO-YJnyt9Kq.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/nb-BbyRW-V5.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/my_MM-DquD1q1a.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/multiColorPicker-DqR-sy03.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ms_MY-DG9HFa4O.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/mn_MN-BDvuDP-s.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ml_IN-aEi-Jitu.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/mk_MK-hMVZQXgY.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/lv_LV-0RxV6mao.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/lt_LT-ChMOou2v.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/liveify-D14Z2Xx7.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/list-DYfcziuN.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/list-DOdQS3Iv.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/list-BpTiFMtt.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ku_IQ-Bu8tOHm0.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ko_KR-BBEdZsE2.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/kn_IN-CGPpy91Q.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/kmr_IQ-Ca8noYNM.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/kmr_IQ-BWFM0eAG.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/km_KH-HGlp8PCa.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/kk_KZ-B2HG70HN.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ka_GE-saWWCdr4.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ja_JP-D8ghqHaZ.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/ja-Bt0Ee7Ov.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/it_IT-Qn8GWs2L.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/it-InFxREUt.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/is_IS-DM3zb0yg.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/inputNumberRange-uSAohvDa.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-ma02Pmjv.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-VXqKyJyN.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-NWypBtN3.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-JMsxBinL.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-DzKtXVtT.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-DuORJqsc.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-DgGwbvvl.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-DfdI7AAt.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-DW_FwePs.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-DG_ffHG5.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-DBvVB6uT.js HTTP/1.1" 200
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-CIhCLKZQ.js HTTP/1.1" 304
+2026-02-13 13:38:27:INFO:172.29.0.1:34848 - "GET /assets/index-C9Jad6Zn.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-C6URjCZu.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-C515SR0x.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-BedbIQq7.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-Bc1XhtA8.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-BR2zFCno.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-BOMKz41S.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-BL55DVAe.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-BF7mxSCW.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/index-21mzQWqZ.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/id_ID-Bjs0nc8M.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/hu_HU-DoBUy_az.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/hu-BsJj0OKr.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/hr_HR-CejhnCXa.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/hi_IN-kpvQTx1V.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/he_IL-DBKIC-m6.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/gl_ES-1f-3ExMC.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/generalSettings-CDuJG64M.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/ga_IE-DohIyGgR.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/functions-Du1hcMma.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/functions-DWHBVsJv.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/functions-DOWMplQQ.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/functions-DGtuZNcT.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/fr_FR-OZpGWy_V.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/fr_CA-BNMLJVE4.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/fr_BE-I2aZ9aCd.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/fr-DZDv8NRB.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/filamentSelectModal-CZaPvKzU.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/filamentQrCodePrintingDialog-lz199Oyk.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/filamentQrCodeExportDialog-CeE0uMtT.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/fi_FI-C0XWMJ50.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/fa_IR-BKzvov35.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/fa-CiHpia8W.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/extraFieldsSettings-tpjz8fBf.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/extraFields-Ck8ZDkVO.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/exportDialog-8Hqgamv7.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/eu_ES-DJSodUTO.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/et_EE-BCqChxVe.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/es_ES-D0rim0F1.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/es-DrjpRIvm.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/en_GB-C6mO1eqO.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/en-C3A9Fwdz.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/el_GR-DlO-D_0R.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/el-DMlSYjDi.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/edit-DtIA3YTo.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/edit-CAmBLkkG.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/edit-BZllDGoE.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/de_DE-D0ZitudX.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/de-Db7dpamR.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/da_DK-Cm-8HglA.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/da-jPOSccY6.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/cs_CZ-CPu3JA5Z.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/cs-BC9Vfroe.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/create-CA5GTiB0.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/create-Bg4-vUJz.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/create-5Bga99Rj.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/column-CJzL2HTo.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/ca_ES-DINky1wv.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/by_BY-CqVs3VnG.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/browser-ponyfill-B62O6Poo.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/bn_BD-dEGDFMtp.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/bg_BG-Buguw8xj.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/az_AZ-iWb8cNsG.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/ar_EG-CgPrkOtZ.js HTTP/1.1" 200
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/Tree-Co7edQhj.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/Trans-DNG4VZIG.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/ToTopOutlined-CfA1YY_E.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/Table-BKPbSm75.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/Slider-4uKZO7wA.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/SearchOutlined-ihkX-KMG.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/QRCodeSVG-BTHfkYMb.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/PrinterOutlined-XIT9Fet7.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/Pagination-D80HQ6J6.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/Pagination-CLNpux47.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:34848 - "GET /assets/EyeOutlined-DAauouLV.js HTTP/1.1" 304
+2026-02-13 13:38:28:INFO:172.29.0.1:46018 - "WebSocket /api/v1/filament/419" [accepted]
+2026-02-13 13:38:28:INFO:Client 172.29.0.1 is now listening on pool filament,419
+2026-02-13 13:38:28:INFO:connection open
+2026-02-13 13:38:29:INFO:172.29.0.1:57330 - "WebSocket /api/v1/filament/421" [accepted]
+2026-02-13 13:38:29:INFO:Client 172.29.0.1 is now listening on pool filament,421
+2026-02-13 13:38:29:INFO:connection open
+2026-02-13 13:38:30:INFO:172.29.0.1:48474 - "WebSocket /api/v1/filament/417" [accepted]
+2026-02-13 13:38:30:INFO:Client 172.29.0.1 is now listening on pool filament,417
+2026-02-13 13:38:30:INFO:connection open
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,413
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,405
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,412
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,407
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,411
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,409
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,403
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,404
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,402
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,416
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,417
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,414
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,410
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,406
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,420
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,415
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,421
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,419
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,408
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:Client 172.29.0.1 has stopped listening on pool filament,418
+2026-02-13 13:38:35:INFO:connection closed
+2026-02-13 13:38:35:INFO:172.29.0.1:31816 - "GET /assets/index-BpgF-do-.js HTTP/1.1" 404
+2026-02-13 13:38:35:INFO:172.29.0.1:43430 - "GET /assets/filamentSelectModal-1lXCehM3.js HTTP/1.1" 404
+2026-02-13 13:38:35:INFO:172.29.0.1:41415 - "GET /assets/index-CUZ8an-R.js HTTP/1.1" 404
+2026-02-13 14:06:41:INFO:Syncing external DB.
+2026-02-13 14:06:41:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 14:06:42:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 14:06:42:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 14:51:33:INFO:Syncing external DB.
+2026-02-13 14:51:34:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 14:51:34:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 14:51:34:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 16:17:45:INFO:Syncing external DB.
+2026-02-13 16:17:46:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 16:17:46:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 16:17:46:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 17:07:53:INFO:Syncing external DB.
+2026-02-13 17:07:53:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 17:07:53:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 17:07:53:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 17:51:33:INFO:Syncing external DB.
+2026-02-13 17:51:34:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 17:51:34:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 17:51:34:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 18:51:33:INFO:Syncing external DB.
+2026-02-13 18:51:34:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 18:51:34:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 18:51:34:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 19:51:33:INFO:Syncing external DB.
+2026-02-13 19:51:34:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 19:51:34:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 19:51:34:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 20:56:52:INFO:Syncing external DB.
+2026-02-13 20:56:53:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 20:56:53:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 20:56:53:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 22:06:49:INFO:Syncing external DB.
+2026-02-13 22:06:49:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/filaments.json "HTTP/1.1 200 OK"
+2026-02-13 22:06:49:INFO:HTTP Request: GET https://donkie.github.io/SpoolmanDB/materials.json "HTTP/1.1 200 OK"
+2026-02-13 22:06:49:INFO:External DB synced. Filaments: 6957, Materials: 33
+2026-02-13 22:21:01:INFO:172.29.0.1:55387 - "GET /filament/sw.js HTTP/1.1" 404
+2026-02-13 22:21:01:INFO:172.29.0.1:55387 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-13 22:21:01:INFO:172.29.0.1:54543 - "GET /kofi_s_logo_nolabel.png HTTP/1.1" 304
+2026-02-13 22:21:01:INFO:172.29.0.1:54543 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-13 22:21:02:INFO:172.29.0.1:54543 - "GET /api/v1/filament?limit=50&offset=0 HTTP/1.1" 200
+2026-02-13 22:21:03:INFO:172.29.0.1:54543 - "GET /sw.js HTTP/1.1" 304
+2026-02-13 22:21:03:INFO:172.29.0.1:54543 - "GET /workbox-8c29f6e4.js HTTP/1.1" 304
+2026-02-13 22:21:13:INFO:172.29.0.1:48973 - "GET /config.js HTTP/1.1" 200
+2026-02-13 22:21:13:INFO:172.29.0.1:48973 - "GET /locales/en/common.json HTTP/1.1" 304
+2026-02-13 22:21:13:INFO:172.29.0.1:48973 - "GET /filament/sw.js HTTP/1.1" 404
+2026-02-13 22:21:13:INFO:172.29.0.1:48973 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-13 22:21:13:INFO:172.29.0.1:48973 - "GET /api/v1/info HTTP/1.1" 200
+2026-02-13 22:21:13:INFO:172.29.0.1:48973 - "GET /api/v1/filament?limit=50&offset=0 HTTP/1.1" 200
+2026-02-13 22:21:15:INFO:172.29.0.1:48973 - "GET /sw.js HTTP/1.1" 304
+2026-02-13 22:22:34:INFO:172.29.0.1:33686 - "GET /api/v1/field/vendor HTTP/1.1" 200
+2026-02-13 22:22:34:INFO:172.29.0.1:55999 - "GET /api/v1/field/filament HTTP/1.1" 200
+2026-02-13 22:22:34:INFO:172.29.0.1:18672 - "GET /api/v1/setting/base_url HTTP/1.1" 200
+2026-02-13 22:22:34:INFO:172.29.0.1:50273 - "GET /api/v1/setting/image_presets_filament HTTP/1.1" 200
+2026-02-13 22:22:34:INFO:172.29.0.1:62671 - "GET /api/v1/filament/1 HTTP/1.1" 200
+2026-02-13 22:23:14:INFO:172.29.0.1:36085 - "GET /api/v1/filament?limit=50&offset=0 HTTP/1.1" 200
+2026-02-13 22:23:16:INFO:172.29.0.1:36085 - "GET /api/v1/vendor HTTP/1.1" 200
+2026-02-13 22:24:08:INFO:172.29.0.1:30473 - "GET /api/v1/filament?limit=10&offset=0&vendor.name=%22Sunlu%22 HTTP/1.1" 200

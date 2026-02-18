@@ -1,4 +1,14 @@
 client/node_modules
+client/.vite
+
+data
+docker-data
+
+.git
+.venv
+.pytest_cache
+.mypy_cache
+.vscode
 
 *.egg-info
 *.egg/
