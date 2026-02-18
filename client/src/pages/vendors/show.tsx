@@ -4,6 +4,7 @@ import { Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { ExtraFieldDisplay } from "../../components/extraFields";
+import VendorLogo from "../../components/vendorLogo";
 import { enrichText } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { IVendor } from "./model";
@@ -39,6 +40,53 @@ export const VendorShow = () => {
       />
       <Title level={5}>{t("vendor.fields.name")}</Title>
       <TextField value={record?.name} />
+      <Title level={5}>{t("vendor.fields.logo_preview")}</Title>
+      <VendorLogo
+        vendor={record}
+        showFallbackText
+        imgStyle={{
+          display: "block",
+          width: "100%",
+          maxWidth: "360px",
+          maxHeight: "64px",
+          objectFit: "contain",
+          objectPosition: "left center",
+        }}
+        fallbackStyle={{
+          width: "100%",
+          maxWidth: "360px",
+          fontWeight: 700,
+          fontSize: "24px",
+          lineHeight: 1.1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      />
+      <Title level={5}>{t("vendor.fields.print_logo_preview")}</Title>
+      <VendorLogo
+        vendor={record}
+        usePrintLogo
+        showFallbackText
+        imgStyle={{
+          display: "block",
+          width: "100%",
+          maxWidth: "360px",
+          maxHeight: "64px",
+          objectFit: "contain",
+          objectPosition: "left center",
+        }}
+        fallbackStyle={{
+          width: "100%",
+          maxWidth: "360px",
+          fontWeight: 700,
+          fontSize: "24px",
+          lineHeight: 1.1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      />
       <Title level={5}>{t("vendor.fields.comment")}</Title>
       <TextField value={enrichText(record?.comment)} />
       <Title level={5}>{t("vendor.fields.empty_spool_weight")}</Title>

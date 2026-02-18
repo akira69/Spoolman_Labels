@@ -1,6 +1,6 @@
 import { CopyOutlined, DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
-import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Table, Typography, message } from "antd";
+import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Switch, Table, Typography, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -15,6 +15,7 @@ import {
   useGetPrintSettings as useGetPrintPresets,
   useSetPrintSettings as useSetPrintPresets,
 } from "./printing";
+import LogoLabelBlock from "./logoLabelBlock";
 import QRCodePrintingDialog from "./qrCodePrintingDialog";
 
 const { Text } = Typography;
@@ -143,7 +144,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
   const template =
     curPreset.template ??
-    `**{vendor.name} - {name}
+    `**{name}
 #{id} - {material}**
 {Diameter: {diameter} mm}
 {Weight: {weight} g}
@@ -196,6 +197,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
   }
 
   const templateTags = [...filamentTags, ...vendorTags];
+  const showManufacturerLogo = curPreset.labelSettings.showManufacturerLogo ?? true;
 
   return (
     <>
@@ -274,7 +276,22 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
         items={items.map((filament) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/filament/show/${filament.id}` : `WEB+SPOOLMAN:F-${filament.id}`,
           amlName: `filament-${filament.id}`,
-          label: (
+          label: showManufacturerLogo ? (
+            <LogoLabelBlock
+              vendor={filament.vendor}
+              label={
+                <p
+                  style={{
+                    padding: "1mm 1mm 1mm 0",
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {renderLabelContents(template, filament)}
+                </p>
+              }
+            />
+          ) : (
             <p
               style={{
                 padding: "1mm 1mm 1mm 0",
@@ -289,6 +306,15 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
         }))}
         extraSettings={
           <>
+            <Form.Item label={t("printing.qrcode.showManufacturerLogo")}>
+              <Switch
+                checked={showManufacturerLogo}
+                onChange={(checked) => {
+                  curPreset.labelSettings.showManufacturerLogo = checked;
+                  updateCurrentPreset(curPreset);
+                }}
+              />
+            </Form.Item>
             <Form.Item label={t("printing.qrcode.template")}>
               <TextArea
                 value={template}

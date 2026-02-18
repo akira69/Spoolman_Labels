@@ -1,6 +1,6 @@
 import { CopyOutlined, DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
-import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Table, Typography, message } from "antd";
+import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Switch, Table, Typography, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -15,6 +15,7 @@ import {
   useGetPrintSettings as useGetPrintPresets,
   useSetPrintSettings as useSetPrintPresets,
 } from "./printing";
+import LogoLabelBlock from "./logoLabelBlock";
 import QRCodePrintingDialog from "./qrCodePrintingDialog";
 
 const { Text } = Typography;
@@ -154,7 +155,7 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
   const template =
     curPreset.template ??
-    `**{filament.vendor.name} - {filament.name}
+    `**{filament.name}
 #{id} - {filament.material}**
 Spool Weight: {filament.spool_weight} g
 {ET: {filament.settings_extruder_temp} °C}
@@ -228,6 +229,7 @@ Spool Weight: {filament.spool_weight} g
   }
 
   const templateTags = [...spoolTags, ...filamentTags, ...vendorTags];
+  const showManufacturerLogo = curPreset.labelSettings.showManufacturerLogo ?? true;
 
   return (
     <>
@@ -306,7 +308,22 @@ Spool Weight: {filament.spool_weight} g
         items={items.map((spool) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/spool/show/${spool.id}` : `WEB+SPOOLMAN:S-${spool.id}`,
           amlName: `spool-${spool.id}`,
-          label: (
+          label: showManufacturerLogo ? (
+            <LogoLabelBlock
+              vendor={spool.filament.vendor}
+              label={
+                <p
+                  style={{
+                    padding: "1mm 1mm 1mm 0",
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {renderLabelContents(template, spool)}
+                </p>
+              }
+            />
+          ) : (
             <p
               style={{
                 padding: "1mm 1mm 1mm 0",
@@ -321,6 +338,15 @@ Spool Weight: {filament.spool_weight} g
         }))}
         extraSettings={
           <>
+            <Form.Item label={t("printing.qrcode.showManufacturerLogo")}>
+              <Switch
+                checked={showManufacturerLogo}
+                onChange={(checked) => {
+                  curPreset.labelSettings.showManufacturerLogo = checked;
+                  updateCurrentPreset(curPreset);
+                }}
+              />
+            </Form.Item>
             <Form.Item label={t("printing.qrcode.template")}>
               <TextArea
                 value={template}

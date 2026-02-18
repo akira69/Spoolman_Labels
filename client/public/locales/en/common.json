@@ -113,6 +113,7 @@
             "templateHelpFilament": "Use {} to insert values of the filament object as text. For example, {id} will be replaced with the filament id, or {vendor.name} will be replaced with the vendor name. If a value is missing it will be replaced with \"?\". A second set of {} can be used to remove this. In addition, any text between the sets of {} will be removed if the value is missing. For example, {Article: {article_number}} will only show the label if a filament has an article number. Enclose text with double asterix ** to make it bold. Click the button to view a list of all available tags.",
             "textSize": "Label Text Size",
             "showContent": "Print Label",
+            "showManufacturerLogo": "Show Manufacturer Logo",
             "useHTTPUrl": {
                 "label": "QR code link",
                 "tooltip": "Will use proprietary link that will work only if scanned from Spoolman's scanning feature (default). URL uses either the base URL specified in settings, or the current page URL if not set.",
@@ -281,6 +282,11 @@
         "vendor": "Manufacturers",
         "fields": {
             "id": "ID",
+            "logo": "Logo",
+            "logo_url": "Logo URL",
+            "print_logo_url": "Print Logo URL",
+            "logo_preview": "Logo Preview",
+            "print_logo_preview": "Print Logo Preview",
             "name": "Name",
             "empty_spool_weight": "Empty Spool Weight",
             "external_id": "External ID",
@@ -288,7 +294,9 @@
             "comment": "Comment"
         },
         "fields_help": {
-            "empty_spool_weight": "The weight of an empty spool from this manufacturer."
+            "empty_spool_weight": "The weight of an empty spool from this manufacturer.",
+            "logo_url": "Optional custom logo used in the UI. Supports absolute URLs or local paths like /vendor-logos/web/bambu-lab-web.png.",
+            "print_logo_url": "Optional custom logo used for label rendering. Supports absolute URLs or local paths like /vendor-logos/print/bambu-lab.png."
         },
         "titles": {
             "create": "Create Manufacturer",
@@ -297,6 +305,9 @@
             "list": "Manufacturers",
             "show": "Show Manufacturer",
             "show_title": "[Manufacturer #{{id}}] {{name}}"
+        },
+        "buttons": {
+            "sync_logos": "Sync Logos"
         },
         "form": {
             "vendor_updated": "This manufacturer has been updated by someone/something else since you opened this page. Saving will overwrite those changes!"
