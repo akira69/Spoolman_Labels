@@ -184,6 +184,7 @@ const QRCodePrintingDialog = ({
             }
 
             .print-page .print-qrcode-title {
+              display: flex;
               flex: 1 1 auto;
               font-size: ${textSize}mm;
               color: #000;
