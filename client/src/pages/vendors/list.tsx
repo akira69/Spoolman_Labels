@@ -1,7 +1,7 @@
-import { EditOutlined, EyeOutlined, FilterOutlined, PlusSquareOutlined } from "@ant-design/icons";
+import { EditOutlined, EyeOutlined, FilterOutlined, PlusSquareOutlined, SyncOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
-import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown, Table } from "antd";
+import { useInvalidate, useNavigation, useTranslate, useUpdate } from "@refinedev/core";
+import { Button, Dropdown, Table, message } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useCallback, useMemo, useState } from "react";
@@ -10,27 +10,35 @@ import {
   ActionsColumn,
   CustomFieldColumn,
   DateColumn,
+  FilteredQueryColumn,
   NumberColumn,
   RichColumn,
   SortedColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
+import VendorLogo from "../../components/vendorLogo";
+import { useSpoolmanVendorExternalIds, useSpoolmanVendors, useVendorLogoManifest } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
+import { getAPIURL } from "../../utils/url";
+import { parseExtraString, suggestVendorLogoPaths } from "../../utils/vendorLogo";
 import { IVendor } from "./model";
 
 dayjs.extend(utc);
 
 const namespace = "vendorList-v2";
 
-const allColumns: (keyof IVendor & string)[] = ["id", "name", "registered", "comment", "empty_spool_weight"];
+const allColumns: string[] = ["id", "logo", "name", "registered", "external_id", "comment", "empty_spool_weight"];
 
 export const VendorList = () => {
   const t = useTranslate();
   const invalidate = useInvalidate();
   const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.vendor);
+  const logoManifestQuery = useVendorLogoManifest();
+  const [messageApi, contextHolder] = message.useMessage();
+  const { mutateAsync: updateVendor } = useUpdate();
 
   const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
 
@@ -114,6 +122,67 @@ export const VendorList = () => {
         <>
           <Button
             type="primary"
+            icon={<SyncOutlined />}
+            onClick={async () => {
+              const manifest = logoManifestQuery.data;
+              if (!manifest) {
+                messageApi.warning("Logo manifest is not available yet.");
+                return;
+              }
+
+              const response = await fetch(getAPIURL() + "/vendor");
+              if (!response.ok) {
+                messageApi.error("Could not load manufacturers for logo sync.");
+                return;
+              }
+              const vendors = (await response.json()) as IVendor[];
+
+              let updatedCount = 0;
+              let matchedCount = 0;
+              for (const vendor of vendors) {
+                const { webPath, printPath } = suggestVendorLogoPaths(vendor.name, manifest);
+                if (!webPath && !printPath) {
+                  continue;
+                }
+                matchedCount += 1;
+
+                const existingLogo = parseExtraString(vendor.extra?.logo_url);
+                const existingPrintLogo = parseExtraString(vendor.extra?.print_logo_url);
+                if (existingLogo && existingPrintLogo) {
+                  continue;
+                }
+
+                const mergedExtra = { ...(vendor.extra ?? {}) };
+                if (!existingLogo && webPath) {
+                  mergedExtra.logo_url = JSON.stringify(webPath);
+                }
+                if (!existingPrintLogo && printPath) {
+                  mergedExtra.print_logo_url = JSON.stringify(printPath);
+                }
+
+                if (mergedExtra.logo_url === vendor.extra?.logo_url && mergedExtra.print_logo_url === vendor.extra?.print_logo_url) {
+                  continue;
+                }
+
+                await updateVendor({
+                  resource: "vendor",
+                  id: vendor.id,
+                  values: { ...vendor, extra: mergedExtra },
+                });
+                updatedCount += 1;
+              }
+
+              invalidate({
+                resource: "vendor",
+                invalidates: ["list"],
+              });
+              messageApi.success(`Logo sync complete. Matched ${matchedCount}, updated ${updatedCount}.`);
+            }}
+          >
+            {t("vendor.buttons.sync_logos")}
+          </Button>
+          <Button
+            type="primary"
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");
@@ -137,7 +206,10 @@ export const VendorList = () => {
 
                 return {
                   key: column_id,
-                  label: t(`vendor.fields.${column_id}`),
+                  label:
+                    column_id === "logo"
+                      ? t("vendor.fields.logo")
+                      : t(`vendor.fields.${column_id}`),
                 };
               }),
               selectedKeys: showColumns,
@@ -159,6 +231,7 @@ export const VendorList = () => {
         </>
       )}
     >
+      {contextHolder}
       <Table
         {...tableProps}
         sticky
@@ -173,16 +246,54 @@ export const VendorList = () => {
             i18ncat: "vendor",
             width: 70,
           }),
-          SortedColumn({
+          showColumns.includes("logo")
+            ? {
+                title: t("vendor.fields.logo"),
+                key: "logo",
+                width: 180,
+                render: (_: unknown, record: IVendor) => (
+                  <VendorLogo
+                    vendor={record}
+                    showFallbackText
+                    imgStyle={{
+                      display: "block",
+                      width: "100%",
+                      maxWidth: "160px",
+                      maxHeight: "24px",
+                      objectFit: "contain",
+                      objectPosition: "left center",
+                    }}
+                    fallbackStyle={{
+                      width: "100%",
+                      fontWeight: 600,
+                      fontSize: "12px",
+                      lineHeight: 1.2,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  />
+                ),
+              }
+            : undefined,
+          FilteredQueryColumn({
             ...commonProps,
             id: "name",
             i18ncat: "vendor",
+            filterValueQuery: useSpoolmanVendors(),
           }),
           DateColumn({
             ...commonProps,
             id: "registered",
             i18ncat: "vendor",
             width: 200,
+          }),
+          FilteredQueryColumn({
+            ...commonProps,
+            id: "external_id",
+            i18ncat: "vendor",
+            filterValueQuery: useSpoolmanVendorExternalIds(),
+            width: 160,
           }),
           NumberColumn({
             ...commonProps,

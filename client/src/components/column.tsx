@@ -108,6 +108,24 @@ function Column<Obj extends Entity>(
   if (props.filters && props.filteredValue) {
     columnProps.filters = props.filters;
     columnProps.filteredValue = props.filteredValue;
+    columnProps.filterSearch = (input: string, item: ColumnFilterItem) => {
+      const query = input.toLowerCase();
+      if (query.length === 0) return true;
+
+      const searchTerms: string[] = [];
+      if (item.value !== undefined && item.value !== null) {
+        searchTerms.push(String(item.value));
+      }
+      if (typeof item.text === "string") {
+        searchTerms.push(item.text);
+      }
+      const extraSearchTerm = (item as ColumnFilterItem & { sortId?: string }).sortId;
+      if (extraSearchTerm) {
+        searchTerms.push(extraSearchTerm);
+      }
+
+      return searchTerms.some((term) => term.toLowerCase().includes(query));
+    };
     if (props.loadingFilters) {
       columnProps.filterDropdown = <FilterDropdownLoading />;
     }
