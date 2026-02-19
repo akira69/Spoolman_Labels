@@ -1,6 +1,6 @@
 import { CopyOutlined, DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
-import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Switch, Table, Typography, message } from "antd";
+import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Table, Typography, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -15,7 +15,6 @@ import {
   useGetPrintSettings as useGetPrintPresets,
   useSetPrintSettings as useSetPrintPresets,
 } from "./printing";
-import LogoLabelBlock from "./logoLabelBlock";
 import QRCodePrintingDialog from "./qrCodePrintingDialog";
 
 const { Text } = Typography;
@@ -52,9 +51,9 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
 
   const localOrRemotePresets = localPresets ?? remotePresets;
 
-  const savePresetsRemote = () => {
+  const savePresetsRemote = async () => {
     if (!localPresets) return;
-    setRemotePresets(localPresets);
+    await setRemotePresets(localPresets);
   };
 
   // Functions to update settings
@@ -138,25 +137,20 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
         if (foundSetting) {
           curPreset = foundSetting;
         } else {
-          // Selected setting not found, select a temp one
-          curPreset = {
-            labelSettings: {
-              printSettings: {
-                id: "TEMP",
-                name: t("printing.generic.newSetting"),
-              },
-            },
-          };
+          // Selected setting not found, reset to first available preset.
+          curPreset = localOrRemotePresets[0];
+          setSelectedPresetState(localOrRemotePresets[0].labelSettings.printSettings.id);
         }
       }
     }
   }
 
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
-  const template =
+  const titleTemplate = curPreset.titleTemplate ?? `==**{filament.name}**== {filament.color_hex}`;
+  const infoTemplate =
     curPreset.template ??
-    `**{filament.name}
-#{id} - {filament.material}**
+    `{filament.material} ({filament.article_number})
+Spool ID: #{id}
 Spool Weight: {filament.spool_weight} g
 {ET: {filament.settings_extruder_temp} °C}
 {BT: {filament.settings_bed_temp} °C}
@@ -229,7 +223,6 @@ Spool Weight: {filament.spool_weight} g
   }
 
   const templateTags = [...spoolTags, ...filamentTags, ...vendorTags];
-  const showManufacturerLogo = curPreset.labelSettings.showManufacturerLogo ?? true;
 
   return (
     <>
@@ -308,48 +301,28 @@ Spool Weight: {filament.spool_weight} g
         items={items.map((spool) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/spool/show/${spool.id}` : `WEB+SPOOLMAN:S-${spool.id}`,
           amlName: `spool-${spool.id}`,
-          label: showManufacturerLogo ? (
-            <LogoLabelBlock
-              vendor={spool.filament.vendor}
-              label={
-                <p
-                  style={{
-                    padding: "1mm 1mm 1mm 0",
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {renderLabelContents(template, spool)}
-                </p>
-              }
-            />
-          ) : (
-            <p
-              style={{
-                padding: "1mm 1mm 1mm 0",
-                margin: 0,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {renderLabelContents(template, spool)}
-            </p>
-          ),
+          vendor: spool.filament.vendor,
+          title: <>{renderLabelContents(titleTemplate, spool)}</>,
+          label: <>{renderLabelContents(infoTemplate, spool)}</>,
           errorLevel: "H",
         }))}
-        extraSettings={
+        extraTitleSettings={
+          <Form.Item label={t("printing.qrcode.titleTemplate")} tooltip={t("printing.qrcode.titleTemplateTooltipSpool")}>
+            <TextArea
+              value={titleTemplate}
+              rows={4}
+              onChange={(newValue) => {
+                curPreset.titleTemplate = newValue.target.value;
+                updateCurrentPreset(curPreset);
+              }}
+            />
+          </Form.Item>
+        }
+        extraInfoSettings={
           <>
-            <Form.Item label={t("printing.qrcode.showManufacturerLogo")}>
-              <Switch
-                checked={showManufacturerLogo}
-                onChange={(checked) => {
-                  curPreset.labelSettings.showManufacturerLogo = checked;
-                  updateCurrentPreset(curPreset);
-                }}
-              />
-            </Form.Item>
-            <Form.Item label={t("printing.qrcode.template")}>
+            <Form.Item label={t("printing.qrcode.infoTemplate")}>
               <TextArea
-                value={template}
+                value={infoTemplate}
                 rows={8}
                 onChange={(newValue) => {
                   curPreset.template = newValue.target.value;
@@ -381,9 +354,13 @@ Spool Weight: {filament.spool_weight} g
               type="primary"
               size="large"
               icon={<SaveOutlined />}
-              onClick={() => {
-                savePresetsRemote();
-                messageApi.success(t("notifications.saveSuccessful"));
+              onClick={async () => {
+                try {
+                  await savePresetsRemote();
+                  messageApi.success(t("notifications.saveSuccessful"));
+                } catch (error) {
+                  messageApi.error(error instanceof Error ? error.message : "Save failed");
+                }
               }}
             >
               {t("printing.generic.saveSetting")}

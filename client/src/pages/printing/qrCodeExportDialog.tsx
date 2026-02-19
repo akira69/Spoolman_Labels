@@ -27,7 +27,7 @@ import VendorLogo from "../../components/vendorLogo";
 import { getBasePath } from "../../utils/url";
 import { IVendor } from "../vendors/model";
 import { QRCodePrintSettings } from "./printing";
-import PrintingDialog from "./printingDialog";
+import ExportDialog from "./exportDialog";
 import TitleTextBlock from "./titleTextBlock";
 
 const { Text } = Typography;
@@ -41,10 +41,11 @@ interface QRCodeData {
   amlName?: string;
 }
 
-interface QRCodePrintingDialogProps {
+interface QRCodeExportDialogProps {
   items: QRCodeData[];
   printSettings: QRCodePrintSettings;
   setPrintSettings: (setPrintSettings: QRCodePrintSettings) => void;
+  extraExportSettings?: ReactElement;
   extraTitleSettings?: ReactElement;
   extraInfoSettings?: ReactElement;
   extraSettingsStart?: ReactElement;
@@ -53,12 +54,14 @@ interface QRCodePrintingDialogProps {
   useHTTPUrl: boolean;
   setUseHTTPUrl: (value: boolean) => void;
   previewValues?: { default: string; url: string };
+  zipFileTypeName: string;
 }
 
-const QRCodePrintingDialog = ({
+const QRCodeExportDialog = ({
   items,
   printSettings,
   setPrintSettings,
+  extraExportSettings,
   extraTitleSettings,
   extraInfoSettings,
   extraSettingsStart,
@@ -67,7 +70,8 @@ const QRCodePrintingDialog = ({
   useHTTPUrl,
   setUseHTTPUrl,
   previewValues,
-}: QRCodePrintingDialogProps) => {
+  zipFileTypeName,
+}: QRCodeExportDialogProps) => {
   const t = useTranslate();
 
   const toOneDecimal = (value: number, min: number, max: number): number =>
@@ -178,7 +182,6 @@ const QRCodePrintingDialog = ({
             )}
           </div>
         )}
-
         {(showQRCodeMode !== "no" || showContent) && (
           <div className={`print-qrcode-main print-qrcode-main-${qrCodePosition}`}>
             {showContent && (
@@ -207,14 +210,16 @@ const QRCodePrintingDialog = ({
   });
 
   return (
-    <PrintingDialog
+    <ExportDialog
       items={elements}
       printSettings={printSettings.printSettings}
       setPrintSettings={(newSettings) => {
         printSettings.printSettings = newSettings;
         setPrintSettings(printSettings);
       }}
+      extraExportSettings={extraExportSettings}
       extraButtons={extraButtons}
+      zipFileTypeName={zipFileTypeName}
       extraSettingsStart={extraSettingsStart}
       extraSettings={
         <>
@@ -685,4 +690,4 @@ const QRCodePrintingDialog = ({
   );
 };
 
-export default QRCodePrintingDialog;
+export default QRCodeExportDialog;

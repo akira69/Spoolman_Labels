@@ -233,7 +233,7 @@ export function useVendorLogoManifest(enabled: boolean = true) {
     enabled,
     queryKey: ["vendor-logo-manifest"],
     queryFn: async () => {
-      const response = await fetch(`${getBasePath()}/vendor-logos/manifest.json`);
+      const response = await fetch(`${getBasePath()}/vendor-logos/manifest.json`, { cache: "no-store" });
       if (!response.ok) {
         return { web_files: [], print_files: [] };
       }

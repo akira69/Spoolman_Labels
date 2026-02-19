@@ -1,21 +1,22 @@
-import { DateField, NumberField, Show, TextField } from "@refinedev/antd";
+import { Show, TextField } from "@refinedev/antd";
 import { useShow, useTranslate } from "@refinedev/core";
 import { PrinterOutlined } from "@ant-design/icons";
-import { Button, Typography } from "antd";
+import { Button, Col, Row, Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useNavigate } from "react-router";
 import { ExtraFieldDisplay } from "../../components/extraFields";
+import ColorHexPreview from "../../components/colorHexPreview";
 import { NumberFieldUnit } from "../../components/numberField";
-import SpoolIcon from "../../components/spoolIcon";
+import VendorLogo from "../../components/vendorLogo";
 import { enrichText } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { useCurrencyFormatter } from "../../utils/settings";
-import { getBasePath } from "../../utils/url";
+import { getBasePath, stripBasePath } from "../../utils/url";
 import { IFilament } from "./model";
 dayjs.extend(utc);
 
-const { Title } = Typography;
+const { Text, Title } = Typography;
 
 export const FilamentShow = () => {
   const t = useTranslate();
@@ -28,6 +29,12 @@ export const FilamentShow = () => {
   const { data, isLoading } = query;
 
   const record = data?.data;
+  const multiColorLabel =
+    record?.multi_color_hexes && record.multi_color_direction === "longitudinal"
+      ? "Longitudinal Multi"
+      : record?.multi_color_hexes
+      ? "Coextruded Multi"
+      : null;
 
   const formatTitle = (item: IFilament) => {
     let vendorPrefix = "";
@@ -51,13 +58,6 @@ export const FilamentShow = () => {
     navigate(URL);
   };
 
-  const colorObj = record?.multi_color_hexes
-    ? {
-        colors: record.multi_color_hexes.split(","),
-        vertical: record.multi_color_direction === "longitudinal",
-      }
-    : record?.color_hex;
-
   return (
     <Show
       isLoading={isLoading}
@@ -72,40 +72,88 @@ export const FilamentShow = () => {
             icon={<PrinterOutlined />}
             href={
               getBasePath() +
-              "/filament/print?filaments=" +
+              "/filament/labels?filaments=" +
               record?.id +
               "&return=" +
-              encodeURIComponent(window.location.pathname)
+              encodeURIComponent(stripBasePath(window.location.pathname))
             }
           >
-            {t("printing.qrcode.button")}
+            {t("printing.qrcode.selectButton")}
           </Button>
           {defaultButtons}
         </>
       )}
     >
-      <Title level={5}>{t("filament.fields.id")}</Title>
-      <NumberField value={record?.id ?? ""} />
-      <Title level={5}>{t("filament.fields.vendor")}</Title>
-      <button
-        onClick={gotoVendor}
-        style={{ background: "none", border: "none", color: "blue", cursor: "pointer", paddingLeft: 0 }}
-      >
-        {record ? record.vendor?.name : ""}
-      </button>
-      <Title level={5}>{t("filament.fields.registered")}</Title>
-      <DateField
-        value={dayjs.utc(record?.registered).local()}
-        title={dayjs.utc(record?.registered).local().format()}
-        format="YYYY-MM-DD HH:mm:ss"
-      />
-      <Title level={5}>{t("filament.fields.name")}</Title>
-      <TextField value={record?.name} />
-      <Title level={5}>{t("filament.fields.color_hex")}</Title>
-      {colorObj && <SpoolIcon color={colorObj} size="large" no_margin />}
-      {record?.color_hex && <TextField value={`#${record?.color_hex}`} />}
-      <Title level={5}>{t("filament.fields.material")}</Title>
-      <TextField value={record?.material} />
+      <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
+        {`${t("filament.fields.registered")} ${
+          record?.registered ? dayjs.utc(record.registered).local().format("YYYY-MM-DD HH:mm:ss") : "-"
+        }`}
+      </Text>
+      <Row gutter={[24, 16]} align="top">
+        <Col xs={24} lg={16}>
+          <Title level={5}>{t("filament.fields.name")}</Title>
+          <TextField value={record?.name} />
+          <Title level={5}>{t("filament.fields.material")}</Title>
+          <TextField value={record?.material} />
+          <Title level={5}>{t("filament.fields.color_hex")}</Title>
+          {multiColorLabel && (
+            <Text type="secondary" style={{ display: "block", marginTop: -10, marginBottom: 8 }}>
+              {multiColorLabel}
+            </Text>
+          )}
+          <ColorHexPreview
+            colorHex={record?.color_hex}
+            multiColorHexes={record?.multi_color_hexes}
+            multiColorDirection={record?.multi_color_direction}
+          />
+        </Col>
+        <Col xs={24} lg={8}>
+          <div>
+            <strong>{t("filament.fields.vendor")}:</strong>{" "}
+            {record?.vendor?.id ? (
+              <button
+                onClick={gotoVendor}
+                style={{ background: "none", border: "none", color: "blue", cursor: "pointer", padding: 0 }}
+              >
+                {record.vendor.name}
+              </button>
+            ) : (
+              <span>{record?.vendor?.name ?? "-"}</span>
+            )}
+          </div>
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: 8,
+              padding: 8,
+              border: "1px solid #d9d9d9",
+              marginTop: 8,
+            }}
+          >
+            <VendorLogo
+              vendor={record?.vendor}
+              showFallbackText
+              imgStyle={{
+                display: "block",
+                width: "100%",
+                maxHeight: "56px",
+                objectFit: "contain",
+                objectPosition: "left center",
+              }}
+              fallbackStyle={{
+                width: "100%",
+                fontWeight: 700,
+                fontSize: "20px",
+                lineHeight: 1.1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                color: "#111",
+              }}
+            />
+          </div>
+        </Col>
+      </Row>
       <Title level={5}>{t("filament.fields.price")}</Title>
       <TextField value={record?.price ? currencyFormatter.format(record.price) : ""} />
       <Title level={5}>{t("filament.fields.density")}</Title>
