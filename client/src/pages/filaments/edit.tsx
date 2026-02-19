@@ -1,11 +1,12 @@
 import { Edit, useForm, useSelect } from "@refinedev/antd";
-import { HttpError, useTranslate } from "@refinedev/core";
-import { Alert, ColorPicker, DatePicker, Form, Input, InputNumber, message, Radio, Select, Typography } from "antd";
+import { HttpError, useList, useTranslate } from "@refinedev/core";
+import { Alert, Col, ColorPicker, Form, Input, InputNumber, Row, message, Radio, Select, Typography } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { MultiColorPicker } from "../../components/multiColorPicker";
+import VendorLogo from "../../components/vendorLogo";
 import { formatNumberOnUserInput, numberParser, numberParserAllowEmpty } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { getCurrencySymbol, useCurrency } from "../../utils/settings";
@@ -20,6 +21,7 @@ the form's onFinish method. Form.Item's normalize should do this, but it doesn't
 */
 
 export const FilamentEdit = () => {
+  const { Text } = Typography;
   const t = useTranslate();
   const [messageApi, contextHolder] = message.useMessage();
   const [hasChanged, setHasChanged] = useState(false);
@@ -42,6 +44,28 @@ export const FilamentEdit = () => {
     optionLabel: "name",
     pagination: { mode: "off" },
   });
+  const { result: vendorListResult } = useList<IVendor>({
+    resource: "vendor",
+    pagination: { mode: "off" },
+  });
+  const selectedVendorId = Form.useWatch(["vendor_id"], formProps.form);
+  const selectedVendor = useMemo(
+    () => vendorListResult?.data?.find((vendor: IVendor) => vendor.id === selectedVendorId),
+    [vendorListResult?.data, selectedVendorId],
+  );
+  const watchedColorHex = Form.useWatch(["color_hex"], formProps.form);
+  const watchedMultiColorHexes = Form.useWatch(["multi_color_hexes"], formProps.form);
+  const watchedMultiColorDirection = Form.useWatch(["multi_color_direction"], formProps.form);
+  const selectedVendorName = selectedVendor?.name ?? null;
+  const logoVendor =
+    selectedVendorName !== null
+      ? {
+          id: selectedVendor?.id ?? 0,
+          registered: selectedVendor?.registered ?? "",
+          name: selectedVendorName,
+          extra: selectedVendor?.extra ?? {},
+        }
+      : undefined;
 
   // Add the vendor_id field to the form
   if (formProps.initialValues) {
@@ -80,279 +104,337 @@ export const FilamentEdit = () => {
     <Edit saveButtonProps={saveButtonProps}>
       {contextHolder}
       <Form {...formProps} layout="vertical">
-        <Form.Item
-          label={t("filament.fields.id")}
-          name={["id"]}
-          rules={[
-            {
-              required: true,
-            },
-          ]}
-        >
-          <Input readOnly disabled />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.registered")}
-          name={["registered"]}
-          rules={[
-            {
-              required: true,
-            },
-          ]}
-          getValueProps={(value) => ({
-            value: value ? dayjs(value) : undefined,
-          })}
-        >
-          <DatePicker disabled showTime format="YYYY-MM-DD HH:mm:ss" />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.name")}
-          help={t("filament.fields_help.name")}
-          name={["name"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-        >
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.vendor")}
-          name={["vendor_id"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-          // Applying this to Form.Item Select's causes a cleared select to send null
-          normalize={(value) => {
-            if (value === undefined) {
-              return null;
-            }
-            return value;
-          }}
-        >
-          <Select
-            {...selectProps}
-            allowClear
-            filterSort={(a, b) => {
-              return a?.label && b?.label
-                ? (a.label as string).localeCompare(b.label as string, undefined, { sensitivity: "base" })
-                : 0;
-            }}
-            filterOption={(input, option) =>
-              typeof option?.label === "string" && option?.label.toLowerCase().includes(input.toLowerCase())
-            }
-          />
-        </Form.Item>
-        <Form.Item label={t("filament.fields.color_hex")}>
-          <Radio.Group
-            onChange={(value) => {
-              setColorType(value.target.value);
-            }}
-            defaultValue={colorType}
-            value={colorType}
-          >
-            <Radio.Button value={"single"}>{t("filament.fields.single_color")}</Radio.Button>
-            <Radio.Button value={"multi"}>{t("filament.fields.multi_color")}</Radio.Button>
-          </Radio.Group>
-        </Form.Item>
-        {colorType == "single" && (
-          <Form.Item
-            name={"color_hex"}
-            rules={[
-              {
-                required: false,
-              },
-            ]}
-            getValueFromEvent={(e) => {
-              return e?.toHex();
-            }}
-          >
-            <ColorPicker />
-          </Form.Item>
-        )}
-        {colorType == "multi" && (
-          <Form.Item
-            name={"multi_color_direction"}
-            help={t("filament.fields_help.multi_color_direction")}
-            rules={[
-              {
-                required: true,
-              },
-            ]}
-            initialValue={"coaxial"}
-          >
-            <Radio.Group>
-              <Radio.Button value={"coaxial"}>{t("filament.fields.coaxial")}</Radio.Button>
-              <Radio.Button value={"longitudinal"}>{t("filament.fields.longitudinal")}</Radio.Button>
-            </Radio.Group>
-          </Form.Item>
-        )}
-        {colorType == "multi" && (
-          <Form.Item
-            name={"multi_color_hexes"}
-            rules={[
-              {
-                required: false,
-              },
-            ]}
-          >
-            <MultiColorPicker min={2} max={14} />
-          </Form.Item>
-        )}
-        <Form.Item
-          label={t("filament.fields.material")}
-          help={t("filament.fields_help.material")}
-          name={["material"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-        >
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.price")}
-          help={t("filament.fields_help.price")}
-          name={["price"]}
-          rules={[
-            {
-              required: false,
-              type: "number",
-              min: 0,
-            },
-          ]}
-        >
-          <InputNumber
-            addonAfter={getCurrencySymbol(undefined, currency)}
-            precision={2}
-            formatter={formatNumberOnUserInput}
-            parser={numberParserAllowEmpty}
-          />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.density")}
-          name={["density"]}
-          rules={[
-            {
-              required: true,
-              type: "number",
-              min: 0,
-              max: 100,
-            },
-          ]}
-        >
-          <InputNumber addonAfter="g/cm³" precision={2} formatter={formatNumberOnUserInput} parser={numberParser} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.diameter")}
-          name={["diameter"]}
-          rules={[
-            {
-              required: true,
-              type: "number",
-              min: 0,
-              max: 10,
-            },
-          ]}
-        >
-          <InputNumber addonAfter="mm" precision={2} formatter={formatNumberOnUserInput} parser={numberParser} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.weight")}
-          help={t("filament.fields_help.weight")}
-          name={["weight"]}
-          rules={[
-            {
-              required: false,
-              type: "number",
-              min: 0,
-            },
-          ]}
-        >
-          <InputNumber addonAfter="g" precision={1} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.spool_weight")}
-          help={t("filament.fields_help.spool_weight")}
-          name={["spool_weight"]}
-          rules={[
-            {
-              required: false,
-              type: "number",
-              min: 0,
-            },
-          ]}
-        >
-          <InputNumber addonAfter="g" precision={1} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.settings_extruder_temp")}
-          name={["settings_extruder_temp"]}
-          rules={[
-            {
-              required: false,
-              type: "number",
-              min: 0,
-            },
-          ]}
-        >
-          <InputNumber addonAfter="°C" precision={0} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.settings_bed_temp")}
-          name={["settings_bed_temp"]}
-          rules={[
-            {
-              required: false,
-              type: "number",
-              min: 0,
-            },
-          ]}
-        >
-          <InputNumber addonAfter="°C" precision={0} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.article_number")}
-          help={t("filament.fields_help.article_number")}
-          name={["article_number"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-        >
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.external_id")}
-          name={["external_id"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-        >
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          label={t("filament.fields.comment")}
-          name={["comment"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-        >
-          <TextArea maxLength={1024} />
-        </Form.Item>
-        <Typography.Title level={5}>{t("settings.extra_fields.tab")}</Typography.Title>
-        {extraFields.data?.map((field, index) => (
-          <ExtraFieldFormItem key={index} field={field} />
-        ))}
+        <Row gutter={[24, 16]} align="top">
+          <Col xs={24} lg={16}>
+            <div style={{ marginBottom: 16 }}>
+              <Text strong>{`${t("filament.fields.id")}: ${formProps.initialValues?.id ?? "-"}`}</Text>
+              <Text type="secondary" style={{ marginLeft: 16 }}>
+                {`${t("filament.fields.registered")} ${
+                  formProps.initialValues?.registered
+                    ? dayjs(formProps.initialValues.registered).format("YYYY-MM-DD HH:mm:ss")
+                    : "-"
+                }`}
+              </Text>
+            </div>
+            <Form.Item
+              label={t("filament.fields.name")}
+              help={t("filament.fields_help.name")}
+              name={["name"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+            >
+              <Input maxLength={64} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.vendor")}
+              name={["vendor_id"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+              // Applying this to Form.Item Select's causes a cleared select to send null
+              normalize={(value) => {
+                if (value === undefined) {
+                  return null;
+                }
+                return value;
+              }}
+            >
+              <Select
+                {...selectProps}
+                allowClear
+                filterSort={(a, b) => {
+                  return a?.label && b?.label
+                    ? (a.label as string).localeCompare(b.label as string, undefined, { sensitivity: "base" })
+                    : 0;
+                }}
+                filterOption={(input, option) =>
+                  typeof option?.label === "string" && option?.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} lg={8}>
+            <div>
+              <strong>{t("filament.fields.vendor")}:</strong>{" "}
+              {selectedVendor?.id ? (
+                <a href={`/vendor/show/${selectedVendor.id}`}>{selectedVendor.name}</a>
+              ) : (
+                <span>{selectedVendorName ?? "-"}</span>
+              )}
+            </div>
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 8,
+                padding: 8,
+                border: "1px solid #d9d9d9",
+                marginTop: 8,
+              }}
+            >
+              <VendorLogo
+                vendor={logoVendor}
+                showFallbackText
+                imgStyle={{
+                  display: "block",
+                  width: "100%",
+                  maxHeight: "56px",
+                  objectFit: "contain",
+                  objectPosition: "left center",
+                }}
+                fallbackStyle={{
+                  width: "100%",
+                  fontWeight: 700,
+                  fontSize: "20px",
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  color: "#111",
+                }}
+              />
+            </div>
+          </Col>
+        </Row>
+        <Row>
+          <Col xs={24} lg={16}>
+            <Form.Item label={t("filament.fields.color_hex")}>
+              <Radio.Group
+                onChange={(value) => {
+                  setColorType(value.target.value);
+                }}
+                defaultValue={colorType}
+                value={colorType}
+              >
+                <Radio.Button value={"single"}>{t("filament.fields.single_color")}</Radio.Button>
+                <Radio.Button value={"multi"}>{t("filament.fields.multi_color")}</Radio.Button>
+              </Radio.Group>
+            </Form.Item>
+            {colorType == "single" && (
+              <Form.Item
+                name={"color_hex"}
+                rules={[
+                  {
+                    required: false,
+                  },
+                ]}
+                getValueFromEvent={(e) => {
+                  return e?.toHex();
+                }}
+              >
+                <ColorPicker>
+                  <div
+                    style={{
+                      width: 74,
+                      height: 74,
+                      borderRadius: 10,
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      backgroundColor: `#${(watchedColorHex ?? "000000").replace("#", "")}`,
+                    }}
+                  />
+                </ColorPicker>
+              </Form.Item>
+            )}
+            {colorType == "single" && watchedColorHex && (
+              <Typography.Text type="secondary" style={{ display: "block", marginTop: -12, marginBottom: 12 }}>
+                #{`${watchedColorHex}`.replace("#", "").toUpperCase()}
+              </Typography.Text>
+            )}
+            {colorType == "multi" && (
+              <Form.Item
+                name={"multi_color_direction"}
+                help={t("filament.fields_help.multi_color_direction")}
+                rules={[
+                  {
+                    required: true,
+                  },
+                ]}
+                initialValue={"coaxial"}
+              >
+                <Radio.Group>
+                  <Radio.Button value={"coaxial"}>{t("filament.fields.coaxial")}</Radio.Button>
+                  <Radio.Button value={"longitudinal"}>{t("filament.fields.longitudinal")}</Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+            )}
+            {colorType == "multi" && (
+              <Form.Item
+                name={"multi_color_hexes"}
+                rules={[
+                  {
+                    required: false,
+                  },
+                ]}
+              >
+                <MultiColorPicker
+                  min={2}
+                  max={14}
+                  layout={watchedMultiColorDirection === "longitudinal" ? "vertical" : "horizontal"}
+                  showHex
+                  hexPosition={watchedMultiColorDirection === "longitudinal" ? "right" : "bottom"}
+                  swatchWidth={watchedMultiColorDirection === "longitudinal" ? 66 : 74}
+                  swatchHeight={watchedMultiColorDirection === "longitudinal" ? 24 : 74}
+                />
+              </Form.Item>
+            )}
+            {colorType == "multi" && watchedMultiColorHexes && <div style={{ marginBottom: 8 }} />}
+            <Form.Item
+              label={t("filament.fields.material")}
+              help={t("filament.fields_help.material")}
+              name={["material"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+            >
+              <Input maxLength={64} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.price")}
+              help={t("filament.fields_help.price")}
+              name={["price"]}
+              rules={[
+                {
+                  required: false,
+                  type: "number",
+                  min: 0,
+                },
+              ]}
+            >
+              <InputNumber
+                addonAfter={getCurrencySymbol(undefined, currency)}
+                precision={2}
+                formatter={formatNumberOnUserInput}
+                parser={numberParserAllowEmpty}
+              />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.density")}
+              name={["density"]}
+              rules={[
+                {
+                  required: true,
+                  type: "number",
+                  min: 0,
+                  max: 100,
+                },
+              ]}
+            >
+              <InputNumber addonAfter="g/cm³" precision={2} formatter={formatNumberOnUserInput} parser={numberParser} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.diameter")}
+              name={["diameter"]}
+              rules={[
+                {
+                  required: true,
+                  type: "number",
+                  min: 0,
+                  max: 10,
+                },
+              ]}
+            >
+              <InputNumber addonAfter="mm" precision={2} formatter={formatNumberOnUserInput} parser={numberParser} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.weight")}
+              help={t("filament.fields_help.weight")}
+              name={["weight"]}
+              rules={[
+                {
+                  required: false,
+                  type: "number",
+                  min: 0,
+                },
+              ]}
+            >
+              <InputNumber addonAfter="g" precision={1} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.spool_weight")}
+              help={t("filament.fields_help.spool_weight")}
+              name={["spool_weight"]}
+              rules={[
+                {
+                  required: false,
+                  type: "number",
+                  min: 0,
+                },
+              ]}
+            >
+              <InputNumber addonAfter="g" precision={1} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.settings_extruder_temp")}
+              name={["settings_extruder_temp"]}
+              rules={[
+                {
+                  required: false,
+                  type: "number",
+                  min: 0,
+                },
+              ]}
+            >
+              <InputNumber addonAfter="°C" precision={0} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.settings_bed_temp")}
+              name={["settings_bed_temp"]}
+              rules={[
+                {
+                  required: false,
+                  type: "number",
+                  min: 0,
+                },
+              ]}
+            >
+              <InputNumber addonAfter="°C" precision={0} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.article_number")}
+              help={t("filament.fields_help.article_number")}
+              name={["article_number"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+            >
+              <Input maxLength={64} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.external_id")}
+              name={["external_id"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+            >
+              <Input maxLength={64} />
+            </Form.Item>
+            <Form.Item
+              label={t("filament.fields.comment")}
+              name={["comment"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+            >
+              <TextArea maxLength={1024} />
+            </Form.Item>
+            <Typography.Title level={5}>{t("settings.extra_fields.tab")}</Typography.Title>
+            {extraFields.data?.map((field, index) => (
+              <ExtraFieldFormItem key={index} field={field} />
+            ))}
+          </Col>
+        </Row>
       </Form>
       {hasChanged && <Alert description={t("filament.form.filament_updated")} type="warning" showIcon />}
     </Edit>

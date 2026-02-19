@@ -6,6 +6,11 @@ export interface VendorLogoManifestPaths {
   print_files?: string[];
 }
 
+interface LogoMatchScore {
+  path: string;
+  score: number;
+}
+
 export function parseExtraString(value: string | undefined): string | undefined {
   if (!value) {
     return undefined;
@@ -57,49 +62,75 @@ function slugFromManifestPath(path: string, type: "web" | "print"): string {
   return base;
 }
 
-function findBestPath(name: string, paths: string[], type: "web" | "print"): string | undefined {
-  if (paths.length === 0) {
-    return undefined;
-  }
-
+function scoreLogoPath(name: string, path: string, type: "web" | "print"): number {
   const targetSlug = slugifyVendorName(name);
+  if (!targetSlug) {
+    return 0;
+  }
   const targetNorm = normalizeForMatch(targetSlug);
   const targetTokens = new Set(targetSlug.split("-").filter(Boolean));
+  const targetTokenCount = targetTokens.size;
+  const candidateSlug = slugifyVendorName(slugFromManifestPath(path, type));
+  if (!candidateSlug) {
+    return 0;
+  }
+  const candidateNorm = normalizeForMatch(candidateSlug);
+  const candidateTokens = new Set(candidateSlug.split("-").filter(Boolean));
+  const candidateTokenCount = candidateTokens.size;
 
-  let bestPath: string | undefined;
-  let bestScore = -1;
-
-  for (const path of paths) {
-    const candidateSlug = slugifyVendorName(slugFromManifestPath(path, type));
-    const candidateNorm = normalizeForMatch(candidateSlug);
-    const candidateTokens = new Set(candidateSlug.split("-").filter(Boolean));
-    let score = 0;
-
-    if (candidateSlug === targetSlug) {
-      score = 100;
-    } else if (candidateNorm === targetNorm) {
-      score = 95;
-    } else if (candidateSlug.includes(targetSlug) || targetSlug.includes(candidateSlug)) {
-      score = 80 - Math.abs(candidateSlug.length - targetSlug.length);
-    } else if (candidateNorm.includes(targetNorm) || targetNorm.includes(candidateNorm)) {
-      score = 70 - Math.abs(candidateNorm.length - targetNorm.length);
-    } else {
-      let overlap = 0;
-      for (const token of targetTokens) {
-        if (candidateTokens.has(token)) overlap += 1;
-      }
-      if (overlap > 0) {
-        score = 40 + overlap;
-      }
-    }
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestPath = path;
-    }
+  if (candidateSlug === targetSlug || candidateNorm === targetNorm) {
+    return 100;
+  }
+  if (candidateNorm === `${targetNorm}s` || `${candidateNorm}s` === targetNorm) {
+    // Allow common singular/plural differences (e.g. "bambu-lab" vs "bambu-labs").
+    return 94;
   }
 
-  return bestScore >= 40 ? bestPath : undefined;
+  let overlap = 0;
+  for (const token of targetTokens) {
+    if (candidateTokens.has(token)) overlap += 1;
+  }
+  const targetCoverage = targetTokenCount > 0 ? overlap / targetTokenCount : 0;
+  const candidateCoverage = candidateTokenCount > 0 ? overlap / candidateTokenCount : 0;
+  // Avoid weak one-word overlaps like "filament-*".
+  if (overlap >= 2 && targetCoverage >= 0.66 && candidateCoverage >= 0.5) {
+    return 70 + Math.min(overlap, 10);
+  }
+
+  return 0;
+}
+
+function rankPaths(name: string, paths: string[], type: "web" | "print"): LogoMatchScore[] {
+  if (paths.length === 0) {
+    return [];
+  }
+  return paths
+    .map((path) => ({ path, score: scoreLogoPath(name, path, type) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+}
+
+function findBestPath(name: string, paths: string[], type: "web" | "print"): string | undefined {
+  const ranked = rankPaths(name, paths, type);
+  if (ranked.length === 0) {
+    return undefined;
+  }
+  const [best] = ranked;
+  if (best.score < 70) {
+    return undefined;
+  }
+  return best.path;
+}
+
+export function suggestVendorLogoOptions(
+  name: string,
+  manifest: VendorLogoManifestPaths,
+  type: "web" | "print",
+  limit = 5,
+): string[] {
+  const paths = type === "web" ? manifest.web_files ?? [] : manifest.print_files ?? [];
+  const ranked = rankPaths(name, paths, type);
+  return ranked.slice(0, limit).map((entry) => entry.path);
 }
 
 export function suggestVendorLogoPaths(name: string, manifest: VendorLogoManifestPaths) {

@@ -1,10 +1,10 @@
-import { EditOutlined, EyeOutlined, FilterOutlined, PlusSquareOutlined, SyncOutlined } from "@ant-design/icons";
+import { EditOutlined, EyeOutlined, FilterOutlined, PlusSquareOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
-import { useInvalidate, useNavigation, useTranslate, useUpdate } from "@refinedev/core";
-import { Button, Dropdown, Table, message } from "antd";
+import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
+import { Button, Dropdown, Table } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   ActionsColumn,
@@ -17,12 +17,10 @@ import {
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
 import VendorLogo from "../../components/vendorLogo";
-import { useSpoolmanVendorExternalIds, useSpoolmanVendors, useVendorLogoManifest } from "../../components/otherModels";
+import { useSpoolmanVendorExternalIds, useSpoolmanVendors } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
-import { getAPIURL } from "../../utils/url";
-import { parseExtraString, suggestVendorLogoPaths } from "../../utils/vendorLogo";
 import { IVendor } from "./model";
 
 dayjs.extend(utc);
@@ -36,10 +34,6 @@ export const VendorList = () => {
   const invalidate = useInvalidate();
   const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.vendor);
-  const logoManifestQuery = useVendorLogoManifest();
-  const [messageApi, contextHolder] = message.useMessage();
-  const { mutateAsync: updateVendor } = useUpdate();
-  const [hasAutoSynced, setHasAutoSynced] = useState(false);
 
   const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
 
@@ -117,92 +111,10 @@ export const VendorList = () => {
     sorter: true,
   };
 
-  const syncVendorLogos = useCallback(
-    async (showToast: boolean) => {
-      const manifest = logoManifestQuery.data;
-      if (!manifest) {
-        if (showToast) {
-          messageApi.warning("Logo manifest is not available yet.");
-        }
-        return;
-      }
-
-      const response = await fetch(getAPIURL() + "/vendor");
-      if (!response.ok) {
-        if (showToast) {
-          messageApi.error("Could not load manufacturers for logo sync.");
-        }
-        return;
-      }
-      const vendors = (await response.json()) as IVendor[];
-
-      let updatedCount = 0;
-      let matchedCount = 0;
-      for (const vendor of vendors) {
-        const { webPath, printPath } = suggestVendorLogoPaths(vendor.name, manifest);
-        if (!webPath && !printPath) {
-          continue;
-        }
-        matchedCount += 1;
-
-        const existingLogo = parseExtraString(vendor.extra?.logo_url);
-        const existingPrintLogo = parseExtraString(vendor.extra?.print_logo_url);
-        if (existingLogo && existingPrintLogo) {
-          continue;
-        }
-
-        const mergedExtra = { ...(vendor.extra ?? {}) };
-        if (!existingLogo && webPath) {
-          mergedExtra.logo_url = JSON.stringify(webPath);
-        }
-        if (!existingPrintLogo && printPath) {
-          mergedExtra.print_logo_url = JSON.stringify(printPath);
-        }
-
-        if (mergedExtra.logo_url === vendor.extra?.logo_url && mergedExtra.print_logo_url === vendor.extra?.print_logo_url) {
-          continue;
-        }
-
-        await updateVendor({
-          resource: "vendor",
-          id: vendor.id,
-          values: { ...vendor, extra: mergedExtra },
-        });
-        updatedCount += 1;
-      }
-
-      if (updatedCount > 0) {
-        invalidate({
-          resource: "vendor",
-          invalidates: ["list"],
-        });
-      }
-      if (showToast) {
-        messageApi.success(`Logo sync complete. Matched ${matchedCount}, updated ${updatedCount}.`);
-      }
-    },
-    [logoManifestQuery.data, messageApi, updateVendor, invalidate],
-  );
-
-  useEffect(() => {
-    if (hasAutoSynced || !logoManifestQuery.data) {
-      return;
-    }
-    setHasAutoSynced(true);
-    void syncVendorLogos(false);
-  }, [hasAutoSynced, logoManifestQuery.data, syncVendorLogos]);
-
   return (
     <List
       headerButtons={({ defaultButtons }) => (
         <>
-          <Button
-            type="primary"
-            icon={<SyncOutlined />}
-            onClick={() => void syncVendorLogos(true)}
-          >
-            {t("vendor.buttons.sync_logos")}
-          </Button>
           <Button
             type="primary"
             icon={<FilterOutlined />}
@@ -253,7 +165,6 @@ export const VendorList = () => {
         </>
       )}
     >
-      {contextHolder}
       <Table
         {...tableProps}
         sticky

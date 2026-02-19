@@ -350,7 +350,11 @@
             "empty_spool_weight": "Empty Spool Weight",
             "external_id": "External ID",
             "registered": "Registered",
-            "comment": "Comment"
+            "comment": "Comment",
+            "logo_suggestions": "Logo Suggestions",
+            "print_logo_suggestions": "Print Logo Suggestions",
+            "logo_suggestions_placeholder": "Select a suggested logo path",
+            "logo_suggestions_none": "None"
         },
         "fields_help": {
             "empty_spool_weight": "The weight of an empty spool from this manufacturer.",
@@ -366,10 +370,15 @@
             "show_title": "[Manufacturer #{{id}}] {{name}}"
         },
         "buttons": {
-            "sync_logos": "Sync Logos"
+            "sync_logos": "Sync Logos",
+            "clear_logo_url": "Clear URL"
         },
         "form": {
-            "vendor_updated": "This manufacturer has been updated by someone/something else since you opened this page. Saving will overwrite those changes!"
+            "vendor_updated": "This manufacturer has been updated by someone/something else since you opened this page. Saving will overwrite those changes!",
+            "logo_sync_no_match": "No matching logos found for this manufacturer name.",
+            "logo_sync_applied": "Suggested logo paths applied.",
+            "logo_preview_auto_notice": "using auto-matched logo from bundled logo pack",
+            "logo_preview_default_notice": "no logo defined, using default generated text logo"
         }
     },
     "home": {
@@ -406,8 +415,8 @@
                 "tooltip": "Round prices to the nearest whole number."
             },
             "logo_sync": {
-                "title": "Manufacturer Logo Sync",
-                "description": "Fills missing manufacturer logo URL fields from the bundled logo manifest. Existing logo URLs are not overwritten.",
+                "title": "Global Manufacturer Logo Sync",
+                "description": "Syncs missing logo URLs across the whole manufacturer database using the bundled logo manifest. Existing logo URLs are not overwritten.",
                 "where": "Source: /vendor-logos/manifest.json (bundled static web/print logo files). Matching ignores minor punctuation/case differences in names.",
                 "button": "Sync Logos Now",
                 "not_ready": "Logo manifest is not available yet.",
@@ -419,7 +428,8 @@
                 "github_button": "Check GitHub for Logo Updates",
                 "github_load_error": "Could not check GitHub logo updates.",
                 "github_done_updated": "Logo pack updated from GitHub. Web: {{web}}, Print: {{print}}.",
-                "github_done_no_changes": "Logo pack already up to date. Web: {{web}}, Print: {{print}}."
+                "github_done_no_changes": "Logo pack already up to date. Web: {{web}}, Print: {{print}}.",
+                "scope_note": "This action syncs the whole manufacturer database. You can sync a single manufacturer from its Edit page."
             }
         },
         "extra_fields": {
