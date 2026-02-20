@@ -292,6 +292,23 @@ async def find(
             examples=[20.0],
         ),
     ] = 20.0,
+    has_spools: Annotated[
+        bool | None,
+        Query(
+            title="Has Spools",
+            description="Filter by whether a filament has at least one associated spool.",
+            examples=[True],
+        ),
+    ] = None,
+    spool_count: Annotated[
+        str | None,
+        Query(
+            title="Spool Count",
+            description="Match filaments with an exact spool count. Separate multiple counts with a comma.",
+            pattern=r"^\d+(,\d+)*$",
+            examples=["0", "1,2,3"],
+        ),
+    ] = None,
     external_id: Annotated[
         str | None,
         Query(
@@ -341,10 +358,16 @@ async def find(
         filter_by_ids = [db_filament.id for db_filament in matched_filaments]
     else:
         filter_by_ids = None
+    if spool_count is not None:
+        spool_counts = [int(spool_count_item) for spool_count_item in spool_count.split(",")]
+    else:
+        spool_counts = None
 
     db_items, total_count = await filament.find(
         db=db,
         ids=filter_by_ids,
+        has_spools=has_spools,
+        spool_count=spool_counts,
         vendor_name=vendor_name if vendor_name is not None else vendor_name_old,
         vendor_id=vendor_ids,
         name=name,
@@ -364,6 +387,19 @@ async def find(
         ),
         headers={"x-total-count": str(total_count)},
     )
+
+
+@router.get(
+    "/spool-count",
+    name="Find filament spool counts",
+    description="Get distinct spool-count values across filaments.",
+    response_model_exclude_none=True,
+)
+async def find_spool_counts(
+    *,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> list[int]:
+    return await filament.find_spool_counts(db=db)
 
 
 @router.websocket(
