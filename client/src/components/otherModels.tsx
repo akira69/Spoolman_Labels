@@ -189,6 +189,28 @@ export function useSpoolmanArticleNumbers(enabled: boolean = false) {
   });
 }
 
+export function useSpoolmanSpoolCounts(enabled: boolean = false) {
+  return useQuery<number[], unknown, ColumnFilterItem[]>({
+    enabled,
+    queryKey: ["filamentSpoolCounts"],
+    queryFn: async () => {
+      const response = await fetch(getAPIURL() + "/filament/spool-count");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
+    select: (data) => {
+      return data
+        .sort((a, b) => a - b)
+        .map((count) => ({
+          text: String(count),
+          value: count,
+        }));
+    },
+  });
+}
+
 export function useSpoolmanLotNumbers(enabled: boolean = false) {
   return useQuery<string[]>({
     enabled: enabled,
