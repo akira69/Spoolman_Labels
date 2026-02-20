@@ -1,6 +1,6 @@
 import { Edit, useForm } from "@refinedev/antd";
 import { HttpError, useTranslate } from "@refinedev/core";
-import { Alert, DatePicker, Divider, Form, Input, InputNumber, Radio, Select, Typography } from "antd";
+import { Alert, Col, DatePicker, Divider, Form, Input, InputNumber, Radio, Row, Select, Typography } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { message } from "antd/lib";
 import dayjs from "dayjs";
@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { useSpoolmanLocations } from "../../components/otherModels";
+import VendorLogo from "../../components/vendorLogo";
 import { searchMatches } from "../../utils/filtering";
 import { formatNumberOnUserInput, numberParser, numberParserAllowEmpty } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -29,6 +30,7 @@ type ISpoolRequest = ISpoolParsedExtras & {
 };
 
 export const SpoolEdit = () => {
+  const { Text } = Typography;
   const t = useTranslate();
   const [messageApi, contextHolder] = message.useMessage();
   const [hasChanged, setHasChanged] = useState(false);
@@ -97,6 +99,20 @@ export const SpoolEdit = () => {
       return null;
     }
   }, [selectedFilamentID, internalSelectOptions, externalSelectOptions]);
+  const selectedVendor = useMemo(() => {
+    if (selectedFilament?.vendor) {
+      return selectedFilament.vendor;
+    }
+    if (selectedFilament?.vendor_name) {
+      return {
+        id: 0,
+        registered: "",
+        name: selectedFilament.vendor_name,
+        extra: {},
+      };
+    }
+    return undefined;
+  }, [selectedFilament]);
 
   // Override the form's onFinish method to stringify the extra fields
   const originalOnFinish = formProps.onFinish;
@@ -234,243 +250,280 @@ export const SpoolEdit = () => {
     <Edit saveButtonProps={saveButtonProps}>
       {contextHolder}
       <Form {...formProps} layout="vertical">
-        <Form.Item
-          label={t("spool.fields.id")}
-          name={["id"]}
-          rules={[
-            {
-              required: true,
-            },
-          ]}
-        >
-          <Input readOnly disabled />
-        </Form.Item>
-        <Form.Item
-          label={t("spool.fields.registered")}
-          name={["registered"]}
-          rules={[
-            {
-              required: true,
-            },
-          ]}
-          getValueProps={(value) => ({
-            value: value ? dayjs(value) : undefined,
-          })}
-        >
-          <DatePicker disabled showTime format="YYYY-MM-DD HH:mm:ss" />
-        </Form.Item>
-        <Form.Item
-          label={t("spool.fields.first_used")}
-          name={["first_used"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-          getValueProps={(value) => ({
-            value: value ? dayjs(value) : undefined,
-          })}
-        >
-          <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" />
-        </Form.Item>
-        <Form.Item
-          label={t("spool.fields.last_used")}
-          name={["last_used"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-          getValueProps={(value) => ({
-            value: value ? dayjs(value) : undefined,
-          })}
-        >
-          <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" />
-        </Form.Item>
-        <Form.Item
-          label={t("spool.fields.filament")}
-          name={["filament_id"]}
-          rules={[
-            {
-              required: true,
-            },
-          ]}
-        >
-          <Select
-            options={filamentOptions}
-            showSearch
-            filterOption={(input, option) => typeof option?.label === "string" && searchMatches(input, option?.label)}
-          />
-        </Form.Item>
-        {selectedFilament?.is_internal === false && (
-          <Alert message={t("spool.fields_help.external_filament")} type="info" />
-        )}
-        <Form.Item
-          label={t("spool.fields.price")}
-          help={t("spool.fields_help.price")}
-          name={["price"]}
-          rules={[
-            {
-              required: false,
-              type: "number",
-              min: 0,
-            },
-          ]}
-        >
-          <InputNumber
-            addonAfter={getCurrencySymbol(undefined, currency)}
-            precision={2}
-            formatter={formatNumberOnUserInput}
-            parser={numberParserAllowEmpty}
-          />
-        </Form.Item>
-        <Form.Item
-          label={t("spool.fields.initial_weight")}
-          help={t("spool.fields_help.initial_weight")}
-          name={["initial_weight"]}
-          rules={[
-            {
-              required: false,
-              type: "number",
-              min: 0,
-            },
-          ]}
-        >
-          <InputNumber addonAfter="g" precision={1} />
-        </Form.Item>
-
-        <Form.Item
-          label={t("spool.fields.spool_weight")}
-          help={t("spool.fields_help.spool_weight")}
-          name={["spool_weight"]}
-          rules={[
-            {
-              required: false,
-              type: "number",
-              min: 0,
-            },
-          ]}
-        >
-          <InputNumber addonAfter="g" precision={1} />
-        </Form.Item>
-
-        <Form.Item hidden={true} name={["used_weight"]} initialValue={0}>
-          <InputNumber value={usedWeight} />
-        </Form.Item>
-
-        <Form.Item label={t("spool.fields.weight_to_use")} help={t("spool.fields_help.weight_to_use")}>
-          <Radio.Group
-            onChange={(value) => {
-              setWeightToEnter(value.target.value);
-            }}
-            defaultValue={WeightToEnter.used_weight}
-            value={weightToEnter}
-          >
-            <Radio.Button value={WeightToEnter.used_weight}>{t("spool.fields.used_weight")}</Radio.Button>
-            <Radio.Button value={WeightToEnter.remaining_weight} disabled={!isRemainingWeightEnabled()}>
-              {t("spool.fields.remaining_weight")}
-            </Radio.Button>
-            <Radio.Button value={WeightToEnter.measured_weight} disabled={!isMeasuredWeightEnabled()}>
-              {t("spool.fields.measured_weight")}
-            </Radio.Button>
-          </Radio.Group>
-        </Form.Item>
-        <Form.Item label={t("spool.fields.used_weight")} help={t("spool.fields_help.used_weight")}>
-          <InputNumber
-            min={0}
-            addonAfter="g"
-            precision={1}
-            formatter={formatNumberOnUserInput}
-            parser={numberParser}
-            disabled={weightToEnter != WeightToEnter.used_weight}
-            value={usedWeight}
-            onChange={(value) => {
-              weightChange(value ?? 0);
-            }}
-          />
-        </Form.Item>
-        <Form.Item label={t("spool.fields.remaining_weight")} help={t("spool.fields_help.remaining_weight")}>
-          <InputNumber
-            min={0}
-            addonAfter="g"
-            precision={1}
-            formatter={formatNumberOnUserInput}
-            parser={numberParser}
-            disabled={weightToEnter != WeightToEnter.remaining_weight}
-            value={getRemainingWeight()}
-            onChange={(value) => {
-              weightChange(getFilamentWeight() - (value ?? 0));
-            }}
-          />
-        </Form.Item>
-        <Form.Item label={t("spool.fields.measured_weight")} help={t("spool.fields_help.measured_weight")}>
-          <InputNumber
-            min={0}
-            addonAfter="g"
-            precision={1}
-            formatter={formatNumberOnUserInput}
-            parser={numberParser}
-            disabled={weightToEnter != WeightToEnter.measured_weight}
-            value={getMeasuredWeight()}
-            onChange={(value) => {
-              const totalWeight = getGrossWeight();
-              weightChange(totalWeight - (value ?? 0));
-            }}
-          />
-        </Form.Item>
-        <Form.Item
-          label={t("spool.fields.location")}
-          help={t("spool.fields_help.location")}
-          name={["location"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-        >
-          <Select
-            dropdownRender={(menu) => (
-              <>
-                {menu}
-                <Divider style={{ margin: "8px 0" }} />
-                <Input
-                  placeholder={t("spool.form.new_location_prompt")}
-                  value={newLocation}
-                  onChange={(event) => setNewLocation(event.target.value)}
-                />
-              </>
+        <Row gutter={[24, 16]} align="top">
+          <Col xs={24} lg={16}>
+            <div style={{ marginBottom: 16 }}>
+              <Text strong>{`${t("spool.fields.id")}: ${formProps.initialValues?.id ?? "-"}`}</Text>
+              <Text type="secondary" style={{ marginLeft: 16 }}>
+                {`${t("spool.fields.registered")} ${
+                  formProps.initialValues?.registered
+                    ? dayjs(formProps.initialValues.registered).format("YYYY-MM-DD HH:mm:ss")
+                    : "-"
+                }`}
+              </Text>
+            </div>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={t("spool.fields.first_used")}
+                  name={["first_used"]}
+                  rules={[
+                    {
+                      required: false,
+                    },
+                  ]}
+                  getValueProps={(value) => ({
+                    value: value ? dayjs(value) : undefined,
+                  })}
+                >
+                  <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={t("spool.fields.last_used")}
+                  name={["last_used"]}
+                  rules={[
+                    {
+                      required: false,
+                    },
+                  ]}
+                  getValueProps={(value) => ({
+                    value: value ? dayjs(value) : undefined,
+                  })}
+                >
+                  <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item
+              label={t("spool.fields.filament")}
+              name={["filament_id"]}
+              rules={[
+                {
+                  required: true,
+                },
+              ]}
+            >
+              <Select
+                options={filamentOptions}
+                showSearch
+                filterOption={(input, option) => typeof option?.label === "string" && searchMatches(input, option?.label)}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} lg={8}>
+            <div>
+              <strong>{t("filament.fields.vendor")}:</strong>{" "}
+              {selectedFilament?.vendor?.id ? (
+                <a href={`/vendor/show/${selectedFilament.vendor.id}`}>{selectedFilament.vendor.name}</a>
+              ) : (
+                <span>{selectedVendor?.name ?? "-"}</span>
+              )}
+            </div>
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 8,
+                padding: 8,
+                border: "1px solid #d9d9d9",
+                marginTop: 8,
+              }}
+            >
+              <VendorLogo
+                vendor={selectedVendor}
+                showFallbackText
+                imgStyle={{
+                  display: "block",
+                  width: "100%",
+                  maxHeight: "56px",
+                  objectFit: "contain",
+                  objectPosition: "left center",
+                }}
+                fallbackStyle={{
+                  width: "100%",
+                  fontWeight: 700,
+                  fontSize: "20px",
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  color: "#111",
+                }}
+              />
+            </div>
+          </Col>
+        </Row>
+        <Row>
+          <Col xs={24} lg={16}>
+            {selectedFilament?.is_internal === false && (
+              <Alert message={t("spool.fields_help.external_filament")} type="info" style={{ marginBottom: 16 }} />
             )}
-            loading={locations.isLoading}
-            options={allLocations.map((item) => ({ label: item, value: item }))}
-          />
-        </Form.Item>
-        <Form.Item
-          label={t("spool.fields.lot_nr")}
-          help={t("spool.fields_help.lot_nr")}
-          name={["lot_nr"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-        >
-          <Input maxLength={64} />
-        </Form.Item>
-        <Form.Item
-          label={t("spool.fields.comment")}
-          name={["comment"]}
-          rules={[
-            {
-              required: false,
-            },
-          ]}
-        >
-          <TextArea maxLength={1024} />
-        </Form.Item>
-        <Typography.Title level={5}>{t("settings.extra_fields.tab")}</Typography.Title>
-        {extraFields.data?.map((field, index) => (
-          <ExtraFieldFormItem key={index} field={field} />
-        ))}
+            <Form.Item
+              label={t("spool.fields.price")}
+              help={t("spool.fields_help.price")}
+              name={["price"]}
+              rules={[
+                {
+                  required: false,
+                  type: "number",
+                  min: 0,
+                },
+              ]}
+            >
+              <InputNumber
+                addonAfter={getCurrencySymbol(undefined, currency)}
+                precision={2}
+                formatter={formatNumberOnUserInput}
+                parser={numberParserAllowEmpty}
+              />
+            </Form.Item>
+            <Form.Item
+              label={t("spool.fields.initial_weight")}
+              help={t("spool.fields_help.initial_weight")}
+              name={["initial_weight"]}
+              rules={[
+                {
+                  required: false,
+                  type: "number",
+                  min: 0,
+                },
+              ]}
+            >
+              <InputNumber addonAfter="g" precision={1} />
+            </Form.Item>
+            <Form.Item
+              label={t("spool.fields.spool_weight")}
+              help={t("spool.fields_help.spool_weight")}
+              name={["spool_weight"]}
+              rules={[
+                {
+                  required: false,
+                  type: "number",
+                  min: 0,
+                },
+              ]}
+            >
+              <InputNumber addonAfter="g" precision={1} />
+            </Form.Item>
+            <Form.Item hidden={true} name={["used_weight"]} initialValue={0}>
+              <InputNumber value={usedWeight} />
+            </Form.Item>
+            <Form.Item label={t("spool.fields.weight_to_use")} help={t("spool.fields_help.weight_to_use")}>
+              <Radio.Group
+                onChange={(value) => {
+                  setWeightToEnter(value.target.value);
+                }}
+                defaultValue={WeightToEnter.used_weight}
+                value={weightToEnter}
+              >
+                <Radio.Button value={WeightToEnter.used_weight}>{t("spool.fields.used_weight")}</Radio.Button>
+                <Radio.Button value={WeightToEnter.remaining_weight} disabled={!isRemainingWeightEnabled()}>
+                  {t("spool.fields.remaining_weight")}
+                </Radio.Button>
+                <Radio.Button value={WeightToEnter.measured_weight} disabled={!isMeasuredWeightEnabled()}>
+                  {t("spool.fields.measured_weight")}
+                </Radio.Button>
+              </Radio.Group>
+            </Form.Item>
+            <Form.Item label={t("spool.fields.used_weight")} help={t("spool.fields_help.used_weight")}>
+              <InputNumber
+                min={0}
+                addonAfter="g"
+                precision={1}
+                formatter={formatNumberOnUserInput}
+                parser={numberParser}
+                disabled={weightToEnter != WeightToEnter.used_weight}
+                value={usedWeight}
+                onChange={(value) => {
+                  weightChange(value ?? 0);
+                }}
+              />
+            </Form.Item>
+            <Form.Item label={t("spool.fields.remaining_weight")} help={t("spool.fields_help.remaining_weight")}>
+              <InputNumber
+                min={0}
+                addonAfter="g"
+                precision={1}
+                formatter={formatNumberOnUserInput}
+                parser={numberParser}
+                disabled={weightToEnter != WeightToEnter.remaining_weight}
+                value={getRemainingWeight()}
+                onChange={(value) => {
+                  weightChange(getFilamentWeight() - (value ?? 0));
+                }}
+              />
+            </Form.Item>
+            <Form.Item label={t("spool.fields.measured_weight")} help={t("spool.fields_help.measured_weight")}>
+              <InputNumber
+                min={0}
+                addonAfter="g"
+                precision={1}
+                formatter={formatNumberOnUserInput}
+                parser={numberParser}
+                disabled={weightToEnter != WeightToEnter.measured_weight}
+                value={getMeasuredWeight()}
+                onChange={(value) => {
+                  const totalWeight = getGrossWeight();
+                  weightChange(totalWeight - (value ?? 0));
+                }}
+              />
+            </Form.Item>
+            <Form.Item
+              label={t("spool.fields.location")}
+              help={t("spool.fields_help.location")}
+              name={["location"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+            >
+              <Select
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <Divider style={{ margin: "8px 0" }} />
+                    <Input
+                      placeholder={t("spool.form.new_location_prompt")}
+                      value={newLocation}
+                      onChange={(event) => setNewLocation(event.target.value)}
+                    />
+                  </>
+                )}
+                loading={locations.isLoading}
+                options={allLocations.map((item) => ({ label: item, value: item }))}
+              />
+            </Form.Item>
+            <Form.Item
+              label={t("spool.fields.lot_nr")}
+              help={t("spool.fields_help.lot_nr")}
+              name={["lot_nr"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+            >
+              <Input maxLength={64} />
+            </Form.Item>
+            <Form.Item
+              label={t("spool.fields.comment")}
+              name={["comment"]}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+            >
+              <TextArea maxLength={1024} />
+            </Form.Item>
+            <Typography.Title level={5}>{t("settings.extra_fields.tab")}</Typography.Title>
+            {extraFields.data?.map((field, index) => (
+              <ExtraFieldFormItem key={index} field={field} />
+            ))}
+          </Col>
+        </Row>
       </Form>
       {hasChanged && <Alert description={t("spool.form.spool_updated")} type="warning" showIcon />}
     </Edit>

@@ -10,11 +10,14 @@ import {
   ActionsColumn,
   CustomFieldColumn,
   DateColumn,
+  FilteredQueryColumn,
   NumberColumn,
   RichColumn,
   SortedColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
+import VendorLogo from "../../components/vendorLogo";
+import { useSpoolmanVendorExternalIds, useSpoolmanVendors } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
@@ -24,7 +27,7 @@ dayjs.extend(utc);
 
 const namespace = "vendorList-v2";
 
-const allColumns: (keyof IVendor & string)[] = ["id", "name", "registered", "comment", "empty_spool_weight"];
+const allColumns: string[] = ["id", "logo", "name", "registered", "external_id", "comment", "empty_spool_weight"];
 
 export const VendorList = () => {
   const t = useTranslate();
@@ -137,7 +140,10 @@ export const VendorList = () => {
 
                 return {
                   key: column_id,
-                  label: t(`vendor.fields.${column_id}`),
+                  label:
+                    column_id === "logo"
+                      ? t("vendor.fields.logo")
+                      : t(`vendor.fields.${column_id}`),
                 };
               }),
               selectedKeys: showColumns,
@@ -173,16 +179,54 @@ export const VendorList = () => {
             i18ncat: "vendor",
             width: 70,
           }),
-          SortedColumn({
+          showColumns.includes("logo")
+            ? {
+                title: t("vendor.fields.logo"),
+                key: "logo",
+                width: 180,
+                render: (_: unknown, record: IVendor) => (
+                  <VendorLogo
+                    vendor={record}
+                    showFallbackText
+                    imgStyle={{
+                      display: "block",
+                      width: "100%",
+                      maxWidth: "160px",
+                      maxHeight: "24px",
+                      objectFit: "contain",
+                      objectPosition: "left center",
+                    }}
+                    fallbackStyle={{
+                      width: "100%",
+                      fontWeight: 600,
+                      fontSize: "12px",
+                      lineHeight: 1.2,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  />
+                ),
+              }
+            : undefined,
+          FilteredQueryColumn({
             ...commonProps,
             id: "name",
             i18ncat: "vendor",
+            filterValueQuery: useSpoolmanVendors(),
           }),
           DateColumn({
             ...commonProps,
             id: "registered",
             i18ncat: "vendor",
             width: 200,
+          }),
+          FilteredQueryColumn({
+            ...commonProps,
+            id: "external_id",
+            i18ncat: "vendor",
+            filterValueQuery: useSpoolmanVendorExternalIds(),
+            width: 160,
           }),
           NumberColumn({
             ...commonProps,

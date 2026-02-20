@@ -28,6 +28,7 @@ import {
   useSpoolmanArticleNumbers,
   useSpoolmanFilamentNames,
   useSpoolmanMaterials,
+  useSpoolmanSpoolCounts,
   useSpoolmanVendors,
 } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
@@ -61,6 +62,7 @@ const namespace = "filamentList-v2";
 
 const allColumns: (keyof IFilamentCollapsed & string)[] = [
   "id",
+  "spool_count",
   "vendor.name",
   "name",
   "material",
@@ -85,6 +87,7 @@ export const FilamentList = () => {
   const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.filament);
   const currencyFormatter = useCurrencyFormatter();
+  const querySpoolCounts = useSpoolmanSpoolCounts(true);
 
   const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
 
@@ -171,7 +174,6 @@ export const FilamentList = () => {
     tableState,
     sorter: true,
   };
-
   return (
     <List
       headerButtons={({ defaultButtons }) => (
@@ -180,10 +182,10 @@ export const FilamentList = () => {
             type="primary"
             icon={<PrinterOutlined />}
             onClick={() => {
-              navigate("print");
+              navigate("labels");
             }}
           >
-            {t("printing.qrcode.button")}
+            {t("printing.qrcode.selectButton")}
           </Button>
           <Button
             type="primary"
@@ -245,6 +247,16 @@ export const FilamentList = () => {
             id: "id",
             i18ncat: "filament",
             width: 70,
+          }),
+          FilteredQueryColumn({
+            ...commonProps,
+            id: "spool_count",
+            dataId: "spool_count",
+            i18ncat: "filament",
+            filterValueQuery: querySpoolCounts,
+            includeEmptyFilter: false,
+            width: 120,
+            transform: (value) => value ?? 0,
           }),
           FilteredQueryColumn({
             ...commonProps,
