@@ -115,10 +115,18 @@ async def find(
 
     Returns a tuple containing the list of items and the total count of matching items.
     """
+    spool_count_subquery = (
+        select(models.Spool.filament_id.label("filament_id"), func.count(models.Spool.id).label("spool_count"))
+        .group_by(models.Spool.filament_id)
+        .subquery()
+    )
+    spool_count_expr = func.coalesce(spool_count_subquery.c.spool_count, 0)
+
     stmt = (
-        select(models.Filament)
+        select(models.Filament, spool_count_expr.label("spool_count"))
         .options(contains_eager(models.Filament.vendor))
         .join(models.Filament.vendor, isouter=True)
+        .join(spool_count_subquery, spool_count_subquery.c.filament_id == models.Filament.id, isouter=True)
     )
 
     stmt = add_where_clause_int_in(stmt, models.Filament.id, ids)
@@ -129,50 +137,39 @@ async def find(
     stmt = add_where_clause_str_opt(stmt, models.Filament.article_number, article_number)
     stmt = add_where_clause_str_opt(stmt, models.Filament.external_id, external_id)
     if has_spools is not None:
-        has_spool_subquery = select(models.Spool.id).where(models.Spool.filament_id == models.Filament.id).exists()
-        stmt = stmt.where(has_spool_subquery if has_spools else ~has_spool_subquery)
+        stmt = stmt.where(spool_count_expr > 0 if has_spools else spool_count_expr == 0)
     if spool_count is not None:
         if isinstance(spool_count, int):
             spool_count = [spool_count]
-        spool_count_subquery = (
-            select(func.count(models.Spool.id))
-            .where(models.Spool.filament_id == models.Filament.id)
-            .scalar_subquery()
-        )
-        stmt = stmt.where(spool_count_subquery.in_(spool_count))
+        stmt = stmt.where(spool_count_expr.in_(spool_count))
 
     total_count = None
 
-    if limit is not None:
-        total_count_stmt = stmt.with_only_columns(func.count(), maintain_column_froms=True)
-        total_count = (await db.execute(total_count_stmt)).scalar()
-
-        stmt = stmt.offset(offset).limit(limit)
-
     if sort_by is not None:
         for fieldstr, order in sort_by.items():
-            field = parse_nested_field(models.Filament, fieldstr)
+            if fieldstr == "spool_count":
+                field = spool_count_expr
+            else:
+                field = parse_nested_field(models.Filament, fieldstr)
             if order == SortOrder.ASC:
                 stmt = stmt.order_by(field.asc())
             elif order == SortOrder.DESC:
                 stmt = stmt.order_by(field.desc())
 
+    if limit is not None:
+        total_count_stmt = stmt.order_by(None).with_only_columns(func.count(models.Filament.id), maintain_column_froms=True)
+        total_count = (await db.execute(total_count_stmt)).scalar()
+
+        stmt = stmt.offset(offset).limit(limit)
+
     rows = await db.execute(
         stmt,
         execution_options={"populate_existing": True},
     )
-    result = list(rows.unique().scalars().all())
-
-    if result:
-        filament_ids = [item.id for item in result]
-        spool_count_rows = await db.execute(
-            select(models.Spool.filament_id, func.count(models.Spool.id))
-            .where(models.Spool.filament_id.in_(filament_ids))
-            .group_by(models.Spool.filament_id),
-        )
-        spool_counts = {filament_id: count for filament_id, count in spool_count_rows.all()}
-        for item in result:
-            setattr(item, "spool_count", spool_counts.get(item.id, 0))
+    result: list[models.Filament] = []
+    for item, item_spool_count in rows.unique().all():
+        setattr(item, "spool_count", int(item_spool_count or 0))
+        result.append(item)
 
     if total_count is None:
         total_count = len(result)
