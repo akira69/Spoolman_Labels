@@ -111,10 +111,7 @@ export const FilamentShow = () => {
           <div>
             <strong>{t("filament.fields.vendor")}:</strong>{" "}
             {record?.vendor?.id ? (
-              <button
-                onClick={gotoVendor}
-                style={{ background: "none", border: "none", color: "blue", cursor: "pointer", padding: 0 }}
-              >
+              <button className="app-link-button" onClick={gotoVendor}>
                 {record.vendor.name}
               </button>
             ) : (
