@@ -390,6 +390,19 @@ async def find(
 
 
 @router.get(
+    "/name",
+    name="Find filament names",
+    description="Get distinct filament names.",
+    response_model_exclude_none=True,
+)
+async def find_names(
+    *,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> list[str]:
+    return await filament.find_names(db=db)
+
+
+@router.get(
     "/spool-count",
     name="Find filament spool counts",
     description="Get distinct spool-count values across filaments.",
