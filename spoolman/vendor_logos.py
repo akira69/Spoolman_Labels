@@ -11,6 +11,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -185,65 +186,89 @@ def _write_manifest(
     return manifest
 
 
+def _get_archive_url(source_repo: str, source_ref: str) -> str:
+    encoded_ref = quote(source_ref, safe="")
+    return f"https://codeload.github.com/{source_repo}/tar.gz/{encoded_ref}"
+
+
 def _download_and_write_logo_pack(remote_state: VendorLogoRemoteState) -> dict[str, object]:
     target_dir = get_runtime_vendor_logo_dir()
-    web_dir = target_dir / "web"
-    print_dir = target_dir / "print"
-    web_dir.mkdir(parents=True, exist_ok=True)
-    print_dir.mkdir(parents=True, exist_ok=True)
+    staged_target_dir = Path(tempfile.mkdtemp(prefix=".vendor-logos-stage-", dir=target_dir.parent))
 
-    for path in web_dir.glob("*.png"):
-        path.unlink()
-    for path in print_dir.glob("*.png"):
-        path.unlink()
+    try:
+        web_dir = staged_target_dir / "web"
+        print_dir = staged_target_dir / "print"
+        web_dir.mkdir(parents=True, exist_ok=True)
+        print_dir.mkdir(parents=True, exist_ok=True)
 
-    with tempfile.TemporaryDirectory() as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-        archive_path = temp_dir / "logos.tar.gz"
-        archive_url = f"https://codeload.github.com/{remote_state.source_repo}/tar.gz/refs/heads/{remote_state.source_ref}"
-        request = Request(archive_url, headers={"User-Agent": "spoolman-vendor-logo-sync"})
-        with urlopen(request, timeout=60) as response:  # noqa: S310
-            archive_path.write_bytes(response.read())
+        with tempfile.TemporaryDirectory() as temp_dir_str:
+            temp_dir = Path(temp_dir_str)
+            archive_path = temp_dir / "logos.tar.gz"
+            archive_url = _get_archive_url(remote_state.source_repo, remote_state.source_ref)
+            request = Request(archive_url, headers={"User-Agent": "spoolman-vendor-logo-sync"})
+            with urlopen(request, timeout=60) as response:  # noqa: S310
+                archive_path.write_bytes(response.read())
 
-        with tarfile.open(archive_path, mode="r:gz") as archive:
-            archive.extractall(path=temp_dir)  # noqa: S202
+            with tarfile.open(archive_path, mode="r:gz") as archive:
+                archive.extractall(path=temp_dir)  # noqa: S202
 
-        source_logo_dir = _find_first_subdir(temp_dir, "logos")
-        source_web_dir = _find_first_subdir(temp_dir, "web")
-        if source_logo_dir is None and source_web_dir is None:
-            raise RuntimeError("Downloaded archive did not contain logos/ or web/ directories.")
+            source_logo_dir = _find_first_subdir(temp_dir, "logos")
+            source_web_dir = _find_first_subdir(temp_dir, "web")
+            if source_logo_dir is None and source_web_dir is None:
+                raise RuntimeError("Downloaded archive did not contain logos/ or web/ directories.")
 
-        web_files: list[str] = []
-        print_files: list[str] = []
+            web_files: list[str] = []
+            print_files: list[str] = []
 
-        if source_web_dir is not None:
-            for source_file in sorted(source_web_dir.rglob("*.png")):
-                dest_file = web_dir / source_file.name
-                shutil.copy2(source_file, dest_file)
-                web_files.append(f"/vendor-logos/web/{source_file.name}")
+            if source_web_dir is not None:
+                for source_file in sorted(source_web_dir.rglob("*.png")):
+                    dest_file = web_dir / source_file.name
+                    shutil.copy2(source_file, dest_file)
+                    web_files.append(f"/vendor-logos/web/{source_file.name}")
 
-        if source_logo_dir is not None:
-            for source_file in sorted(source_logo_dir.rglob("*.png")):
-                filename = source_file.name
-                if filename.lower().endswith("-web.png"):
-                    if source_web_dir is None:
-                        dest_file = web_dir / filename
-                        shutil.copy2(source_file, dest_file)
-                        web_files.append(f"/vendor-logos/web/{filename}")
-                    continue
-                dest_file = print_dir / filename
-                shutil.copy2(source_file, dest_file)
-                print_files.append(f"/vendor-logos/print/{filename}")
+            if source_logo_dir is not None:
+                for source_file in sorted(source_logo_dir.rglob("*.png")):
+                    filename = source_file.name
+                    if filename.lower().endswith("-web.png"):
+                        if source_web_dir is None:
+                            dest_file = web_dir / filename
+                            shutil.copy2(source_file, dest_file)
+                            web_files.append(f"/vendor-logos/web/{filename}")
+                        continue
+                    dest_file = print_dir / filename
+                    shutil.copy2(source_file, dest_file)
+                    print_files.append(f"/vendor-logos/print/{filename}")
 
-    return _write_manifest(
-        target_dir=target_dir,
-        source_repo=remote_state.source_repo,
-        source_ref=remote_state.source_ref,
-        source_url=remote_state.source_url,
-        signature=remote_state.signature,
-        web_files=web_files,
-        print_files=print_files,
-    )
+        manifest = _write_manifest(
+            target_dir=staged_target_dir,
+            source_repo=remote_state.source_repo,
+            source_ref=remote_state.source_ref,
+            source_url=remote_state.source_url,
+            signature=remote_state.signature,
+            web_files=web_files,
+            print_files=print_files,
+        )
+
+        backup_dir = target_dir.parent / f".vendor-logos-backup-{uuid4().hex}"
+        had_existing_target = target_dir.exists()
+        try:
+            if had_existing_target:
+                os.replace(target_dir, backup_dir)
+            os.replace(staged_target_dir, target_dir)
+        except Exception:
+            if staged_target_dir.exists():
+                shutil.rmtree(staged_target_dir, ignore_errors=True)
+            if had_existing_target and backup_dir.exists() and not target_dir.exists():
+                os.replace(backup_dir, target_dir)
+            raise
+        else:
+            if backup_dir.exists():
+                shutil.rmtree(backup_dir, ignore_errors=True)
+
+        return manifest
+    finally:
+        if staged_target_dir.exists():
+            shutil.rmtree(staged_target_dir, ignore_errors=True)
 
 
 def sync_logo_pack_from_github_if_needed() -> VendorLogoSyncResult:
