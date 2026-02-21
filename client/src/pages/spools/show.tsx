@@ -1,9 +1,10 @@
-import { InboxOutlined, PrinterOutlined, ToTopOutlined, ToolOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, InboxOutlined, PrinterOutlined, ToTopOutlined, ToolOutlined } from "@ant-design/icons";
 import { DateField, Show, TextField } from "@refinedev/antd";
-import { useInvalidate, useShow, useTranslate } from "@refinedev/core";
+import { useDelete, useInvalidate, useShow, useTranslate } from "@refinedev/core";
 import { Button, Col, Modal, Row, Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { useNavigate } from "react-router";
 import { ExtraFieldDisplay } from "../../components/extraFields";
 import ColorHexPreview from "../../components/colorHexPreview";
 import { NumberFieldUnit } from "../../components/numberField";
@@ -23,9 +24,11 @@ const { confirm } = Modal;
 
 export const SpoolShow = () => {
   const t = useTranslate();
+  const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.spool);
   const currencyFormatter = useCurrencyFormatter();
   const invalidate = useInvalidate();
+  const { mutate: deleteSpoolMutation } = useDelete();
 
   const { query } = useShow<ISpool>({
     liveMode: "auto",
@@ -42,10 +45,8 @@ export const SpoolShow = () => {
     return currencyFormatter.format(price);
   };
 
-  // Provides the function to open the spool adjustment modal and the modal component itself
   const { openSpoolAdjustModal, spoolAdjustModal } = useSpoolAdjustModal();
 
-  // Function for opening an ant design modal that asks for confirmation for archiving a spool
   const archiveSpool = async (spool: ISpool, archive: boolean) => {
     await setSpoolArchived(spool, archive);
     invalidate({
@@ -59,7 +60,6 @@ export const SpoolShow = () => {
     if (spool === undefined) {
       return;
     }
-    // If the spool has no remaining weight, archive it immediately since it's likely not a mistake
     if (spool.remaining_weight != undefined && spool.remaining_weight <= 0) {
       await archiveSpool(spool, true);
     } else {
@@ -74,6 +74,35 @@ export const SpoolShow = () => {
         },
       });
     }
+  };
+
+  const deleteSpoolPopup = (spool: ISpool | undefined) => {
+    if (!spool) {
+      return;
+    }
+    confirm({
+      title: t("buttons.confirm"),
+      content: `${t("buttons.delete")} #${spool.id}?`,
+      okText: t("buttons.delete"),
+      okButtonProps: { danger: true },
+      cancelText: t("buttons.cancel"),
+      onOk: () =>
+        new Promise<void>((resolve, reject) => {
+          deleteSpoolMutation(
+            {
+              resource: "spool",
+              id: spool.id,
+            },
+            {
+              onSuccess: () => {
+                navigate("/spool");
+                resolve();
+              },
+              onError: () => reject(new Error("delete failed")),
+            },
+          );
+        }),
+    });
   };
 
   const formatFilament = (item: IFilament) => {
@@ -97,8 +126,8 @@ export const SpoolShow = () => {
     record?.filament.multi_color_hexes && record.filament.multi_color_direction === "longitudinal"
       ? "Longitudinal Multi"
       : record?.filament.multi_color_hexes
-      ? "Coextruded Multi"
-      : null;
+        ? "Coextruded Multi"
+        : null;
 
   const formatTitle = (item: ISpool) => {
     return t("spool.titles.show_title", {
@@ -112,7 +141,7 @@ export const SpoolShow = () => {
     <Show
       isLoading={isLoading}
       title={record ? formatTitle(record) : ""}
-      headerButtons={({ defaultButtons }) => (
+      headerButtons={() => (
         <>
           <Button type="primary" icon={<ToolOutlined />} onClick={() => record && openSpoolAdjustModal(record)}>
             {t("spool.titles.adjust")}
@@ -130,21 +159,27 @@ export const SpoolShow = () => {
           >
             {t("printing.qrcode.selectButton")}
           </Button>
-          {record?.archived ? (
-            <Button icon={<ToTopOutlined />} onClick={() => archiveSpool(record, false)}>
-              {t("buttons.unArchive")}
-            </Button>
-          ) : (
-            <Button danger icon={<InboxOutlined />} onClick={() => archiveSpoolPopup(record)}>
-              {t("buttons.archive")}
-            </Button>
-          )}
-
-          {defaultButtons}
+          <Button icon={<EditOutlined />} type="primary" onClick={() => record && navigate(`/spool/edit/${record.id}`)}>
+            {t("buttons.edit")}
+          </Button>
           {spoolAdjustModal}
         </>
       )}
     >
+      <div className="show-floating-actions">
+        {record?.archived ? (
+          <Button icon={<ToTopOutlined />} onClick={() => archiveSpool(record, false)}>
+            {t("buttons.unArchive")}
+          </Button>
+        ) : (
+          <Button danger icon={<InboxOutlined />} onClick={() => archiveSpoolPopup(record)}>
+            {t("buttons.archive")}
+          </Button>
+        )}
+        <Button danger icon={<DeleteOutlined />} onClick={() => deleteSpoolPopup(record)}>
+          {t("buttons.delete")}
+        </Button>
+      </div>
       <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
         {`${t("spool.fields.registered")} ${
           record?.registered ? dayjs.utc(record.registered).local().format("YYYY-MM-DD HH:mm:ss") : "-"

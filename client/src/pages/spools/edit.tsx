@@ -247,7 +247,27 @@ export const SpoolEdit = () => {
   }, [initialUsedWeight]);
 
   return (
-    <Edit saveButtonProps={saveButtonProps}>
+    <Edit
+      saveButtonProps={saveButtonProps}
+      footerButtons={({ defaultButtons }) => (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 16,
+            right: 92,
+            zIndex: 1200,
+            display: "flex",
+            gap: 8,
+            padding: "8px 10px",
+            borderRadius: 10,
+            background: "rgba(17, 17, 17, 0.88)",
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          {defaultButtons}
+        </div>
+      )}
+    >
       {contextHolder}
       <Form {...formProps} layout="vertical">
         <Row gutter={[24, 16]} align="top">

@@ -1,7 +1,8 @@
 import { CopyOutlined, DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
-import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Table, Typography, message } from "antd";
+import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Typography, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
+import ResizableTable from "../../components/resizableTable";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -474,7 +475,8 @@ Spool Weight: {filament.spool_weight} g
               />
             </Form.Item>
             <Modal open={templateHelpOpen} footer={null} onCancel={() => setTemplateHelpOpen(false)}>
-              <Table
+              <ResizableTable
+                columnResizeKey="spool-export-template-tags"
                 size="small"
                 showHeader={false}
                 pagination={false}
