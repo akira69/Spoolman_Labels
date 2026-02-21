@@ -154,7 +154,7 @@ export const SpoolShow = () => {
         <Col xs={24} lg={16}>
           {record && (
             <Title level={5}>
-              <a href={filamentURL(record.filament)}>{`${formatFilament(record.filament)} Filament`}</a>
+              <a className="app-link" href={filamentURL(record.filament)}>{`${formatFilament(record.filament)} Filament`}</a>
             </Title>
           )}
           <Title level={5}>{t("filament.fields.color_hex")}</Title>
@@ -173,7 +173,7 @@ export const SpoolShow = () => {
           <div>
             <strong>{t("filament.fields.vendor")}:</strong>{" "}
             {record?.filament.vendor?.id ? (
-              <a href={`/vendor/show/${record.filament.vendor.id}`}>{record.filament.vendor.name}</a>
+              <a className="app-link" href={`/vendor/show/${record.filament.vendor.id}`}>{record.filament.vendor.name}</a>
             ) : (
               <span>{record?.filament.vendor?.name ?? "-"}</span>
             )}
