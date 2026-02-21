@@ -32,27 +32,30 @@
 }
 
 
-.app-link,
-.app-link:visited {
-  color: #d07a36;
+a.app-link,
+a.app-link:visited,
+.ant-typography a.app-link,
+.ant-typography a.app-link:visited {
+  color: #d07a36 !important;
   text-decoration: none;
 }
 
-.app-link:hover {
-  color: #e08a46;
+a.app-link:hover,
+.ant-typography a.app-link:hover {
+  color: #e08a46 !important;
   text-decoration: underline;
 }
 
 .app-link-button {
   background: none;
   border: none;
-  color: #d07a36;
+  color: #d07a36 !important;
   cursor: pointer;
   padding: 0;
   font: inherit;
 }
 
 .app-link-button:hover {
-  color: #e08a46;
+  color: #e08a46 !important;
   text-decoration: underline;
 }
