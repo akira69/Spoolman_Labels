@@ -146,7 +146,7 @@ export function getVendorLogoCandidates(vendor: IVendor | undefined, usePrintLog
 
   const extraLogo = parseExtraString(vendor.extra?.logo_url);
   const extraPrintLogo = parseExtraString(vendor.extra?.print_logo_url);
-  const customLogo = usePrintLogo ? extraPrintLogo ?? extraLogo : extraLogo;
+  const customLogo = usePrintLogo ? extraPrintLogo : extraLogo;
 
   const candidates: string[] = [];
   const customUrl = normalizeUrl(customLogo);
@@ -167,7 +167,7 @@ export function getVendorLogoCandidates(vendor: IVendor | undefined, usePrintLog
       `${basePath}/vendor-logos/${slug}.png`,
       `${basePath}/vendor-logos/${slug}-web.png`,
     ];
-    candidates.push(...(usePrintLogo ? [...printCandidates, ...webCandidates] : [...webCandidates, ...printCandidates]));
+    candidates.push(...(usePrintLogo ? printCandidates : [...webCandidates, ...printCandidates]));
   }
 
   return [...new Set(candidates)];
