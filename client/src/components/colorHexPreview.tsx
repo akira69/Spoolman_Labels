@@ -38,8 +38,8 @@ export default function ColorHexPreview({ colorHex, multiColorHexes, multiColorD
   if (isLongitudinal) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        {colors.map((hex) => (
-          <div key={hex} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {colors.map((hex, index) => (
+          <div key={`${hex}-${index}`} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div
               style={{
                 width: 56,
@@ -56,50 +56,23 @@ export default function ColorHexPreview({ colorHex, multiColorHexes, multiColorD
     );
   }
 
-  const swatchWidth = Math.max(64, colors.length * 22);
-  const strip = (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${colors.length}, minmax(0, 1fr))`,
-        width: swatchWidth,
-        height: 26,
-        borderRadius: 6,
-        overflow: "hidden",
-        border: "1px solid rgba(255,255,255,0.22)",
-      }}
-    >
-      {colors.map((hex, index) => (
-        <div key={`${hex}-${index}`} style={{ background: hex }} />
-      ))}
-    </div>
-  );
-
-  if (colors.length === 2) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <Typography.Text style={SMALL_TEXT_STYLE}>{colors[0]}</Typography.Text>
-        {strip}
-        <Typography.Text style={SMALL_TEXT_STYLE}>{colors[1]}</Typography.Text>
-      </div>
-    );
-  }
-
-  const middle = colors.slice(1, -1);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <Typography.Text style={SMALL_TEXT_STYLE}>{colors[0]}</Typography.Text>
-        {strip}
-        <Typography.Text style={SMALL_TEXT_STYLE}>{colors[colors.length - 1]}</Typography.Text>
-      </div>
-      <div style={{ marginLeft: 8 + 54, display: "grid", gridTemplateColumns: `repeat(${middle.length}, minmax(0, 1fr))`, width: swatchWidth - 44 }}>
-        {middle.map((hex, index) => (
-          <Typography.Text key={`${hex}-${index}`} style={{ ...SMALL_TEXT_STYLE, textAlign: "center" }}>
-            {hex}
-          </Typography.Text>
-        ))}
-      </div>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 0 }}>
+      {colors.map((hex, index) => (
+        <div
+          key={`${hex}-${index}`}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: 64,
+            gap: 4,
+          }}
+        >
+          <SpoolIcon color={hex} size="large" no_margin />
+          <Typography.Text style={{ ...SMALL_TEXT_STYLE, textAlign: "center" }}>{hex}</Typography.Text>
+        </div>
+      ))}
     </div>
   );
 }
