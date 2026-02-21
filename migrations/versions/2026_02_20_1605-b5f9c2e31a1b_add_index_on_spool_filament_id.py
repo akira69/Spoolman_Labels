@@ -19,8 +19,12 @@ def upgrade() -> None:
     """Perform the upgrade."""
     conn = op.get_bind()
     inspector = sa.inspect(conn)
-    index_names = {index["name"] for index in inspector.get_indexes("spool")}
-    if "ix_spool_filament_id" not in index_names:
+    existing_indexes = inspector.get_indexes("spool")
+
+    has_filament_id_index = any(
+        [column.lower() for column in (index.get("column_names") or [])] == ["filament_id"] for index in existing_indexes
+    )
+    if not has_filament_id_index:
         op.create_index("ix_spool_filament_id", "spool", ["filament_id"], unique=False)
 
 
