@@ -1,10 +1,11 @@
 import { useTable } from "@refinedev/antd";
 import { CrudFilter } from "@refinedev/core";
-import { Button, Checkbox, Col, Dropdown, Input, message, Pagination, Row, Space, Table } from "antd";
+import { Button, Checkbox, Col, Dropdown, Input, message, Pagination, Row, Space } from "antd";
 import { t } from "i18next";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { FilteredQueryColumn, SortedColumn, SpoolIconColumn } from "../../components/column";
+import ResizableTable from "../../components/resizableTable";
 import {
   useSpoolmanFilamentNames,
   useSpoolmanMaterials,
@@ -291,7 +292,8 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
           </Col>
         </Row>
         <div style={{ flex: 1, minHeight: 0 }}>
-          <Table
+          <ResizableTable
+            columnResizeKey="filament-select-modal-table"
             {...tableProps}
             rowKey="id"
             tableLayout="fixed"

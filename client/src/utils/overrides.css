@@ -59,3 +59,57 @@ a.app-link:hover,
   color: #e08a46 !important;
   text-decoration: underline;
 }
+
+
+.show-floating-actions {
+  position: fixed;
+  right: 92px;
+  bottom: 16px;
+  z-index: 1200;
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(17, 17, 17, 0.88);
+  backdrop-filter: blur(4px);
+}
+
+@media (max-width: 768px) {
+  .show-floating-actions {
+    right: 16px;
+    bottom: 16px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+
+.resizable-table-header-cell {
+  position: relative;
+}
+
+.resizable-table-header-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+
+.resizable-table-header-handle::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background-color 0.15s ease;
+}
+
+.resizable-table-header-handle:hover::after {
+  background: #d07a36;
+}

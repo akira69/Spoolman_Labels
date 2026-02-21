@@ -11,7 +11,6 @@ import {
   Popconfirm,
   Select,
   Space,
-  Table,
   message,
 } from "antd";
 import { FormItemProps, Rule } from "antd/es/form";
@@ -24,6 +23,7 @@ import { useState } from "react";
 import { Trans } from "react-i18next";
 import { useParams } from "react-router";
 import { DateTimePicker } from "../../components/dateTimePicker";
+import ResizableTable from "../../components/resizableTable";
 import { InputNumberRange } from "../../components/inputNumberRange";
 import { EntityType, Field, FieldType, useDeleteField, useGetFields, useSetField } from "../../utils/queryFields";
 
@@ -608,7 +608,8 @@ export function ExtraFieldsSettings() {
         }}
       />
       <Form form={form} component={false} disabled={isSubmitting}>
-        <Table
+        <ResizableTable
+          columnResizeKey={`extra-fields-${entityType}`}
           components={{
             body: {
               cell: EditableCell,

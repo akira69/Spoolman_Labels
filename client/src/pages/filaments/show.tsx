@@ -1,7 +1,7 @@
+import { DeleteOutlined, EditOutlined, PrinterOutlined } from "@ant-design/icons";
 import { Show, TextField } from "@refinedev/antd";
-import { useShow, useTranslate } from "@refinedev/core";
-import { PrinterOutlined } from "@ant-design/icons";
-import { Button, Col, Row, Typography } from "antd";
+import { useDelete, useShow, useTranslate } from "@refinedev/core";
+import { Button, Col, Modal, Row, Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useNavigate } from "react-router";
@@ -14,15 +14,19 @@ import { EntityType, useGetFields } from "../../utils/queryFields";
 import { useCurrencyFormatter } from "../../utils/settings";
 import { getBasePath, stripBasePath } from "../../utils/url";
 import { IFilament } from "./model";
+
 dayjs.extend(utc);
 
 const { Text, Title } = Typography;
+const { confirm } = Modal;
 
 export const FilamentShow = () => {
   const t = useTranslate();
   const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.filament);
   const currencyFormatter = useCurrencyFormatter();
+  const { mutate: deleteFilamentMutation } = useDelete();
+
   const { query } = useShow<IFilament>({
     liveMode: "auto",
   });
@@ -33,8 +37,8 @@ export const FilamentShow = () => {
     record?.multi_color_hexes && record.multi_color_direction === "longitudinal"
       ? "Longitudinal Multi"
       : record?.multi_color_hexes
-      ? "Coextruded Multi"
-      : null;
+        ? "Coextruded Multi"
+        : null;
 
   const formatTitle = (item: IFilament) => {
     let vendorPrefix = "";
@@ -48,21 +52,50 @@ export const FilamentShow = () => {
     });
   };
 
-  const gotoVendor = (): undefined => {
-    const URL = `/vendor/show/${record?.vendor?.id}`;
-    navigate(URL);
+  const gotoVendor = (): void => {
+    const url = `/vendor/show/${record?.vendor?.id}`;
+    navigate(url);
   };
 
-  const gotoSpools = (): undefined => {
-    const URL = `/spool#filters=[{"field":"filament.id","operator":"in","value":[${record?.id}]}]`;
-    navigate(URL);
+  const gotoSpools = (): void => {
+    const url = `/spool#filters=[{"field":"filament.id","operator":"in","value":[${record?.id}]}]`;
+    navigate(url);
+  };
+
+  const deleteFilamentPopup = (filament: IFilament | undefined) => {
+    if (!filament) {
+      return;
+    }
+    confirm({
+      title: t("buttons.confirm"),
+      content: `${t("buttons.delete")} #${filament.id}?`,
+      okText: t("buttons.delete"),
+      okButtonProps: { danger: true },
+      cancelText: t("buttons.cancel"),
+      onOk: () =>
+        new Promise<void>((resolve, reject) => {
+          deleteFilamentMutation(
+            {
+              resource: "filament",
+              id: filament.id,
+            },
+            {
+              onSuccess: () => {
+                navigate("/filament");
+                resolve();
+              },
+              onError: () => reject(new Error("delete failed")),
+            },
+          );
+        }),
+    });
   };
 
   return (
     <Show
       isLoading={isLoading}
       title={record ? formatTitle(record) : ""}
-      headerButtons={({ defaultButtons }) => (
+      headerButtons={() => (
         <>
           <Button type="primary" onClick={gotoSpools}>
             {t("filament.fields.spools")}
@@ -80,10 +113,21 @@ export const FilamentShow = () => {
           >
             {t("printing.qrcode.selectButton")}
           </Button>
-          {defaultButtons}
+          <Button icon={<EditOutlined />} type="primary" onClick={() => record && navigate(`/filament/edit/${record.id}`)}>
+            {t("buttons.edit")}
+          </Button>
         </>
       )}
     >
+      <div className="show-floating-actions">
+        <Button
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => deleteFilamentPopup(record)}
+        >
+          {t("buttons.delete")}
+        </Button>
+      </div>
       <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
         {`${t("filament.fields.registered")} ${
           record?.registered ? dayjs.utc(record.registered).local().format("YYYY-MM-DD HH:mm:ss") : "-"
