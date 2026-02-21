@@ -3,8 +3,10 @@
   --camera-button-bottom: 24px;
   --camera-button-size: 56px;
   --camera-button-gap: 12px;
+  --floating-actions-padding-y: 8px;
+  --floating-actions-padding-x: 10px;
   --floating-actions-right: calc(var(--camera-button-right) + var(--camera-button-size) + var(--camera-button-gap));
-  --floating-actions-bottom: var(--camera-button-bottom);
+  --floating-actions-bottom: calc(var(--camera-button-bottom) - var(--floating-actions-padding-y));
 }
 
 #qty-input {
@@ -77,8 +79,9 @@ a.app-link:hover,
   bottom: var(--floating-actions-bottom);
   z-index: 1200;
   display: flex;
+  align-items: flex-end;
   gap: 8px;
-  padding: 8px 10px;
+  padding: var(--floating-actions-padding-y) var(--floating-actions-padding-x);
   border-radius: 10px;
   background: rgba(17, 17, 17, 0.88);
   backdrop-filter: blur(4px);
