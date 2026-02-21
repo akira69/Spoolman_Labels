@@ -1,3 +1,12 @@
+:root {
+  --camera-button-right: 24px;
+  --camera-button-bottom: 24px;
+  --camera-button-size: 56px;
+  --camera-button-gap: 12px;
+  --floating-actions-right: calc(var(--camera-button-right) + var(--camera-button-size) + var(--camera-button-gap));
+  --floating-actions-bottom: var(--camera-button-bottom);
+}
+
 #qty-input {
   text-align: center !important;
 }
@@ -61,10 +70,11 @@ a.app-link:hover,
 }
 
 
-.show-floating-actions {
+.show-floating-actions,
+.floating-form-actions {
   position: fixed;
-  right: 92px;
-  bottom: 16px;
+  right: var(--floating-actions-right);
+  bottom: var(--floating-actions-bottom);
   z-index: 1200;
   display: flex;
   gap: 8px;
@@ -75,9 +85,10 @@ a.app-link:hover,
 }
 
 @media (max-width: 768px) {
-  .show-floating-actions {
-    right: 16px;
-    bottom: 16px;
+  .show-floating-actions,
+  .floating-form-actions {
+    right: var(--floating-actions-right);
+    bottom: var(--floating-actions-bottom);
     flex-wrap: wrap;
     justify-content: flex-end;
   }
