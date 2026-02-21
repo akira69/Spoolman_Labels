@@ -23,6 +23,7 @@ import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../compo
 import { useVendorLogoManifest } from "../../components/otherModels";
 import VendorLogo from "../../components/vendorLogo";
 import { EntityType, useGetFields } from "../../utils/queryFields";
+import { getAPIURL } from "../../utils/url";
 import { suggestVendorLogoOptions, suggestVendorLogoPaths } from "../../utils/vendorLogo";
 import { IVendor, IVendorParsedExtras } from "./model";
 
@@ -230,7 +231,7 @@ export const VendorEdit = () => {
   const syncLogoPackFromGithub = async () => {
     setIsSyncingLogoPack(true);
     try {
-      const response = await fetch("/api/v1/vendor/logo-pack/sync-from-github", {
+      const response = await fetch(getAPIURL() + "/vendor/logo-pack/sync-from-github", {
         method: "POST",
       });
       const body = (await response.json()) as {
