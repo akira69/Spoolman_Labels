@@ -362,7 +362,9 @@
         "fields_help": {
             "empty_spool_weight": "The weight of an empty spool from this manufacturer.",
             "logo_url": "Optional custom logo used in the UI. Supports absolute URLs or local paths like /vendor-logos/web/bambu-lab-web.png.",
-            "print_logo_url": "Optional custom logo used for label rendering. Supports absolute URLs or local paths like /vendor-logos/print/bambu-lab.png."
+            "print_logo_url": "Optional custom logo used for label rendering. Supports absolute URLs or local paths like /vendor-logos/print/bambu-lab.png.",
+            "logo_suggestions": "Checks the logo database for files with names similar to this manufacturer.",
+            "print_logo_suggestions": "Checks the print-logo database for files with names similar to this manufacturer."
         },
         "titles": {
             "create": "Create Manufacturer",
@@ -374,14 +376,19 @@
         },
         "buttons": {
             "sync_logos": "Sync Logos",
-            "clear_logo_url": "Clear URL"
+            "clear_logo_url": "Clear URL",
+            "convert_logo_to_print": "Convert Logo to Print",
+            "convert_logo_to_print_help": "Creates a black-and-white print logo from the current Logo URL and stores it as a separate local print logo file."
         },
         "form": {
             "vendor_updated": "This manufacturer has been updated by someone/something else since you opened this page. Saving will overwrite those changes!",
             "logo_sync_no_match": "No matching logos found for this manufacturer name.",
             "logo_sync_applied": "Suggested logo paths applied.",
             "logo_preview_auto_notice": "using auto-matched logo from bundled logo pack",
-            "logo_preview_default_notice": "no logo defined, using default generated text logo"
+            "logo_preview_default_notice": "no logo defined, using default generated text logo",
+            "logo_convert_requires_web_logo": "Set a Logo URL first.",
+            "logo_convert_success": "Generated print logo from web logo.",
+            "logo_convert_error": "Could not generate a print logo from this Logo URL."
         }
     },
     "home": {

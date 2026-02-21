@@ -14,7 +14,7 @@ from spoolman.database import vendor
 from spoolman.database.database import get_db_session
 from spoolman.database.utils import SortOrder
 from spoolman.extra_fields import EntityType, get_extra_fields, validate_extra_field_dict
-from spoolman.vendor_logos import sync_logo_pack_from_github_if_needed
+from spoolman.vendor_logos import convert_web_logo_to_print_logo, sync_logo_pack_from_github_if_needed
 from spoolman.ws import websocket_manager
 
 router = APIRouter(
@@ -78,6 +78,24 @@ class VendorLogoPackSyncResult(BaseModel):
     local_signature: str | None = Field(None, description="Previous local pack signature before check.")
     remote_signature: str = Field(description="Latest signature detected from GitHub.")
     synced_at_utc: str | None = Field(None, description="UTC timestamp of last successful pack sync.")
+
+
+class VendorLogoConvertRequest(BaseModel):
+    logo_url: str = Field(description="Source web logo URL or local logo path.")
+    vendor_name: str | None = Field(None, max_length=64, description="Optional vendor name for filename slug.")
+
+    @field_validator("logo_url")
+    @classmethod
+    def validate_logo_url(cls: type["VendorLogoConvertRequest"], value: str) -> str:
+        trimmed = value.strip()
+        if trimmed == "":
+            raise ValueError("Logo URL is required.")
+        return trimmed
+
+
+class VendorLogoConvertResult(BaseModel):
+    print_logo_url: str = Field(description="Generated print logo URL.")
+    message: str = Field(description="Result summary.")
 
 
 @router.get(
@@ -197,6 +215,24 @@ async def sync_logo_pack_from_github() -> VendorLogoPackSyncResult:
         local_signature=result.local_signature,
         remote_signature=result.remote_signature,
         synced_at_utc=result.synced_at_utc,
+    )
+
+
+@router.post(
+    "/logo-pack/convert-web-to-print",
+    name="Convert vendor web logo to print logo",
+    description="Converts a web logo into a black-and-white print logo stored in runtime vendor logos.",
+    response_model=VendorLogoConvertResult,
+)
+async def convert_web_logo_to_print(body: VendorLogoConvertRequest) -> VendorLogoConvertResult | JSONResponse:
+    try:
+        print_logo_url = await asyncio.to_thread(convert_web_logo_to_print_logo, body.logo_url, body.vendor_name)
+    except (ValueError, RuntimeError, OSError) as exc:
+        return JSONResponse(status_code=400, content=Message(message=str(exc)).model_dump())
+
+    return VendorLogoConvertResult(
+        print_logo_url=print_logo_url,
+        message="Generated print logo from web logo.",
     )
 
 
