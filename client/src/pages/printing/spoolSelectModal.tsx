@@ -1,3 +1,4 @@
+import { EditOutlined, FilterOutlined } from "@ant-design/icons";
 import { useTable } from "@refinedev/antd";
 import { CrudFilter } from "@refinedev/core";
 import { Button, Checkbox, Col, Dropdown, Input, message, Pagination, Row, Space } from "antd";
@@ -176,6 +177,7 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
   const isAllFilteredSelected = dataSource.every((spool) => selectedSet.has(spool.id));
   const isSomeButNotAllFilteredSelected =
     dataSource.some((spool) => selectedSet.has(spool.id)) && !isAllFilteredSelected;
+  const hasActiveFilters = searchValue.trim().length > 0 || (filters?.length ?? 0) > 0;
 
   const commonProps = {
     t,
@@ -236,6 +238,8 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
         <Row gutter={[12, 12]} align="middle" style={{ marginBottom: 8 }}>
           <Col flex="none">
             <Button
+              type={hasActiveFilters ? "primary" : "default"}
+              icon={<FilterOutlined />}
               onClick={() => {
                 setSearchValue("");
                 setFilters([], "replace");
@@ -264,7 +268,7 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
                 },
               }}
             >
-              <Button>{t("buttons.hideColumns")}</Button>
+              <Button type="primary" icon={<EditOutlined />}>{t("buttons.hideColumns")}</Button>
             </Dropdown>
           </Col>
           <Col flex="auto">

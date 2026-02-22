@@ -207,6 +207,56 @@ function FilterDropdownContent(props: {
   );
 }
 
+
+function SearchFilterDropdownContent(props: {
+  selectedKeys: Key[];
+  setSelectedKeys: (keys: Key[]) => void;
+  confirm: () => void;
+  clearFilters?: () => void;
+  t: (key: string) => string;
+  placeholder: string;
+}) {
+  const { selectedKeys, setSelectedKeys, confirm, clearFilters, t, placeholder } = props;
+  const currentValue = selectedKeys.length > 0 ? String(selectedKeys[0]) : "";
+
+  return (
+    <div style={{ padding: 8, width: 240 }}>
+      <Input
+        allowClear
+        size="small"
+        value={currentValue}
+        placeholder={placeholder}
+        onChange={(event) => {
+          const value = event.target.value;
+          setSelectedKeys(value ? [value] : []);
+        }}
+        onPressEnter={() => confirm()}
+      />
+      <Space style={{ marginTop: 8 }}>
+        <Button
+          size="small"
+          type="primary"
+          onClick={() => {
+            confirm();
+          }}
+        >
+          {t("buttons.filter")}
+        </Button>
+        <Button
+          size="small"
+          onClick={() => {
+            setSelectedKeys([]);
+            clearFilters?.();
+            confirm();
+          }}
+        >
+          {t("buttons.clear")}
+        </Button>
+      </Space>
+    </div>
+  );
+}
+
 interface Entity {
   id: number;
 }
@@ -226,6 +276,8 @@ interface BaseColumnProps<Obj extends Entity> {
   title?: string;
   align?: AlignType;
   sorter?: boolean;
+  searchable?: boolean;
+  searchPlaceholder?: string;
   t: (key: string) => string;
   navigate: (link: string) => void;
   dataSource: Obj[];
@@ -314,6 +366,27 @@ function Column<Obj extends Entity>(
     if (props.dataId) {
       columnProps.key = props.dataId;
     }
+  } else if (props.searchable) {
+    const filterField = props.dataId ?? (Array.isArray(props.id) ? undefined : (props.id as keyof Obj));
+    if (filterField) {
+      const typedFilters = typeFilters<Obj>(props.tableState.filters);
+      const filteredValue = getFiltersForField(typedFilters, filterField);
+      columnProps.filteredValue = filteredValue;
+      columnProps.filterMultiple = false;
+      columnProps.filterDropdown = ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => (
+        <SearchFilterDropdownContent
+          selectedKeys={selectedKeys}
+          setSelectedKeys={setSelectedKeys}
+          confirm={confirm}
+          clearFilters={clearFilters}
+          t={t}
+          placeholder={props.searchPlaceholder ?? t("buttons.filter")}
+        />
+      );
+      if (props.dataId) {
+        columnProps.key = props.dataId;
+      }
+    }
   }
 
   // Render
@@ -363,6 +436,7 @@ export function SortedColumn<Obj extends Entity>(props: BaseColumnProps<Obj>) {
   return Column({
     ...props,
     sorter: true,
+    searchable: props.searchable ?? true,
   });
 }
 
@@ -371,6 +445,7 @@ export function RichColumn<Obj extends Entity>(
 ) {
   return Column({
     ...props,
+    searchable: props.searchable ?? true,
     render: (rawValue: string | undefined) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       return enrichText(value);
@@ -435,6 +510,7 @@ export function NumberColumn<Obj extends Entity>(props: NumberColumnProps<Obj>) 
   return Column({
     ...props,
     align: "right",
+    searchable: props.searchable ?? true,
     render: (rawValue) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       if (value === null || value === undefined) {
@@ -457,6 +533,7 @@ export function NumberColumn<Obj extends Entity>(props: NumberColumnProps<Obj>) 
 export function DateColumn<Obj extends Entity>(props: BaseColumnProps<Obj>) {
   return Column({
     ...props,
+    searchable: props.searchable ?? true,
     render: (rawValue) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       return (
@@ -570,6 +647,7 @@ export function SpoolIconColumn<Obj extends Entity>(props: SpoolIconColumnProps<
 export function NumberRangeColumn<Obj extends Entity>(props: NumberColumnProps<Obj>) {
   return Column({
     ...props,
+    searchable: props.searchable ?? true,
     render: (rawValue) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       if (value === null || value === undefined) {

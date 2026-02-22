@@ -309,6 +309,46 @@ async def find(
             examples=["0", "1,2,3"],
         ),
     ] = None,
+    filament_id: Annotated[
+        str | None,
+        Query(alias="id", title="Filament ID", description="Partial match against filament ID values."),
+    ] = None,
+    price: Annotated[
+        str | None,
+        Query(title="Price", description="Partial match against filament price values as text."),
+    ] = None,
+    density: Annotated[
+        str | None,
+        Query(title="Density", description="Partial match against density values as text."),
+    ] = None,
+    diameter: Annotated[
+        str | None,
+        Query(title="Diameter", description="Partial match against diameter values as text."),
+    ] = None,
+    weight: Annotated[
+        str | None,
+        Query(title="Weight", description="Partial match against filament weight values as text."),
+    ] = None,
+    spool_weight: Annotated[
+        str | None,
+        Query(title="Spool Weight", description="Partial match against spool-weight values as text."),
+    ] = None,
+    settings_extruder_temp: Annotated[
+        str | None,
+        Query(title="Extruder Temperature", description="Partial match against extruder-temperature values."),
+    ] = None,
+    settings_bed_temp: Annotated[
+        str | None,
+        Query(title="Bed Temperature", description="Partial match against bed-temperature values."),
+    ] = None,
+    registered: Annotated[
+        str | None,
+        Query(title="Registered", description="Partial match against registration timestamps."),
+    ] = None,
+    comment: Annotated[
+        str | None,
+        Query(title="Comment", description="Partial case-insensitive match against filament comments."),
+    ] = None,
     external_id: Annotated[
         str | None,
         Query(
@@ -370,10 +410,20 @@ async def find(
         spool_count=spool_counts,
         vendor_name=vendor_name if vendor_name is not None else vendor_name_old,
         vendor_id=vendor_ids,
+        filament_id=filament_id,
         name=name,
         material=material,
         article_number=article_number,
+        price=price,
+        density=density,
+        diameter=diameter,
+        weight=weight,
+        spool_weight=spool_weight,
+        settings_extruder_temp=settings_extruder_temp,
+        settings_bed_temp=settings_bed_temp,
+        registered=registered,
         external_id=external_id,
+        comment=comment,
         sort_by=sort_by,
         limit=limit,
         offset=offset,

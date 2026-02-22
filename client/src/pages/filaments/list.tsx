@@ -175,6 +175,7 @@ export const FilamentList = () => {
     tableState,
     sorter: true,
   };
+  const hasActiveFilters = (filters?.length ?? 0) > 0;
   return (
     <List
       headerButtons={({ defaultButtons }) => (
@@ -189,7 +190,7 @@ export const FilamentList = () => {
             {t("printing.qrcode.selectButton")}
           </Button>
           <Button
-            type="primary"
+            type={hasActiveFilters ? "primary" : "default"}
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");

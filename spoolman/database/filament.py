@@ -15,6 +15,7 @@ from spoolman.database import models, vendor
 from spoolman.database.utils import (
     SortOrder,
     add_where_clause_int_in,
+    add_where_clause_number_opt,
     add_where_clause_int_opt,
     add_where_clause_str,
     add_where_clause_str_opt,
@@ -103,7 +104,17 @@ async def find(
     name: str | None = None,
     material: str | None = None,
     article_number: str | None = None,
+    filament_id: str | None = None,
+    price: str | None = None,
+    density: str | None = None,
+    diameter: str | None = None,
+    weight: str | None = None,
+    spool_weight: str | None = None,
+    settings_extruder_temp: str | None = None,
+    settings_bed_temp: str | None = None,
+    registered: str | None = None,
     external_id: str | None = None,
+    comment: str | None = None,
     sort_by: dict[str, SortOrder] | None = None,
     limit: int | None = None,
     offset: int = 0,
@@ -132,10 +143,20 @@ async def find(
     stmt = add_where_clause_int_in(stmt, models.Filament.id, ids)
     stmt = add_where_clause_int_opt(stmt, models.Filament.vendor_id, vendor_id)
     stmt = add_where_clause_str(stmt, models.Vendor.name, vendor_name)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.id, filament_id)
     stmt = add_where_clause_str_opt(stmt, models.Filament.name, name)
     stmt = add_where_clause_str_opt(stmt, models.Filament.material, material)
     stmt = add_where_clause_str_opt(stmt, models.Filament.article_number, article_number)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.price, price)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.density, density)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.diameter, diameter)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.weight, weight)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.spool_weight, spool_weight)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.settings_extruder_temp, settings_extruder_temp)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.settings_bed_temp, settings_bed_temp)
+    stmt = add_where_clause_number_opt(stmt, models.Filament.registered, registered)
     stmt = add_where_clause_str_opt(stmt, models.Filament.external_id, external_id)
+    stmt = add_where_clause_str_opt(stmt, models.Filament.comment, comment)
     if has_spools is not None:
         stmt = stmt.where(spool_count_expr > 0 if has_spools else spool_count_expr == 0)
     if spool_count is not None:
@@ -164,10 +185,28 @@ async def find(
         total_count_stmt = add_where_clause_int_in(total_count_stmt, models.Filament.id, ids)
         total_count_stmt = add_where_clause_int_opt(total_count_stmt, models.Filament.vendor_id, vendor_id)
         total_count_stmt = add_where_clause_str(total_count_stmt, models.Vendor.name, vendor_name)
+        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.id, filament_id)
         total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.name, name)
         total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.material, material)
         total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.article_number, article_number)
+        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.price, price)
+        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.density, density)
+        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.diameter, diameter)
+        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.weight, weight)
+        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.spool_weight, spool_weight)
+        total_count_stmt = add_where_clause_number_opt(
+            total_count_stmt,
+            models.Filament.settings_extruder_temp,
+            settings_extruder_temp,
+        )
+        total_count_stmt = add_where_clause_number_opt(
+            total_count_stmt,
+            models.Filament.settings_bed_temp,
+            settings_bed_temp,
+        )
+        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.registered, registered)
         total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.external_id, external_id)
+        total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.comment, comment)
 
         if has_spools is not None:
             has_spool_subquery = select(models.Spool.id).where(models.Spool.filament_id == models.Filament.id).exists()
