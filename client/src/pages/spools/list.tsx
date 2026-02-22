@@ -430,6 +430,7 @@ export const SpoolList = () => {
             id: "location",
             i18ncat: "spool",
             filterValueQuery: useSpoolmanLocations(),
+            emptyFilterLabel: "",
             width: 120,
           }),
           FilteredQueryColumn({

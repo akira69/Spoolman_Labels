@@ -46,6 +46,41 @@ function valueKey(value: Key): string {
   return String(value);
 }
 
+function normalizeSearchableValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => String(entry)).join(", ");
+  }
+  return String(value);
+}
+
+function getRecordValue(record: unknown, dataIndex: string | string[]): unknown {
+  if (Array.isArray(dataIndex)) {
+    return dataIndex.reduce<unknown>((current, part) => {
+      if (current === null || current === undefined || typeof current !== "object") {
+        return undefined;
+      }
+      return (current as Record<string, unknown>)[part];
+    }, record);
+  }
+
+  if (record !== null && record !== undefined && typeof record === "object") {
+    const recordObject = record as Record<string, unknown>;
+    if (Object.prototype.hasOwnProperty.call(recordObject, dataIndex)) {
+      return recordObject[dataIndex];
+    }
+  }
+
+  return dataIndex.split(".").reduce<unknown>((current, part) => {
+    if (current === null || current === undefined || typeof current !== "object") {
+      return undefined;
+    }
+    return (current as Record<string, unknown>)[part];
+  }, record);
+}
+
 function FilterDropdownContent(props: {
   items: ColumnFilterItem[];
   selectedKeys: Key[];
@@ -278,6 +313,7 @@ interface BaseColumnProps<Obj extends Entity> {
   sorter?: boolean;
   searchable?: boolean;
   searchPlaceholder?: string;
+  searchValueFormatter?: (rawValue: unknown, record: Obj) => string;
   t: (key: string) => string;
   navigate: (link: string) => void;
   dataSource: Obj[];
@@ -371,18 +407,60 @@ function Column<Obj extends Entity>(
     if (filterField) {
       const typedFilters = typeFilters<Obj>(props.tableState.filters);
       const filteredValue = getFiltersForField(typedFilters, filterField);
+      const searchableValues = new Map<string, string>();
+      const searchValueDataIndex = props.dataId ?? props.id;
+
+      props.dataSource.forEach((record) => {
+        const rawValue = getRecordValue(record, searchValueDataIndex);
+        const displayValue = props.searchValueFormatter
+          ? props.searchValueFormatter(rawValue, record)
+          : normalizeSearchableValue(rawValue);
+        const normalizedDisplayValue = displayValue ?? "";
+        const filterValue = normalizedDisplayValue === "" ? "<empty>" : normalizedDisplayValue;
+        if (!searchableValues.has(filterValue)) {
+          searchableValues.set(filterValue, normalizedDisplayValue);
+        }
+      });
+
+      const searchableFilters: ColumnFilterItem[] = Array.from(searchableValues.entries())
+        .map(([value, label]) => ({ value, text: label }))
+        .sort((left, right) =>
+          filterSearchTerm(left).localeCompare(filterSearchTerm(right), undefined, {
+            numeric: true,
+            sensitivity: "base",
+          }),
+        );
+
       columnProps.filteredValue = filteredValue;
-      columnProps.filterMultiple = false;
-      columnProps.filterDropdown = ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => (
-        <SearchFilterDropdownContent
-          selectedKeys={selectedKeys}
-          setSelectedKeys={setSelectedKeys}
-          confirm={confirm}
-          clearFilters={clearFilters}
-          t={t}
-          placeholder={props.searchPlaceholder ?? t("buttons.filter")}
-        />
-      );
+
+      if (searchableFilters.length > 0) {
+        columnProps.filters = searchableFilters;
+        columnProps.filterMultiple = true;
+        columnProps.filterDropdown = ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => (
+          <FilterDropdownContent
+            items={searchableFilters}
+            selectedKeys={selectedKeys}
+            setSelectedKeys={setSelectedKeys}
+            confirm={confirm}
+            clearFilters={clearFilters}
+            allowMultipleFilters={true}
+            t={t}
+          />
+        );
+      } else {
+        columnProps.filterMultiple = false;
+        columnProps.filterDropdown = ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => (
+          <SearchFilterDropdownContent
+            selectedKeys={selectedKeys}
+            setSelectedKeys={setSelectedKeys}
+            confirm={confirm}
+            clearFilters={clearFilters}
+            t={t}
+            placeholder={props.searchPlaceholder ?? t("buttons.filter")}
+          />
+        );
+      }
+
       if (props.dataId) {
         columnProps.key = props.dataId;
       }
@@ -457,6 +535,7 @@ interface FilteredQueryColumnProps<Obj extends Entity> extends BaseColumnProps<O
   filterValueQuery: UseQueryResult<string[] | ColumnFilterItem[], unknown>;
   allowMultipleFilters?: boolean;
   includeEmptyFilter?: boolean;
+  emptyFilterLabel?: string;
 }
 
 export function FilteredQueryColumn<Obj extends Entity>(props: FilteredQueryColumnProps<Obj>) {
@@ -476,7 +555,7 @@ export function FilteredQueryColumn<Obj extends Entity>(props: FilteredQueryColu
   }
   if (props.includeEmptyFilter !== false) {
     filters.push({
-      text: "<empty>",
+      text: props.emptyFilterLabel ?? "<empty>",
       value: "<empty>",
     });
   }
@@ -534,6 +613,13 @@ export function DateColumn<Obj extends Entity>(props: BaseColumnProps<Obj>) {
   return Column({
     ...props,
     searchable: props.searchable ?? true,
+    searchValueFormatter: (rawValue) => {
+      const value = props.transform ? props.transform(rawValue) : rawValue;
+      if (!value) {
+        return "";
+      }
+      return dayjs.utc(value as string).local().format("YYYY-MM-DD HH:mm");
+    },
     render: (rawValue) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       return (
