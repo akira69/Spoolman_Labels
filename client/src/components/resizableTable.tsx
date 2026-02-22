@@ -8,10 +8,11 @@ import { useSavedState } from "../utils/saveload";
 
 interface ResizableHeaderCellProps extends ThHTMLAttributes<HTMLTableCellElement> {
   onResizeStart?: (event: ReactMouseEvent<HTMLSpanElement>) => void;
+  onResizeAutoFit?: (event: ReactMouseEvent<HTMLSpanElement>) => void;
   resizable?: boolean;
 }
 
-function ResizableHeaderCell({ className, onResizeStart, resizable, children, ...restProps }: ResizableHeaderCellProps) {
+function ResizableHeaderCell({ className, onResizeStart, onResizeAutoFit, resizable, children, ...restProps }: ResizableHeaderCellProps) {
   return (
     <th {...restProps} className={`${className ?? ""}${resizable ? " resizable-table-header-cell" : ""}`}>
       {children}
@@ -26,6 +27,11 @@ function ResizableHeaderCell({ className, onResizeStart, resizable, children, ..
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
+          }}
+          onDoubleClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onResizeAutoFit?.(event);
           }}
         />
       )}
@@ -47,6 +53,74 @@ function columnIdentifier<RecordType extends AnyObject>(column: ColumnType<Recor
   const key = column.key != null ? String(column.key) : undefined;
   const dataIndex = serializeDataIndex(column.dataIndex);
   return key ?? dataIndex ?? `${parentId}-${index}`;
+}
+
+function measureIntrinsicElementWidth(element: HTMLElement): number {
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll(".resizable-table-header-handle").forEach((handle) => handle.remove());
+  clone.style.position = "fixed";
+  clone.style.left = "-99999px";
+  clone.style.top = "-99999px";
+  clone.style.width = "max-content";
+  clone.style.maxWidth = "none";
+  clone.style.minWidth = "0";
+  clone.style.display = "inline-block";
+  clone.style.whiteSpace = "nowrap";
+  clone.style.visibility = "hidden";
+  document.body.appendChild(clone);
+  const measuredWidth = clone.getBoundingClientRect().width;
+  clone.remove();
+  return measuredWidth;
+}
+
+function measureCellAutoFitWidth(cell: HTMLTableCellElement): number {
+  const style = window.getComputedStyle(cell);
+  const paddingLeft = Number.parseFloat(style.paddingLeft || "0") || 0;
+  const paddingRight = Number.parseFloat(style.paddingRight || "0") || 0;
+  const horizontalPadding = paddingLeft + paddingRight;
+
+  const childElements = Array.from(cell.children).filter((child): child is HTMLElement => child instanceof HTMLElement);
+  if (childElements.length > 0) {
+    const widestChild = childElements.reduce((maxWidth, child) => {
+      return Math.max(maxWidth, measureIntrinsicElementWidth(child));
+    }, 0);
+    return Math.ceil(widestChild + horizontalPadding);
+  }
+
+  const text = cell.textContent?.trim() ?? "";
+  if (text.length === 0) {
+    return Math.ceil(horizontalPadding);
+  }
+
+  const textProbe = document.createElement("span");
+  textProbe.textContent = text;
+  textProbe.style.position = "fixed";
+  textProbe.style.left = "-99999px";
+  textProbe.style.top = "-99999px";
+  textProbe.style.whiteSpace = "nowrap";
+  textProbe.style.font = style.font;
+  textProbe.style.fontSize = style.fontSize;
+  textProbe.style.fontWeight = style.fontWeight;
+  textProbe.style.letterSpacing = style.letterSpacing;
+  textProbe.style.visibility = "hidden";
+  document.body.appendChild(textProbe);
+  const textWidth = textProbe.getBoundingClientRect().width;
+  textProbe.remove();
+
+  return Math.ceil(textWidth + horizontalPadding);
+}
+
+function hasCellOverflow(cell: HTMLTableCellElement): boolean {
+  if (cell.scrollWidth > cell.clientWidth + 1) {
+    return true;
+  }
+
+  return Array.from(cell.children).some((child) => {
+    if (!(child instanceof HTMLElement)) {
+      return false;
+    }
+    return child.scrollWidth > child.clientWidth + 1;
+  });
 }
 
 export interface ResizableTableProps<RecordType extends AnyObject> extends TableProps<RecordType> {
@@ -143,6 +217,50 @@ function ResizableTable<RecordType extends AnyObject>(props: ResizableTableProps
 
               document.addEventListener("mousemove", onMouseMove);
               document.addEventListener("mouseup", onMouseUp);
+            },
+            onResizeAutoFit: (event: ReactMouseEvent<HTMLSpanElement>) => {
+              const currentHeaderCell = event.currentTarget.closest("th");
+              const headerRow = currentHeaderCell?.parentElement;
+              if (!(currentHeaderCell instanceof HTMLTableCellElement) || !(headerRow instanceof HTMLTableRowElement)) {
+                return;
+              }
+
+              const headerCells = Array.from(headerRow.cells);
+              const columnIndex = headerCells.indexOf(currentHeaderCell);
+              if (columnIndex === -1) {
+                return;
+              }
+
+              const tableContainer = currentHeaderCell.closest(".ant-table-container");
+              const currentWidth = Math.ceil(currentHeaderCell.getBoundingClientRect().width);
+              let nextWidth = measureCellAutoFitWidth(currentHeaderCell);
+              let hasOverflow = hasCellOverflow(currentHeaderCell);
+
+              if (tableContainer) {
+                const bodyRows = Array.from(tableContainer.querySelectorAll("tbody tr"));
+                bodyRows.forEach((row) => {
+                  if (!(row instanceof HTMLTableRowElement)) {
+                    return;
+                  }
+                  const cell = row.cells.item(columnIndex);
+                  if (cell) {
+                    nextWidth = Math.max(nextWidth, measureCellAutoFitWidth(cell));
+                    hasOverflow = hasOverflow || hasCellOverflow(cell);
+                  }
+                });
+              }
+
+              const autoFitWidth = Math.max(minColumnWidth, nextWidth);
+              const finalWidth = hasOverflow ? autoFitWidth : Math.max(minColumnWidth, Math.min(currentWidth, autoFitWidth));
+              setColumnWidths((previous) => {
+                if (previous[id] === finalWidth) {
+                  return previous;
+                }
+                return {
+                  ...previous,
+                  [id]: finalWidth,
+                };
+              });
             },
           } as unknown as HTMLAttributes<HTMLElement>;
         };
