@@ -396,6 +396,7 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
                 id: "location",
                 i18ncat: "spool",
                 filterValueQuery: useSpoolmanLocations(),
+                emptyFilterLabel: "",
                 width: 160,
               }),
               FilteredQueryColumn({
