@@ -55,16 +55,18 @@ export interface ResizableTableProps<RecordType extends AnyObject> extends Table
 }
 
 function ResizableTable<RecordType extends AnyObject>(props: ResizableTableProps<RecordType>) {
-  const { columns, components, columnResizeKey, minColumnWidth = 72, ...restProps } = props;
+  const { columns, components, columnResizeKey, minColumnWidth = 72, scroll, sticky, ...tableProps } = props;
   const [columnWidths, setColumnWidths] = useSavedState<Record<string, number>>(
     `table-column-widths-${columnResizeKey}`,
     {},
   );
 
-  const resolvedColumns = useMemo(() => {
+  const { resolvedColumns, requiredMinWidth } = useMemo(() => {
     if (!columns) {
-      return columns;
+      return { resolvedColumns: columns, requiredMinWidth: minColumnWidth };
     }
+
+    let minWidthSum = 0;
 
     const withResize = (input: ColumnsType<RecordType>, parentId: string): ColumnsType<RecordType> => {
       return input.map((column, index) => {
@@ -88,9 +90,18 @@ function ResizableTable<RecordType extends AnyObject>(props: ResizableTableProps
         }
 
         const leafColumn = nextColumn as ColumnType<RecordType>;
+        const existingMinWidth =
+          typeof (leafColumn as { minWidth?: number }).minWidth === "number"
+            ? (leafColumn as { minWidth?: number }).minWidth
+            : undefined;
+        const effectiveMinWidth = Math.max(minColumnWidth, existingMinWidth ?? 0);
+
         if (typeof columnWidth === "number") {
-          leafColumn.width = columnWidth;
+          leafColumn.width = Math.max(effectiveMinWidth, columnWidth);
         }
+        (leafColumn as { minWidth?: number }).minWidth = effectiveMinWidth;
+
+        minWidthSum += typeof leafColumn.width === "number" ? leafColumn.width : effectiveMinWidth;
 
         const originalOnHeaderCell = (column as ColumnType<RecordType>).onHeaderCell;
         leafColumn.onHeaderCell = (col) => {
@@ -140,7 +151,10 @@ function ResizableTable<RecordType extends AnyObject>(props: ResizableTableProps
       });
     };
 
-    return withResize(columns as ColumnsType<RecordType>, "root");
+    return {
+      resolvedColumns: withResize(columns as ColumnsType<RecordType>, "root"),
+      requiredMinWidth: minWidthSum,
+    };
   }, [columns, columnWidths, minColumnWidth, setColumnWidths]);
 
   const mergedComponents = useMemo(() => {
@@ -153,7 +167,25 @@ function ResizableTable<RecordType extends AnyObject>(props: ResizableTableProps
     };
   }, [components]);
 
-  return <Table<RecordType> {...restProps} columns={resolvedColumns} components={mergedComponents} />;
+  const resolvedScroll = useMemo(() => {
+    const nextScroll = { ...(scroll ?? {}) };
+    if (nextScroll.x === undefined) {
+      nextScroll.x = requiredMinWidth;
+    } else if (typeof nextScroll.x === "number") {
+      nextScroll.x = Math.max(nextScroll.x, requiredMinWidth);
+    }
+    return nextScroll;
+  }, [requiredMinWidth, scroll]);
+
+  return (
+    <Table<RecordType>
+      {...tableProps}
+      columns={resolvedColumns}
+      components={mergedComponents}
+      scroll={resolvedScroll}
+      sticky={sticky ?? true}
+    />
+  );
 }
 
 export default ResizableTable;
