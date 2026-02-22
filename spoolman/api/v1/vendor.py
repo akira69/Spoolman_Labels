@@ -136,6 +136,22 @@ async def find(
             ),
         ),
     ] = None,
+    vendor_id: Annotated[
+        str | None,
+        Query(alias="id", title="Vendor ID", description="Partial match against vendor ID values."),
+    ] = None,
+    registered: Annotated[
+        str | None,
+        Query(title="Registered", description="Partial match against registration timestamps."),
+    ] = None,
+    empty_spool_weight: Annotated[
+        str | None,
+        Query(title="Empty Spool Weight", description="Partial match against empty spool weight values as text."),
+    ] = None,
+    comment: Annotated[
+        str | None,
+        Query(title="Comment", description="Partial case-insensitive match against vendor comments."),
+    ] = None,
     sort: Annotated[
         str | None,
         Query(
@@ -162,6 +178,10 @@ async def find(
         db=db,
         name=name,
         external_id=external_id,
+        vendor_id=vendor_id,
+        registered=registered,
+        empty_spool_weight=empty_spool_weight,
+        comment=comment,
         sort_by=sort_by,
         limit=limit,
         offset=offset,

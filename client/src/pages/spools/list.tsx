@@ -256,6 +256,7 @@ export const SpoolList = () => {
     tableState,
     sorter: true,
   };
+  const hasActiveFilters = (filters?.length ?? 0) > 0;
 
   return (
     <List
@@ -280,7 +281,7 @@ export const SpoolList = () => {
             {showArchived ? t("buttons.hideArchived") : t("buttons.showArchived")}
           </Button>
           <Button
-            type="primary"
+            type={hasActiveFilters ? "primary" : "default"}
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");

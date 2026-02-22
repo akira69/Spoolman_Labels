@@ -111,13 +111,14 @@ export const VendorList = () => {
     tableState,
     sorter: true,
   };
+  const hasActiveFilters = (filters?.length ?? 0) > 0;
 
   return (
     <List
       headerButtons={({ defaultButtons }) => (
         <>
           <Button
-            type="primary"
+            type={hasActiveFilters ? "primary" : "default"}
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");
