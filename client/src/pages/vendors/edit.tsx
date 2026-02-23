@@ -23,6 +23,7 @@ import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../compo
 import { useVendorLogoManifest } from "../../components/otherModels";
 import VendorLogo from "../../components/vendorLogo";
 import { EntityType, useGetFields } from "../../utils/queryFields";
+import { getAPIURL } from "../../utils/url";
 import { suggestVendorLogoOptions, suggestVendorLogoPaths } from "../../utils/vendorLogo";
 import { IVendor, IVendorParsedExtras } from "./model";
 
@@ -40,6 +41,7 @@ export const VendorEdit = () => {
   const [hasChanged, setHasChanged] = useState(false);
   const [allowAutoSuggest, setAllowAutoSuggest] = useState(true);
   const [isSyncingLogoPack, setIsSyncingLogoPack] = useState(false);
+  const [isConvertingPrintLogo, setIsConvertingPrintLogo] = useState(false);
   const [savedComparableState, setSavedComparableState] = useState<string | null>(null);
   const extraFields = useGetFields(EntityType.vendor);
   const logoManifest = useVendorLogoManifest();
@@ -128,6 +130,22 @@ export const VendorEdit = () => {
       </Tooltip>
     </>
   );
+  const logoSuggestionsLabel = (
+    <>
+      {t("vendor.fields.logo_suggestions")} {" "}
+      <Tooltip title={t("vendor.fields_help.logo_suggestions")}>
+        <QuestionCircleOutlined />
+      </Tooltip>
+    </>
+  );
+  const printLogoSuggestionsLabel = (
+    <>
+      {t("vendor.fields.print_logo_suggestions")} {" "}
+      <Tooltip title={t("vendor.fields_help.print_logo_suggestions")}>
+        <QuestionCircleOutlined />
+      </Tooltip>
+    </>
+  );
   const webSuggestions =
     watchedName && logoManifest.data ? suggestVendorLogoOptions(watchedName, logoManifest.data, "web") : [];
   const printSuggestions =
@@ -207,6 +225,44 @@ export const VendorEdit = () => {
     return toComparableState(formProps.initialValues);
   }, [formProps.initialValues]);
 
+  const convertWebLogoToPrint = async () => {
+    if (!logoUrlValue) {
+      messageApi.warning(t("vendor.form.logo_convert_requires_web_logo"));
+      return;
+    }
+
+    setIsConvertingPrintLogo(true);
+    try {
+      const response = await fetch(getAPIURL() + "/vendor/logo-pack/convert-web-to-print", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          logo_url: logoUrlValue,
+          vendor_name: watchedName ?? null,
+        }),
+      });
+      const body = (await response.json()) as {
+        print_logo_url?: string;
+        message?: string;
+      };
+
+      if (!response.ok || !body.print_logo_url) {
+        throw new Error(body.message ?? t("vendor.form.logo_convert_error"));
+      }
+
+      setAllowAutoSuggest(false);
+      formProps.form?.setFieldValue(["extra", "print_logo_url"], body.print_logo_url);
+      await logoManifest.refetch();
+      messageApi.success(body.message ?? t("vendor.form.logo_convert_success"));
+    } catch (error) {
+      messageApi.error(error instanceof Error ? error.message : t("vendor.form.logo_convert_error"));
+    } finally {
+      setIsConvertingPrintLogo(false);
+    }
+  };
+
   useEffect(() => {
     if (initialComparableState !== null) {
       setSavedComparableState(initialComparableState);
@@ -230,7 +286,7 @@ export const VendorEdit = () => {
   const syncLogoPackFromGithub = async () => {
     setIsSyncingLogoPack(true);
     try {
-      const response = await fetch("/api/v1/vendor/logo-pack/sync-from-github", {
+      const response = await fetch(getAPIURL() + "/vendor/logo-pack/sync-from-github", {
         method: "POST",
       });
       const body = (await response.json()) as {
@@ -307,20 +363,7 @@ export const VendorEdit = () => {
     <Edit
       saveButtonProps={saveButtonState}
       footerButtons={({ defaultButtons }) => (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 16,
-            right: 92,
-            zIndex: 1200,
-            display: "flex",
-            gap: 8,
-            padding: "8px 10px",
-            borderRadius: 10,
-            background: "rgba(17, 17, 17, 0.88)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
+        <div className="floating-form-actions">
           {defaultButtons}
         </div>
       )}
@@ -412,7 +455,7 @@ export const VendorEdit = () => {
                 </Tooltip>
               </Space.Compact>
             </Form.Item>
-            <Form.Item label={t("vendor.fields.logo_suggestions")} style={{ marginTop: -8 }}>
+            <Form.Item label={logoSuggestionsLabel} style={{ marginTop: -8 }}>
               <Select
                 value={undefined}
                 placeholder={t("vendor.fields.logo_suggestions_placeholder")}
@@ -502,7 +545,7 @@ export const VendorEdit = () => {
                 </Tooltip>
               </Space.Compact>
             </Form.Item>
-            <Form.Item label={t("vendor.fields.print_logo_suggestions")} style={{ marginTop: -8 }}>
+            <Form.Item label={printLogoSuggestionsLabel} style={{ marginTop: -8 }}>
               <Select
                 value={undefined}
                 placeholder={t("vendor.fields.logo_suggestions_placeholder")}
@@ -564,6 +607,17 @@ export const VendorEdit = () => {
                   }}
                 />
               </div>
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 8 }}>
+              <Tooltip title={t("vendor.buttons.convert_logo_to_print_help")}>
+                <Button
+                  onClick={() => void convertWebLogoToPrint()}
+                  loading={isConvertingPrintLogo}
+                  disabled={!logoUrlValue}
+                >
+                  {t("vendor.buttons.convert_logo_to_print")}
+                </Button>
+              </Tooltip>
             </Form.Item>
             <Form.Item>
               <Tooltip title={t("settings.general.logo_sync.github_description")}>

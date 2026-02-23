@@ -85,6 +85,27 @@ def add_where_clause_str(
     return stmt
 
 
+def add_where_clause_number_opt(
+    stmt: Select,
+    field: attributes.InstrumentedAttribute[Any] | Any,
+    value: str | None,
+) -> Select:
+    """Add a where clause for numeric/date-like fields by searching their string representation."""
+    if value is not None:
+        conditions = []
+        for value_part in value.split(","):
+            term = value_part.strip()
+            if len(term) == 0:
+                conditions.append(field.is_(None))
+            elif len(term) >= 2 and term[0] == '"' and term[-1] == '"':
+                conditions.append(sqlalchemy.cast(field, sqlalchemy.String) == term[1:-1])
+            else:
+                conditions.append(sqlalchemy.cast(field, sqlalchemy.String).ilike(f"%{term}%"))
+
+        stmt = stmt.where(sqlalchemy.or_(*conditions))
+    return stmt
+
+
 def add_where_clause_int(
     stmt: Select,
     field: attributes.InstrumentedAttribute[int],

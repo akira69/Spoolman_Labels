@@ -16,6 +16,7 @@ from spoolman.database import filament, models
 from spoolman.database.utils import (
     SortOrder,
     add_where_clause_int,
+    add_where_clause_number_opt,
     add_where_clause_int_opt,
     add_where_clause_str,
     add_where_clause_str_opt,
@@ -121,6 +122,16 @@ async def find(  # noqa: C901, PLR0912
     vendor_id: int | Sequence[int] | None = None,
     location: str | None = None,
     lot_nr: str | None = None,
+    spool_id: str | None = None,
+    price: str | None = None,
+    used_weight: str | None = None,
+    remaining_weight: str | None = None,
+    used_length: str | None = None,
+    remaining_length: str | None = None,
+    first_used: str | None = None,
+    last_used: str | None = None,
+    registered: str | None = None,
+    comment: str | None = None,
     allow_archived: bool = False,
     sort_by: dict[str, SortOrder] | None = None,
     limit: int | None = None,
@@ -140,6 +151,19 @@ async def find(  # noqa: C901, PLR0912
         .options(contains_eager(models.Spool.filament).contains_eager(models.Filament.vendor))
     )
 
+    price_expr = coalesce(models.Spool.price, models.Filament.price)
+    remaining_weight_expr = coalesce(models.Spool.initial_weight, models.Filament.weight) - models.Spool.used_weight
+    remaining_length_expr = (
+        remaining_weight_expr
+        / models.Filament.density
+        / (models.Filament.diameter * models.Filament.diameter)
+    )
+    used_length_expr = (
+        models.Spool.used_weight
+        / models.Filament.density
+        / (models.Filament.diameter * models.Filament.diameter)
+    )
+
     stmt = add_where_clause_int(stmt, models.Spool.filament_id, filament_id)
     stmt = add_where_clause_int_opt(stmt, models.Filament.vendor_id, vendor_id)
     stmt = add_where_clause_str(stmt, models.Vendor.name, vendor_name)
@@ -147,6 +171,16 @@ async def find(  # noqa: C901, PLR0912
     stmt = add_where_clause_str_opt(stmt, models.Filament.material, filament_material)
     stmt = add_where_clause_str_opt(stmt, models.Spool.location, location)
     stmt = add_where_clause_str_opt(stmt, models.Spool.lot_nr, lot_nr)
+    stmt = add_where_clause_number_opt(stmt, models.Spool.id, spool_id)
+    stmt = add_where_clause_number_opt(stmt, price_expr, price)
+    stmt = add_where_clause_number_opt(stmt, models.Spool.used_weight, used_weight)
+    stmt = add_where_clause_number_opt(stmt, remaining_weight_expr, remaining_weight)
+    stmt = add_where_clause_number_opt(stmt, used_length_expr, used_length)
+    stmt = add_where_clause_number_opt(stmt, remaining_length_expr, remaining_length)
+    stmt = add_where_clause_number_opt(stmt, models.Spool.first_used, first_used)
+    stmt = add_where_clause_number_opt(stmt, models.Spool.last_used, last_used)
+    stmt = add_where_clause_number_opt(stmt, models.Spool.registered, registered)
+    stmt = add_where_clause_str_opt(stmt, models.Spool.comment, comment)
 
     if not allow_archived:
         # Since the archived field is nullable, and default is false, we need to check for both false or null
@@ -169,26 +203,16 @@ async def find(  # noqa: C901, PLR0912
         for fieldstr, order in sort_by.items():
             sorts = []
             if fieldstr == "remaining_weight":
-                sorts.append(coalesce(models.Spool.initial_weight, models.Filament.weight) - models.Spool.used_weight)
+                sorts.append(remaining_weight_expr)
             elif fieldstr == "remaining_length":
-                # Simplified weight -> length formula. Absolute value is not correct but the proportionality is still
-                # kept, which means the sort order is correct.
-                sorts.append(
-                    (coalesce(models.Spool.initial_weight, models.Filament.weight) - models.Spool.used_weight)
-                    / models.Filament.density
-                    / (models.Filament.diameter * models.Filament.diameter),
-                )
+                sorts.append(remaining_length_expr)
             elif fieldstr == "used_length":
-                sorts.append(
-                    models.Spool.used_weight
-                    / models.Filament.density
-                    / (models.Filament.diameter * models.Filament.diameter),
-                )
+                sorts.append(used_length_expr)
             elif fieldstr == "filament.combined_name":
                 sorts.append(models.Vendor.name)
                 sorts.append(models.Filament.name)
             elif fieldstr == "price":
-                sorts.append(coalesce(models.Spool.price, models.Filament.price))
+                sorts.append(price_expr)
             else:
                 sorts.append(parse_nested_field(models.Spool, fieldstr))
 

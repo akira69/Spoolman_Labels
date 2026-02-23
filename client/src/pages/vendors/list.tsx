@@ -1,7 +1,7 @@
 import { EditOutlined, EyeOutlined, FilterOutlined, PlusSquareOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown, Table } from "antd";
+import { Button, Dropdown } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useCallback, useMemo, useState } from "react";
@@ -16,6 +16,7 @@ import {
   SortedColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
+import ResizableTable from "../../components/resizableTable";
 import VendorLogo from "../../components/vendorLogo";
 import { useSpoolmanVendorExternalIds, useSpoolmanVendors } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
@@ -110,13 +111,14 @@ export const VendorList = () => {
     tableState,
     sorter: true,
   };
+  const hasActiveFilters = (filters?.length ?? 0) > 0;
 
   return (
     <List
       headerButtons={({ defaultButtons }) => (
         <>
           <Button
-            type="primary"
+            type={hasActiveFilters ? "primary" : "default"}
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");
@@ -165,7 +167,8 @@ export const VendorList = () => {
         </>
       )}
     >
-      <Table
+      <ResizableTable
+        columnResizeKey="vendor-list-table"
         {...tableProps}
         sticky
         tableLayout="auto"

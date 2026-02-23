@@ -8,7 +8,7 @@ import {
 } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown, Table } from "antd";
+import { Button, Dropdown } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useMemo, useState } from "react";
@@ -24,6 +24,7 @@ import {
   SpoolIconColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
+import ResizableTable from "../../components/resizableTable";
 import {
   useSpoolmanArticleNumbers,
   useSpoolmanFilamentNames,
@@ -174,6 +175,7 @@ export const FilamentList = () => {
     tableState,
     sorter: true,
   };
+  const hasActiveFilters = (filters?.length ?? 0) > 0;
   return (
     <List
       headerButtons={({ defaultButtons }) => (
@@ -188,7 +190,7 @@ export const FilamentList = () => {
             {t("printing.qrcode.selectButton")}
           </Button>
           <Button
-            type="primary"
+            type={hasActiveFilters ? "primary" : "default"}
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");
@@ -234,7 +236,8 @@ export const FilamentList = () => {
         </>
       )}
     >
-      <Table<IFilamentCollapsed>
+      <ResizableTable<IFilamentCollapsed>
+        columnResizeKey="filament-list-table"
         {...tableProps}
         sticky
         tableLayout="auto"

@@ -1,10 +1,12 @@
+import { EditOutlined, FilterOutlined } from "@ant-design/icons";
 import { useTable } from "@refinedev/antd";
 import { CrudFilter } from "@refinedev/core";
-import { Button, Checkbox, Col, Input, message, Pagination, Row, Space, Table } from "antd";
+import { Button, Checkbox, Col, Dropdown, Input, message, Pagination, Row, Space } from "antd";
 import { t } from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { FilteredQueryColumn, SortedColumn, SpoolIconColumn } from "../../components/column";
+import ResizableTable from "../../components/resizableTable";
 import {
   useSpoolmanFilamentFilter,
   useSpoolmanLocations,
@@ -12,7 +14,7 @@ import {
   useSpoolmanMaterials,
 } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
-import { TableState } from "../../utils/saveload";
+import { TableState, useSavedState } from "../../utils/saveload";
 import { ISpool } from "../spools/model";
 
 interface Props {
@@ -43,6 +45,19 @@ function collapseSpool(element: ISpool): ISpoolCollapsed {
   };
 }
 
+const namespace = "spoolSelectModal-v1";
+const allColumns: string[] = ["id", "filament.combined_name", "filament.material", "location", "lot_nr"];
+
+function getColumnLabel(columnId: string): string {
+  if (columnId === "filament.combined_name") {
+    return t("spool.fields.filament_name");
+  }
+  if (columnId === "filament.material") {
+    return t("spool.fields.material");
+  }
+  return t(`spool.fields.${columnId.replace(".", "_")}`);
+}
+
 const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }: Props) => {
   const [selectedItems, setSelectedItems] = useState<number[]>(initialSelectedIds ?? []);
   const [showArchived, setShowArchived] = useState(false);
@@ -50,45 +65,45 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
   const [selectedArchivedMap, setSelectedArchivedMap] = useState<Record<number, boolean>>({});
+  const [showColumns, setShowColumns] = useSavedState<string[]>(`${namespace}-showColumns`, allColumns);
 
   const { tableProps, sorters, filters, setFilters, currentPage, pageSize, setCurrentPage, setPageSize } =
     useTable<ISpoolCollapsed>({
-    resource: "spool",
-    meta: {
-      queryParams: {
-        ["allow_archived"]: showArchived,
+      resource: "spool",
+      meta: {
+        queryParams: {
+          ["allow_archived"]: showArchived,
+        },
       },
-    },
-    syncWithLocation: false,
-    pagination: {
-      mode: "server",
-      currentPage: 1,
-      pageSize: 50,
-    },
-    sorters: {
-      mode: "server",
-    },
-    filters: {
-      mode: "server",
-    },
-    queryOptions: {
-      select(data) {
-        return {
-          total: data.total,
-          data: data.data.map(collapseSpool),
-        };
+      syncWithLocation: false,
+      pagination: {
+        mode: "server",
+        currentPage: 1,
+        pageSize: 50,
       },
-    },
-  });
+      sorters: {
+        mode: "server",
+      },
+      filters: {
+        mode: "server",
+      },
+      queryOptions: {
+        select(data) {
+          return {
+            total: data.total,
+            data: data.data.map(collapseSpool),
+          };
+        },
+      },
+    });
 
-  // Store state in local storage
   const tableState: TableState = {
     sorters,
     filters,
     pagination: { currentPage: currentPage, pageSize },
+    showColumns,
   };
 
-  // Collapse the dataSource to a mutable list and add a filament_name field
   const dataSource: ISpoolCollapsed[] = useMemo(
     () => (tableProps.dataSource || []).map((record) => ({ ...record })),
     [tableProps.dataSource],
@@ -139,7 +154,6 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
     setCurrentPage(1);
   };
 
-  // Function to add/remove all filtered items from selected items
   const selectUnselectFiltered = (select: boolean) => {
     setSelectedItems((prevSelected) => {
       const nextSelected = new Set(prevSelected);
@@ -154,17 +168,16 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
     });
   };
 
-  // Handler for selecting/unselecting individual items
   const handleSelectItem = (item: number) => {
     setSelectedItems((prevSelected) =>
       prevSelected.includes(item) ? prevSelected.filter((selected) => selected !== item) : [...prevSelected, item],
     );
   };
 
-  // State for the select/unselect all checkbox
   const isAllFilteredSelected = dataSource.every((spool) => selectedSet.has(spool.id));
   const isSomeButNotAllFilteredSelected =
     dataSource.some((spool) => selectedSet.has(spool.id)) && !isAllFilteredSelected;
+  const hasActiveFilters = searchValue.trim().length > 0 || (filters?.length ?? 0) > 0;
 
   const commonProps = {
     t,
@@ -225,6 +238,8 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
         <Row gutter={[12, 12]} align="middle" style={{ marginBottom: 8 }}>
           <Col flex="none">
             <Button
+              type={hasActiveFilters ? "primary" : "default"}
+              icon={<FilterOutlined />}
               onClick={() => {
                 setSearchValue("");
                 setFilters([], "replace");
@@ -233,6 +248,28 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
             >
               {t("buttons.clearFilters")}
             </Button>
+          </Col>
+          <Col flex="none">
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: allColumns.map((columnId) => ({
+                  key: columnId,
+                  label: getColumnLabel(columnId),
+                })),
+                selectedKeys: showColumns,
+                selectable: true,
+                multiple: true,
+                onDeselect: (info) => {
+                  setShowColumns(info.selectedKeys as string[]);
+                },
+                onSelect: (info) => {
+                  setShowColumns(info.selectedKeys as string[]);
+                },
+              }}
+            >
+              <Button type="primary" icon={<EditOutlined />}>{t("buttons.hideColumns")}</Button>
+            </Dropdown>
           </Col>
           <Col flex="auto">
             <div
@@ -258,7 +295,6 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
                 onChange={(e) => {
                   setShowArchived(e.target.checked);
                   if (!e.target.checked) {
-                    // Remove archived spools from selected items
                     setSelectedItems((prevSelected) =>
                       prevSelected.filter((selected) => selectedArchivedMap[selected] !== true),
                     );
@@ -312,7 +348,8 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
           </Col>
         </Row>
         <div style={{ flex: 1, minHeight: 0 }}>
-          <Table
+          <ResizableTable
+            columnResizeKey="spool-select-modal-table"
             {...tableProps}
             rowKey="id"
             tableLayout="fixed"
@@ -359,6 +396,7 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
                 id: "location",
                 i18ncat: "spool",
                 filterValueQuery: useSpoolmanLocations(),
+                emptyFilterLabel: "",
                 width: 160,
               }),
               FilteredQueryColumn({

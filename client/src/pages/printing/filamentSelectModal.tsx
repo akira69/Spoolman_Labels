@@ -1,13 +1,20 @@
+import { EditOutlined, FilterOutlined } from "@ant-design/icons";
 import { useTable } from "@refinedev/antd";
 import { CrudFilter } from "@refinedev/core";
-import { Button, Checkbox, Col, Input, message, Pagination, Row, Space, Table } from "antd";
+import { Button, Checkbox, Col, Dropdown, Input, message, Pagination, Row, Space } from "antd";
 import { t } from "i18next";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { FilteredQueryColumn, SortedColumn, SpoolIconColumn } from "../../components/column";
-import { useSpoolmanFilamentNames, useSpoolmanMaterials, useSpoolmanVendors } from "../../components/otherModels";
+import ResizableTable from "../../components/resizableTable";
+import {
+  useSpoolmanFilamentNames,
+  useSpoolmanMaterials,
+  useSpoolmanSpoolCounts,
+  useSpoolmanVendors,
+} from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
-import { TableState } from "../../utils/saveload";
+import { TableState, useSavedState } from "../../utils/saveload";
 import { IFilament } from "../filaments/model";
 
 interface Props {
@@ -25,41 +32,53 @@ function collapseFilament(element: IFilament): IFilamentCollapsed {
   return { ...element, "vendor.name": element.vendor?.name ?? null };
 }
 
+const namespace = "filamentSelectModal-v1";
+const allColumns: string[] = ["id", "spool_count", "vendor.name", "name", "material"];
+
+function getColumnLabel(columnId: string): string {
+  if (columnId === "vendor.name") {
+    return t("filament.fields.vendor_name");
+  }
+  return t(`filament.fields.${columnId.replace(".", "_")}`);
+}
+
 const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrint }: Props) => {
   const [selectedItems, setSelectedItems] = useState<number[]>(initialSelectedIds ?? []);
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
+  const [showColumns, setShowColumns] = useSavedState<string[]>(`${namespace}-showColumns`, allColumns);
 
   const { tableProps, sorters, filters, setFilters, currentPage, pageSize, setCurrentPage, setPageSize } =
     useTable<IFilamentCollapsed>({
-    resource: "filament",
-    syncWithLocation: false,
-    pagination: {
-      mode: "server",
-      currentPage: 1,
-      pageSize: 50,
-    },
-    sorters: {
-      mode: "server",
-    },
-    filters: {
-      mode: "server",
-    },
-    queryOptions: {
-      select(data) {
-        return {
-          total: data.total,
-          data: data.data.map(collapseFilament),
-        };
+      resource: "filament",
+      syncWithLocation: false,
+      pagination: {
+        mode: "server",
+        currentPage: 1,
+        pageSize: 50,
       },
-    },
-  });
+      sorters: {
+        mode: "server",
+      },
+      filters: {
+        mode: "server",
+      },
+      queryOptions: {
+        select(data) {
+          return {
+            total: data.total,
+            data: data.data.map(collapseFilament),
+          };
+        },
+      },
+    });
 
   const tableState: TableState = {
     sorters,
     filters,
     pagination: { currentPage: currentPage, pageSize },
+    showColumns,
   };
 
   const dataSource: IFilamentCollapsed[] = useMemo(
@@ -122,6 +141,7 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
   const isAllFilteredSelected = dataSource.every((filament) => selectedSet.has(filament.id));
   const isSomeButNotAllFilteredSelected =
     dataSource.some((filament) => selectedSet.has(filament.id)) && !isAllFilteredSelected;
+  const hasActiveFilters = searchValue.trim().length > 0 || (filters?.length ?? 0) > 0;
 
   const commonProps = {
     t,
@@ -179,6 +199,8 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
         <Row gutter={[12, 12]} align="middle" style={{ marginBottom: 8 }}>
           <Col flex="none">
             <Button
+              type={hasActiveFilters ? "primary" : "default"}
+              icon={<FilterOutlined />}
               onClick={() => {
                 setSearchValue("");
                 setFilters([], "replace");
@@ -187,6 +209,28 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
             >
               {t("buttons.clearFilters")}
             </Button>
+          </Col>
+          <Col flex="none">
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: allColumns.map((columnId) => ({
+                  key: columnId,
+                  label: getColumnLabel(columnId),
+                })),
+                selectedKeys: showColumns,
+                selectable: true,
+                multiple: true,
+                onDeselect: (info) => {
+                  setShowColumns(info.selectedKeys as string[]);
+                },
+                onSelect: (info) => {
+                  setShowColumns(info.selectedKeys as string[]);
+                },
+              }}
+            >
+              <Button type="primary" icon={<EditOutlined />}>{t("buttons.hideColumns")}</Button>
+            </Dropdown>
           </Col>
           <Col flex="auto">
             <div
@@ -252,7 +296,8 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
           </Col>
         </Row>
         <div style={{ flex: 1, minHeight: 0 }}>
-          <Table
+          <ResizableTable
+            columnResizeKey="filament-select-modal-table"
             {...tableProps}
             rowKey="id"
             tableLayout="fixed"
@@ -271,6 +316,16 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
                 id: "id",
                 i18ncat: "filament",
                 width: 70,
+              }),
+              FilteredQueryColumn({
+                ...commonProps,
+                id: "spool_count",
+                dataId: "spool_count",
+                i18ncat: "filament",
+                width: 120,
+                includeEmptyFilter: false,
+                filterValueQuery: useSpoolmanSpoolCounts(),
+                transform: (value) => value ?? 0,
               }),
               FilteredQueryColumn({
                 ...commonProps,
