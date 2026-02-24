@@ -28,7 +28,7 @@
         "hideArchived": "Arşivlenenleri gizle",
         "showArchived": "Arşivlenenleri göster",
         "notAccessTitle": "Erişim için yetkiniz bulunmamakta",
-        "hideColumns": "Sütunları gizle",
+        "hideColumns": "Sütunlar",
         "clearFilters": "Filtreleri temizle"
     },
     "warnWhenUnsavedChanges": "Çıkmak istediğinizden emin misiniz? Kaydedilmemiş değişiklikleriniz bulunmakta.",
