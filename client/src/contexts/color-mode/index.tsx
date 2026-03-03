@@ -28,6 +28,9 @@ export const ColorModeContextProvider = ({ children }: PropsWithChildren) => {
   };
 
   const { darkAlgorithm, defaultAlgorithm } = theme;
+  // Apply the scrollbar theme globally in dark mode because many scroll containers come from
+  // nested Ant components/popup portals, so local component-level overrides miss large parts of
+  // the UI. The light theme keeps native scrollbars unchanged.
   const darkScrollbarCss = `
     body, body * {
       scrollbar-width: thin;
