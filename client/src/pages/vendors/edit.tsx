@@ -75,6 +75,8 @@ export const VendorEdit = () => {
     const normalized = normalizeForCompare(value) as Record<string, unknown> | undefined;
     const normalizedExtra = { ...(normalized?.extra as Record<string, unknown> | undefined) };
 
+    // Compare only the fields this form actually edits so live metadata and nested
+    // objects do not keep the Save button permanently "dirty".
     return JSON.stringify({
       name: normalized?.name ?? "",
       comment: normalized?.comment ?? "",

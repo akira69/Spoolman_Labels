@@ -61,6 +61,8 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
 
   const savePresetsRemote = async (): Promise<boolean> => {
     if (!localPresets || !hasUnsavedPresetChanges) return false;
+    // Only persist when the local working copy diverges from the remote source; this
+    // keeps the Save Preset button as a true "needs action" indicator.
     await setRemotePresets.mutateAsync(localPresets);
     setLocalPresets(undefined);
     return true;

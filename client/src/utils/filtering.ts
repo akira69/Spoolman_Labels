@@ -75,6 +75,8 @@ export function hasMeaningfulFilters(filters?: CrudFilter[]): boolean {
 
   return filters.some((filter) => {
     if ("operator" in filter && (filter.operator === "or" || filter.operator === "and")) {
+      // Refine nests grouped filters, so recurse until we find a real leaf value
+      // instead of treating the wrapper object itself as "active".
       return hasMeaningfulFilters(filter.value);
     }
 
