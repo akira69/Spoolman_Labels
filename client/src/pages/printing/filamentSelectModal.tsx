@@ -1,0 +1,334 @@
+import { useTable } from "@refinedev/antd";
+import { Button, Checkbox, Col, Input, message, Pagination, Row, Table } from "antd";
+import { t } from "i18next";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router";
+import { FilteredQueryColumn, SortedColumn, SpoolIconColumn } from "../../components/column";
+import { useSpoolmanFilamentNames, useSpoolmanMaterials, useSpoolmanVendors } from "../../components/otherModels";
+import { removeUndefined } from "../../utils/filtering";
+import { TableState } from "../../utils/saveload";
+import { IFilament } from "../filaments/model";
+
+interface Props {
+  description?: string;
+  onPrint: (selectedFilamentIds: number[]) => void;
+  searchPlaceholder?: string;
+}
+
+interface IFilamentCollapsed extends IFilament {
+  "vendor.name": string | null;
+}
+
+function collapseFilament(element: IFilament): IFilamentCollapsed {
+  return { ...element, "vendor.name": element.vendor?.name ?? null };
+}
+
+function matchesSearch(filament: IFilamentCollapsed, searchTerm: string): boolean {
+  const needle = searchTerm.trim().toLowerCase();
+  if (needle.length === 0) {
+    return true;
+  }
+
+  const haystacks = [String(filament.id), filament["vendor.name"] ?? "", filament.name ?? "", filament.material ?? ""];
+  return haystacks.some((value) => value.toLowerCase().includes(needle));
+}
+
+const MIN_TABLE_SCROLL_Y = 180;
+const TABLE_BOTTOM_GAP = 16;
+
+const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props) => {
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [messageApi, contextHolder] = message.useMessage();
+  const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState("");
+  const [tableScrollY, setTableScrollY] = useState<number>(300);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const { tableProps, sorters, filters, setFilters, currentPage, pageSize, setCurrentPage, setPageSize } =
+    useTable<IFilamentCollapsed>({
+      resource: "filament",
+      syncWithLocation: false,
+      pagination: {
+        mode: "server",
+        currentPage: 1,
+        pageSize: 50,
+      },
+      sorters: {
+        mode: "server",
+      },
+      filters: {
+        mode: "server",
+      },
+      queryOptions: {
+        select(data) {
+          return {
+            total: data.total,
+            data: data.data.map(collapseFilament),
+          };
+        },
+      },
+    });
+
+  const tableState: TableState = {
+    sorters,
+    filters,
+    pagination: { currentPage, pageSize },
+  };
+
+  const dataSource: IFilamentCollapsed[] = useMemo(
+    () => (tableProps.dataSource || []).map((record) => ({ ...record })),
+    [tableProps.dataSource],
+  );
+  // Keep the selector standalone on current master: search only narrows the rows already loaded for this page.
+  const visibleDataSource = useMemo(
+    () => dataSource.filter((filament) => matchesSearch(filament, searchValue)),
+    [dataSource, searchValue],
+  );
+  const selectedSet = useMemo(() => new Set(selectedItems), [selectedItems]);
+
+  useEffect(() => {
+    const computeScrollHeight = () => {
+      if (!tableContainerRef.current) {
+        return;
+      }
+      // Recompute against the current viewport so the table can fill the dialog without introducing a second pager row.
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const tableTop = tableContainerRef.current.getBoundingClientRect().top;
+      const availableHeight = Math.floor(viewportHeight - tableTop - TABLE_BOTTOM_GAP);
+      setTableScrollY(Math.max(MIN_TABLE_SCROLL_Y, availableHeight));
+    };
+
+    computeScrollHeight();
+
+    const onViewportResize = () => computeScrollHeight();
+    window.addEventListener("resize", onViewportResize);
+    window.addEventListener("orientationchange", onViewportResize);
+    window.visualViewport?.addEventListener("resize", onViewportResize);
+    window.visualViewport?.addEventListener("scroll", onViewportResize);
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => computeScrollHeight()) : undefined;
+    if (resizeObserver && rootRef.current) {
+      resizeObserver.observe(rootRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", onViewportResize);
+      window.removeEventListener("orientationchange", onViewportResize);
+      window.visualViewport?.removeEventListener("resize", onViewportResize);
+      window.visualViewport?.removeEventListener("scroll", onViewportResize);
+      resizeObserver?.disconnect();
+    };
+  }, []);
+
+  const paginationTotal = tableProps.pagination ? tableProps.pagination.total ?? 0 : 0;
+  const handlePageChange = (page: number, nextPageSize?: number) => {
+    if (typeof nextPageSize === "number" && nextPageSize !== pageSize) {
+      setPageSize(nextPageSize);
+    }
+    setCurrentPage(page);
+  };
+  const handlePageSizeChange = (_current: number, size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  const selectUnselectFiltered = (select: boolean) => {
+    setSelectedItems((prevSelected) => {
+      const nextSelected = new Set(prevSelected);
+      // Bulk selection follows the user's current narrowing term so "select all" only touches the rows they can see.
+      visibleDataSource.forEach((filament) => {
+        if (select) {
+          nextSelected.add(filament.id);
+        } else {
+          nextSelected.delete(filament.id);
+        }
+      });
+      return Array.from(nextSelected);
+    });
+  };
+
+  const handleSelectItem = (item: number) => {
+    setSelectedItems((prevSelected) =>
+      prevSelected.includes(item) ? prevSelected.filter((selected) => selected !== item) : [...prevSelected, item],
+    );
+  };
+
+  const isAllFilteredSelected =
+    visibleDataSource.length > 0 && visibleDataSource.every((filament) => selectedSet.has(filament.id));
+  const isSomeButNotAllFilteredSelected =
+    visibleDataSource.some((filament) => selectedSet.has(filament.id)) && !isAllFilteredSelected;
+
+  const commonProps = {
+    t,
+    navigate,
+    actions: () => [],
+    dataSource,
+    tableState,
+    sorter: true,
+  };
+
+  const resolvedDescription =
+    description ??
+    t("printing.filamentSelect.description", {
+      defaultValue: "Search for and select filament labels to print:",
+    });
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ??
+    t("printing.filamentSelect.searchPlaceholder", {
+      defaultValue: "Search by filament ID, vendor, name, or material",
+    });
+
+  return (
+    <>
+      {contextHolder}
+      <div ref={rootRef} style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
+        {(resolvedDescription || tableProps.pagination) && (
+          <Row gutter={[12, 8]} align="middle" style={{ marginBottom: 8 }}>
+            <Col flex="auto">{resolvedDescription && <div style={{ margin: 0 }}>{resolvedDescription}</div>}</Col>
+            {tableProps.pagination && (
+              <Col flex="none">
+                <Pagination
+                  size="small"
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={paginationTotal}
+                  showSizeChanger
+                  pageSizeOptions={["10", "20", "50", "100"]}
+                  showQuickJumper
+                  onChange={handlePageChange}
+                  onShowSizeChange={handlePageSizeChange}
+                />
+              </Col>
+            )}
+          </Row>
+        )}
+        <Row gutter={[12, 8]} style={{ marginBottom: 8 }}>
+          <Col xs={24} md={12}>
+            <Input.Search
+              placeholder={resolvedSearchPlaceholder}
+              value={searchValue}
+              allowClear
+              enterButton
+              onChange={(event) => {
+                setSearchValue(event.target.value);
+              }}
+              onSearch={(value) => {
+                setSearchValue(value);
+              }}
+            />
+          </Col>
+        </Row>
+        <Row gutter={[12, 12]} align="middle" style={{ marginBottom: 8 }}>
+          <Col flex="none">
+            <Button
+              onClick={() => {
+                setSearchValue("");
+                setFilters([], "replace");
+                setCurrentPage(1);
+              }}
+            >
+              {t("buttons.clearFilters")}
+            </Button>
+          </Col>
+          <Col flex="auto">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <Checkbox
+                checked={isAllFilteredSelected}
+                indeterminate={isSomeButNotAllFilteredSelected}
+                onChange={(e) => {
+                  selectUnselectFiltered(e.target.checked);
+                }}
+              >
+                {t("printing.filamentSelect.selectAll")}
+              </Checkbox>
+              <div style={{ minWidth: 140, textAlign: "right" }}>
+                {t("printing.filamentSelect.selectedTotal", {
+                  count: selectedItems.length,
+                })}
+              </div>
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (selectedItems.length === 0) {
+                    messageApi.open({
+                      type: "error",
+                      content: t("printing.filamentSelect.noFilamentsSelected"),
+                    });
+                    return;
+                  }
+                  onPrint(selectedItems);
+                }}
+              >
+                {t("printing.qrcode.button")}
+              </Button>
+            </div>
+          </Col>
+        </Row>
+        <div ref={tableContainerRef} style={{ flex: 1, minHeight: 0 }}>
+          <Table
+            {...tableProps}
+            rowKey="id"
+            tableLayout="fixed"
+            pagination={false}
+            dataSource={visibleDataSource}
+            scroll={{ y: tableScrollY, x: "max-content" }}
+            columns={removeUndefined([
+              {
+                width: 48,
+                render: (_, item: IFilament) => (
+                  <Checkbox checked={selectedSet.has(item.id)} onChange={() => handleSelectItem(item.id)} />
+                ),
+              },
+              SortedColumn({
+                ...commonProps,
+                id: "id",
+                i18ncat: "filament",
+                width: 70,
+              }),
+              FilteredQueryColumn({
+                ...commonProps,
+                id: "vendor.name",
+                i18nkey: "filament.fields.vendor_name",
+                filterValueQuery: useSpoolmanVendors(),
+                width: 180,
+              }),
+              SpoolIconColumn({
+                ...commonProps,
+                id: "name",
+                i18ncat: "filament",
+                width: 320,
+                color: (record: IFilamentCollapsed) =>
+                  record.multi_color_hexes
+                    ? {
+                        colors: record.multi_color_hexes.split(","),
+                        vertical: record.multi_color_direction === "longitudinal",
+                      }
+                    : record.color_hex,
+                filterValueQuery: useSpoolmanFilamentNames(),
+              }),
+              FilteredQueryColumn({
+                ...commonProps,
+                id: "material",
+                i18ncat: "filament",
+                filterValueQuery: useSpoolmanMaterials(),
+                width: 140,
+              }),
+            ])}
+          />
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default FilamentSelectModal;
