@@ -29,12 +29,13 @@ export interface SpoolQRCodePrintSettings {
   labelSettings: QRCodePrintSettings;
 }
 
+// Load saved print presets and backfill missing ids so older settings remain selectable in the current UI.
 export function useGetPrintSettings(settingKey = "print_presets"): SpoolQRCodePrintSettings[] | undefined {
   const { data } = useGetSetting(settingKey);
   if (!data) return;
   const parsed: SpoolQRCodePrintSettings[] =
     data && data.value ? JSON.parse(data.value) : ([] as SpoolQRCodePrintSettings[]);
-  // Loop through all parsed and generate a new ID field if it's not set
+  // Older presets did not store ids; generate them lazily so the editor can still target each entry.
   return parsed.map((settings) => {
     if (!settings.labelSettings.printSettings.id) {
       settings.labelSettings.printSettings.id = uuidv4();
@@ -60,8 +61,8 @@ interface GenericObject {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Resolve dot-path placeholders, including JSON-backed extra fields, for label templates.
 function getTagValue(tag: string, obj: GenericObject): any {
-  // Split tag by .
   const tagParts = tag.split(".");
   if (tagParts[0] === "extra") {
     const extraValue = obj.extra[tagParts[1]];
@@ -72,7 +73,7 @@ function getTagValue(tag: string, obj: GenericObject): any {
   }
 
   const value = obj[tagParts[0]] ?? "?";
-  // check if value is itself an object. If so, recursively call this and remove the first part of the tag
+  // Nested objects reuse the same lookup rules so templates can walk relations like vendor.name.
   if (typeof value === "object") {
     return getTagValue(tagParts.slice(1).join("."), value);
   }
@@ -100,8 +101,8 @@ function applyTextFormatting(text: string): ReactElement[] {
   return elements;
 }
 
+// Expand template tags and preserve the lightweight formatting supported in printable label text.
 export function renderLabelContents(template: string, obj: GenericObject): ReactElement {
-  // Find all {tags} in the template string and loop over them
   const matches = [...template.matchAll(/{(?:[^}{]|{[^}{]*})*}/gs)];
   let label_text = template;
   matches.forEach((match) => {
@@ -110,6 +111,7 @@ export function renderLabelContents(template: string, obj: GenericObject): React
       const tagValue = getTagValue(tag, obj);
       label_text = label_text.replace(match[0], tagValue);
     } else if ((match[0].match(/{/g) || []).length == 2) {
+      // Double-brace sections keep surrounding text only when the nested tag resolves to a real value.
       const structure = match[0].match(/{(.*?){(.*?)}(.*?)}/);
       if (structure != null) {
         const tag = structure[2];
@@ -123,6 +125,5 @@ export function renderLabelContents(template: string, obj: GenericObject): React
     }
   });
 
-  // Split string on \n into individual lines
   return <>{applyTextFormatting(label_text)}</>;
 }

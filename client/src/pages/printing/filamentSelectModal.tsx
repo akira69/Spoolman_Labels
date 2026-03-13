@@ -19,10 +19,12 @@ interface IFilamentCollapsed extends IFilament {
   "vendor.name": string | null;
 }
 
+// Flatten vendor name into each row so shared table helpers can sort and filter it like a top-level field.
 function collapseFilament(element: IFilament): IFilamentCollapsed {
   return { ...element, "vendor.name": element.vendor?.name ?? null };
 }
 
+// Keep the quick search local to the currently loaded page instead of changing the server-side query contract.
 function matchesSearch(filament: IFilamentCollapsed, searchTerm: string): boolean {
   const needle = searchTerm.trim().toLowerCase();
   if (needle.length === 0) {
@@ -36,6 +38,7 @@ function matchesSearch(filament: IFilamentCollapsed, searchTerm: string): boolea
 const MIN_TABLE_SCROLL_Y = 180;
 const TABLE_BOTTOM_GAP = 16;
 
+// Combine server-side paging with lightweight local selection so the print flow can stay inside one dialog.
 const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props) => {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [messageApi, contextHolder] = message.useMessage();
@@ -134,10 +137,10 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
     setCurrentPage(1);
   };
 
+  // Bulk toggles only touch the rows currently visible after search and paging.
   const selectUnselectFiltered = (select: boolean) => {
     setSelectedItems((prevSelected) => {
       const nextSelected = new Set(prevSelected);
-      // Bulk selection follows the user's current narrowing term so "select all" only touches the rows they can see.
       visibleDataSource.forEach((filament) => {
         if (select) {
           nextSelected.add(filament.id);

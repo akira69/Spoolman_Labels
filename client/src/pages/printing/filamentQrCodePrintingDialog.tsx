@@ -23,6 +23,7 @@ interface FilamentQRCodePrintingDialogProps {
   filamentIds: number[];
 }
 
+// Assemble filament label data, presets, and template tags on top of the shared QR printing workflow.
 const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDialogProps) => {
   const t = useTranslate();
   const baseUrlSetting = useGetSetting("base_url");
@@ -52,11 +53,13 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
 
   const localOrRemotePresets = localPresets ?? remotePresets;
 
+  // Keep edits local until the user explicitly saves so partially edited presets do not overwrite stored defaults.
   const savePresetsRemote = () => {
     if (!localPresets) return;
     setRemotePresets(localPresets);
   };
 
+  // New presets need an id immediately so the selector can switch to them before they are persisted.
   const addNewPreset = () => {
     if (!localOrRemotePresets) return;
     const newId = uuidv4();
@@ -72,6 +75,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
     setSelectedPresetState(newId);
     return newPreset;
   };
+  // Duplicates get a fresh id so later edits do not mutate the original preset in place.
   const duplicateCurrentPreset = () => {
     if (!localOrRemotePresets) return;
     const newPreset = {
@@ -82,6 +86,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
     setLocalPresets([...localOrRemotePresets, newPreset]);
     setSelectedPresetState(newPreset.labelSettings.printSettings.id);
   };
+  // Replace only the active preset inside the working copy shown by this dialog.
   const updateCurrentPreset = (newSettings: SpoolQRCodePrintSettings) => {
     if (!localOrRemotePresets) return;
     setLocalPresets(
@@ -90,6 +95,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
       ),
     );
   };
+  // Clearing the selection lets the fallback logic choose the next valid preset on the next render.
   const deleteCurrentPreset = () => {
     if (!localOrRemotePresets) return;
     setLocalPresets(
@@ -157,6 +163,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
 {comment}
 {vendor.comment}`;
 
+  // Template help needs both built-in fields and dynamic extra fields so the preview stays in sync with custom schemas.
   const filamentTags = [
     { tag: "id" },
     { tag: "registered" },

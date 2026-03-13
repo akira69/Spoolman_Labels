@@ -62,6 +62,7 @@ const paperDimensions: { [key: string]: PaperDimensions } = {
   },
 };
 
+// Lay out printable items onto fixed-size sheets and reuse that DOM for preview, browser print, and image export.
 const PrintingDialog = ({
   items,
   printSettings,
@@ -99,6 +100,7 @@ const PrintingDialog = ({
   const itemsPerRow = paperColumns;
   const itemsPerPage = itemsPerRow * paperRows;
 
+  // Expand skipped slots and copy counts once so every output path shares the same pagination math.
   const itemsIncludingSkipped = [...Array(skipItems).fill(<></>)];
   for (const item of items) {
     for (let i = 0; i < itemCopies; i += 1) {
@@ -106,6 +108,7 @@ const PrintingDialog = ({
     }
   }
 
+  // Chunk the flattened list into physical pages before rendering sheet boundaries.
   const pageBlocks = [];
   for (let page_idx = 0; page_idx < itemsIncludingSkipped.length / itemsPerPage; page_idx += 1) {
     pageBlocks.push(itemsIncludingSkipped.slice(page_idx * itemsPerPage, (page_idx + 1) * itemsPerPage));
@@ -178,18 +181,19 @@ const PrintingDialog = ({
     );
   });
 
+  // Image export only targets label nodes, not the surrounding page chrome.
   const getPrintItems = () => {
     const root = contentRef.current ?? document;
     return Array.from(root.getElementsByClassName("print-qrcode-item"));
   };
 
-
+  // Download one PNG per unique rendered label even when the sheet preview contains repeated copies.
   const saveAsImage = async () => {
     const hasPrinted: Element[] = [];
     const items = getPrintItems();
 
     for (const item of items) {
-      // Prevent printing copies
+      // Repeated copies on the sheet share DOM structure, so skip duplicates during export.
       let isDuplicate = false;
       for (let i = 0; i < hasPrinted.length; i += 1) {
         if (item.isEqualNode(hasPrinted[i])) {
@@ -215,7 +219,6 @@ const PrintingDialog = ({
       link.click();
     }
   };
-
 
   return (
     <>
