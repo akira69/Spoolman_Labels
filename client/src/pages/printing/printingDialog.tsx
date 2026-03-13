@@ -1,4 +1,4 @@
-import { FileImageOutlined, PrinterOutlined } from "@ant-design/icons";
+import { PrinterOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
 import {
   Button,
@@ -14,7 +14,6 @@ import {
   Slider,
   Space,
 } from "antd";
-import * as htmlToImage from "html-to-image";
 import { ReactElement, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { useSavedState } from "../../utils/saveload";
@@ -62,7 +61,6 @@ const paperDimensions: { [key: string]: PaperDimensions } = {
   },
 };
 
-// Lay out printable items onto fixed-size sheets and reuse that DOM for preview, browser print, and image export.
 const PrintingDialog = ({
   items,
   printSettings,
@@ -100,7 +98,6 @@ const PrintingDialog = ({
   const itemsPerRow = paperColumns;
   const itemsPerPage = itemsPerRow * paperRows;
 
-  // Expand skipped slots and copy counts once so every output path shares the same pagination math.
   const itemsIncludingSkipped = [...Array(skipItems).fill(<></>)];
   for (const item of items) {
     for (let i = 0; i < itemCopies; i += 1) {
@@ -108,7 +105,6 @@ const PrintingDialog = ({
     }
   }
 
-  // Chunk the flattened list into physical pages before rendering sheet boundaries.
   const pageBlocks = [];
   for (let page_idx = 0; page_idx < itemsIncludingSkipped.length / itemsPerPage; page_idx += 1) {
     pageBlocks.push(itemsIncludingSkipped.slice(page_idx * itemsPerPage, (page_idx + 1) * itemsPerPage));
@@ -180,45 +176,6 @@ const PrintingDialog = ({
       </div>
     );
   });
-
-  // Image export only targets label nodes, not the surrounding page chrome.
-  const getPrintItems = () => {
-    const root = contentRef.current ?? document;
-    return Array.from(root.getElementsByClassName("print-qrcode-item"));
-  };
-
-  // Download one PNG per unique rendered label even when the sheet preview contains repeated copies.
-  const saveAsImage = async () => {
-    const hasPrinted: Element[] = [];
-    const items = getPrintItems();
-
-    for (const item of items) {
-      // Repeated copies on the sheet share DOM structure, so skip duplicates during export.
-      let isDuplicate = false;
-      for (let i = 0; i < hasPrinted.length; i += 1) {
-        if (item.isEqualNode(hasPrinted[i])) {
-          isDuplicate = true;
-          break;
-        }
-      }
-      if (isDuplicate) {
-        continue;
-      }
-      hasPrinted.push(item);
-
-      // Generate png image
-      const url = await htmlToImage.toPng(item as HTMLElement, {
-        backgroundColor: "#FFF",
-        cacheBust: true,
-      });
-
-      // Download image
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "spoolmanlabel.png";
-      link.click();
-    }
-  };
 
   return (
     <>
@@ -829,13 +786,10 @@ const PrintingDialog = ({
           </Form>
         </Col>
       </Row>
-      <Row justify={"end"}>
+      <Row justify={"end"} style={{ paddingRight: 72 }}>
         <Col>
           <Space>
             {extraButtons}
-            <Button type="primary" icon={<FileImageOutlined />} size="large" onClick={saveAsImage}>
-              {t("printing.generic.saveAsImage")}
-            </Button>
             <Button type="primary" icon={<PrinterOutlined />} size="large" onClick={() => reactToPrintFn()}>
               {t("printing.generic.print")}
             </Button>

@@ -11,7 +11,9 @@ import { IFilament } from "../filaments/model";
 
 interface Props {
   description?: string;
-  onPrint: (selectedFilamentIds: number[]) => void;
+  initialSelectedIds?: number[];
+  onExport?: (selectedIds: number[]) => void;
+  onPrint?: (selectedIds: number[]) => void;
   searchPlaceholder?: string;
 }
 
@@ -19,12 +21,12 @@ interface IFilamentCollapsed extends IFilament {
   "vendor.name": string | null;
 }
 
-// Flatten vendor name into each row so shared table helpers can sort and filter it like a top-level field.
+// Flatten nested vendor data onto the table row so shared column helpers can sort
+// and filter on a plain `vendor.name` field.
 function collapseFilament(element: IFilament): IFilamentCollapsed {
   return { ...element, "vendor.name": element.vendor?.name ?? null };
 }
 
-// Keep the quick search local to the currently loaded page instead of changing the server-side query contract.
 function matchesSearch(filament: IFilamentCollapsed, searchTerm: string): boolean {
   const needle = searchTerm.trim().toLowerCase();
   if (needle.length === 0) {
@@ -38,9 +40,10 @@ function matchesSearch(filament: IFilamentCollapsed, searchTerm: string): boolea
 const MIN_TABLE_SCROLL_Y = 180;
 const TABLE_BOTTOM_GAP = 16;
 
-// Combine server-side paging with lightweight local selection so the print flow can stay inside one dialog.
-const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props) => {
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+// Keep the export flow on the same selection page while reusing the full-dataset
+// filament search behavior from the print foundation PR.
+const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrint, searchPlaceholder }: Props) => {
+  const [selectedItems, setSelectedItems] = useState<number[]>(initialSelectedIds ?? []);
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
@@ -89,7 +92,6 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
     () => (tableProps.dataSource || []).map((record) => ({ ...record })),
     [tableProps.dataSource],
   );
-  // Keep typing responsive by narrowing the current page immediately even while the backend query is in flight.
   const visibleDataSource = useMemo(
     () => dataSource.filter((filament) => matchesSearch(filament, searchValue)),
     [dataSource, searchValue],
@@ -101,7 +103,6 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
       if (!tableContainerRef.current) {
         return;
       }
-      // Recompute against the current viewport so the table can fill the dialog without introducing a second pager row.
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
       const tableTop = tableContainerRef.current.getBoundingClientRect().top;
       const availableHeight = Math.floor(viewportHeight - tableTop - TABLE_BOTTOM_GAP);
@@ -147,7 +148,8 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
     setCurrentPage(1);
   };
 
-  // Bulk toggles only touch the rows currently visible after search and paging.
+  // Bulk selection follows the currently visible search result slice so the quick
+  // page-local narrowing and the backend search stay in sync.
   const selectUnselectFiltered = (select: boolean) => {
     setSelectedItems((prevSelected) => {
       const nextSelected = new Set(prevSelected);
@@ -273,21 +275,40 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
                   count: selectedItems.length,
                 })}
               </div>
-              <Button
-                type="primary"
-                onClick={() => {
-                  if (selectedItems.length === 0) {
-                    messageApi.open({
-                      type: "error",
-                      content: t("printing.filamentSelect.noFilamentsSelected"),
-                    });
-                    return;
-                  }
-                  onPrint(selectedItems);
-                }}
-              >
-                {t("printing.qrcode.button")}
-              </Button>
+              {onPrint && (
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (selectedItems.length === 0) {
+                      messageApi.open({
+                        type: "error",
+                        content: t("printing.filamentSelect.noFilamentsSelected"),
+                      });
+                      return;
+                    }
+                    onPrint(selectedItems);
+                  }}
+                >
+                  {t("printing.qrcode.button")}
+                </Button>
+              )}
+              {onExport && (
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (selectedItems.length === 0) {
+                      messageApi.open({
+                        type: "error",
+                        content: t("printing.filamentSelect.noFilamentsSelected"),
+                      });
+                      return;
+                    }
+                    onExport(selectedItems);
+                  }}
+                >
+                  {t("printing.qrcode.exportButton")}
+                </Button>
+              )}
             </div>
           </Col>
         </Row>

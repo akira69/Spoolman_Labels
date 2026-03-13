@@ -12,18 +12,19 @@ import { IFilament } from "../filaments/model";
 import {
   SpoolQRCodePrintSettings,
   renderLabelContents,
+  renderTemplateText,
   useGetPrintSettings as useGetPrintPresets,
   useSetPrintSettings as useSetPrintPresets,
 } from "./printing";
-import QRCodePrintingDialog from "./qrCodePrintingDialog";
+import QRCodeExportDialog from "./qrCodeExportDialog";
 
 const { Text } = Typography;
 
-interface FilamentQRCodePrintingDialogProps {
+interface FilamentQRCodeExportDialogProps {
   filamentIds: number[];
 }
 
-const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDialogProps) => {
+const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogProps) => {
   const t = useTranslate();
   const baseUrlSetting = useGetSetting("base_url");
   const baseUrlRoot =
@@ -31,7 +32,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
       ? JSON.parse(baseUrlSetting.data?.value)
       : window.location.origin;
   const [messageApi, contextHolder] = message.useMessage();
-  const [useHTTPUrl, setUseHTTPUrl] = useSavedState("print-useHTTPUrl-filament", false);
+  const [useHTTPUrl, setUseHTTPUrl] = useSavedState("export-useHTTPUrl-filament", false);
 
   const itemQueries = useGetFilamentsByIds(filamentIds);
   const items = itemQueries
@@ -41,13 +42,15 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
     .filter((item) => item !== null) as IFilament[];
 
   const [selectedPresetState, setSelectedPresetState] = useSavedState<string | undefined>(
-    "selectedPresetFilament",
+    "selectedImagePresetFilament",
     undefined,
   );
 
   const [localPresets, setLocalPresets] = useState<SpoolQRCodePrintSettings[] | undefined>();
-  const remotePresets = useGetPrintPresets("print_presets_filament");
-  const setRemotePresets = useSetPrintPresets("print_presets_filament");
+  // Export presets stay in their own bucket so filename/DPI/export-format choices do not
+  // mutate the simpler print-only presets used by the non-export dialog.
+  const remotePresets = useGetPrintPresets("image_presets_filament");
+  const setRemotePresets = useSetPrintPresets("image_presets_filament");
 
   const localOrRemotePresets = localPresets ?? remotePresets;
 
@@ -109,6 +112,8 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
     };
   } else {
     if (localOrRemotePresets.length === 0) {
+      // First-time export users should land in a usable preset immediately instead of an
+      // empty export dialog with no selected settings object to edit.
       const newSetting = addNewPreset();
       if (!newSetting) {
         console.error("Error adding new setting, this should never happen");
@@ -127,9 +132,14 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
         if (foundSetting) {
           curPreset = foundSetting;
         } else {
-          // Fall back to the first saved preset when the remembered selection no longer exists.
-          curPreset = localOrRemotePresets[0];
-          setSelectedPresetState(localOrRemotePresets[0].labelSettings.printSettings.id);
+          curPreset = {
+            labelSettings: {
+              printSettings: {
+                id: "TEMP",
+                name: t("printing.generic.newSetting"),
+              },
+            },
+          };
         }
       }
     }
@@ -149,6 +159,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
 {{comment}}
 {comment}
 {vendor.comment}`;
+  const filenameTemplate = curPreset.filenameTemplate ?? `{vendor.name}-{material}-{name}`;
 
   const filamentTags = [
     { tag: "id" },
@@ -195,7 +206,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
   return (
     <>
       {contextHolder}
-      <QRCodePrintingDialog
+      <QRCodeExportDialog
         printSettings={curPreset.labelSettings}
         setPrintSettings={(newSettings) => {
           curPreset.labelSettings = newSettings;
@@ -208,9 +219,10 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
           default: "WEB+SPOOLMAN:F-{id}",
           url: `${baseUrlRoot}/filament/show/{id}`,
         }}
+        zipFileTypeName="filament"
         extraSettingsStart={
           <>
-            <Form.Item label={t("printing.generic.filamentPrintPresets")}>
+            <Form.Item label={t("printing.generic.filamentImagePresets")}>
               <Flex gap={8}>
                 <Select
                   value={selectedPresetState}
@@ -268,6 +280,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
         }
         items={items.map((filament) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/filament/show/${filament.id}` : `WEB+SPOOLMAN:F-${filament.id}`,
+          amlName: renderTemplateText(filenameTemplate, filament),
           label: (
             <p
               style={{
@@ -281,6 +294,20 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
           ),
           errorLevel: "H",
         }))}
+        extraFormatSettings={
+          <Form.Item
+            label={t("printing.qrcode.filenameTemplate")}
+            tooltip={t("printing.qrcode.filenameTemplateTooltipFilament")}
+          >
+            <Input
+              value={filenameTemplate}
+              onChange={(newValue) => {
+                curPreset.filenameTemplate = newValue.target.value;
+                updateCurrentPreset(curPreset);
+              }}
+            />
+          </Form.Item>
+        }
         extraSettings={
           <>
             <Form.Item label={t("printing.qrcode.template")}>
@@ -331,4 +358,4 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
   );
 };
 
-export default FilamentQRCodePrintingDialog;
+export default FilamentQRCodeExportDialog;
