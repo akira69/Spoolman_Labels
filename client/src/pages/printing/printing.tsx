@@ -54,27 +54,21 @@ export function useSetPrintSettings(
   };
 }
 
-interface GenericObject {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-  extra: { [key: string]: string };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 // Resolve dot-path placeholders, including JSON-backed extra fields, for label templates.
-function getTagValue(tag: string, obj: GenericObject): any {
+function getTagValue(tag: string, obj: object): unknown {
+  const record = obj as { [key: string]: unknown; extra?: { [key: string]: string } };
   const tagParts = tag.split(".");
   if (tagParts[0] === "extra") {
-    const extraValue = obj.extra[tagParts[1]];
+    const extraValue = record.extra?.[tagParts[1]];
     if (extraValue === undefined) {
       return "?";
     }
     return JSON.parse(extraValue);
   }
 
-  const value = obj[tagParts[0]] ?? "?";
+  const value = record[tagParts[0]] ?? "?";
   // Nested objects reuse the same lookup rules so templates can walk relations like vendor.name.
-  if (typeof value === "object") {
+  if (typeof value === "object" && value !== null) {
     return getTagValue(tagParts.slice(1).join("."), value);
   }
   return value;
@@ -102,24 +96,24 @@ function applyTextFormatting(text: string): ReactElement[] {
 }
 
 // Expand template tags and preserve the lightweight formatting supported in printable label text.
-export function renderLabelContents(template: string, obj: GenericObject): ReactElement {
+export function renderLabelContents(template: string, obj: object): ReactElement {
   const matches = [...template.matchAll(/{(?:[^}{]|{[^}{]*})*}/gs)];
   let label_text = template;
   matches.forEach((match) => {
     if ((match[0].match(/{/g) || []).length == 1) {
       const tag = match[0].replace(/[{}]/g, "");
       const tagValue = getTagValue(tag, obj);
-      label_text = label_text.replace(match[0], tagValue);
+      label_text = label_text.replace(match[0], String(tagValue));
     } else if ((match[0].match(/{/g) || []).length == 2) {
       // Double-brace sections keep surrounding text only when the nested tag resolves to a real value.
       const structure = match[0].match(/{(.*?){(.*?)}(.*?)}/);
       if (structure != null) {
         const tag = structure[2];
         const tagValue = getTagValue(tag, obj);
-        if (tagValue == "?") {
+        if (tagValue === "?") {
           label_text = label_text.replace(match[0], "");
         } else {
-          label_text = label_text.replace(match[0], structure[1] + tagValue + structure[3]);
+          label_text = label_text.replace(match[0], structure[1] + String(tagValue) + structure[3]);
         }
       }
     }

@@ -96,6 +96,7 @@ async def find(
     *,
     db: AsyncSession,
     ids: list[int] | None = None,
+    search: str | None = None,
     vendor_name: str | None = None,
     vendor_id: int | Sequence[int] | None = None,
     name: str | None = None,
@@ -126,6 +127,38 @@ async def find(
     stmt = add_where_clause_str_opt(stmt, models.Filament.material, material)
     stmt = add_where_clause_str_opt(stmt, models.Filament.article_number, article_number)
     stmt = add_where_clause_str_opt(stmt, models.Filament.external_id, external_id)
+    if search is not None:
+        search_conditions = []
+        for value_part in search.split(","):
+            if len(value_part) == 0:
+                continue
+
+            if value_part[0] == '"' and value_part[-1] == '"':
+                exact_value = value_part[1:-1]
+                search_conditions.extend(
+                    [
+                        models.Vendor.name == exact_value,
+                        models.Filament.name == exact_value,
+                        models.Filament.material == exact_value,
+                        models.Filament.article_number == exact_value,
+                    ],
+                )
+                if exact_value.lstrip("-").isdigit():
+                    search_conditions.append(models.Filament.id == int(exact_value))
+            else:
+                fuzzy_value = f"%{value_part}%"
+                search_conditions.extend(
+                    [
+                        models.Vendor.name.ilike(fuzzy_value),
+                        models.Filament.name.ilike(fuzzy_value),
+                        models.Filament.material.ilike(fuzzy_value),
+                        models.Filament.article_number.ilike(fuzzy_value),
+                        sqlalchemy.cast(models.Filament.id, sqlalchemy.String).ilike(fuzzy_value),
+                    ],
+                )
+
+        if search_conditions:
+            stmt = stmt.where(sqlalchemy.or_(*search_conditions))
 
     total_count = None
 

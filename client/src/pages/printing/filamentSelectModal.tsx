@@ -44,6 +44,7 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
+  const [serverSearchValue, setServerSearchValue] = useState("");
   const [tableScrollY, setTableScrollY] = useState<number>(300);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
@@ -51,6 +52,11 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
   const { tableProps, sorters, filters, setFilters, currentPage, pageSize, setCurrentPage, setPageSize } =
     useTable<IFilamentCollapsed>({
       resource: "filament",
+      meta: {
+        queryParams: {
+          ...(serverSearchValue.trim().length > 0 ? { search: serverSearchValue.trim() } : {}),
+        },
+      },
       syncWithLocation: false,
       pagination: {
         mode: "server",
@@ -83,7 +89,7 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
     () => (tableProps.dataSource || []).map((record) => ({ ...record })),
     [tableProps.dataSource],
   );
-  // Keep the selector standalone on current master: search only narrows the rows already loaded for this page.
+  // Keep typing responsive by narrowing the current page immediately even while the backend query is in flight.
   const visibleDataSource = useMemo(
     () => dataSource.filter((filament) => matchesSearch(filament, searchValue)),
     [dataSource, searchValue],
@@ -134,6 +140,10 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
   };
   const handlePageSizeChange = (_current: number, size: number) => {
     setPageSize(size);
+    setCurrentPage(1);
+  };
+  const applySearchFilter = (nextSearch: string) => {
+    setServerSearchValue(nextSearch.trim());
     setCurrentPage(1);
   };
 
@@ -215,10 +225,13 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
               allowClear
               enterButton
               onChange={(event) => {
-                setSearchValue(event.target.value);
+                const value = event.target.value;
+                setSearchValue(value);
+                applySearchFilter(value);
               }}
               onSearch={(value) => {
                 setSearchValue(value);
+                applySearchFilter(value);
               }}
             />
           </Col>
@@ -228,6 +241,7 @@ const FilamentSelectModal = ({ description, onPrint, searchPlaceholder }: Props)
             <Button
               onClick={() => {
                 setSearchValue("");
+                setServerSearchValue("");
                 setFilters([], "replace");
                 setCurrentPage(1);
               }}
