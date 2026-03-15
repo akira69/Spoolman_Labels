@@ -5,20 +5,20 @@ import { FloatButton, Modal, Space } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-// Keep the scanner modal globally available so labels can jump straight into the matching detail pages.
 const QRCodeScannerModal = () => {
   const [visible, setVisible] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const t = useTranslate();
   const navigate = useNavigate();
 
-  // Accept both compact WEB+SPOOLMAN payloads and shared detail URLs so old and new labels scan the same way.
   const onScan = (detectedCodes: IDetectedBarcode[]) => {
     if (detectedCodes.length === 0) {
       return;
     }
     const result = detectedCodes[0].rawValue;
 
+    // Accept both compact WEB+SPOOLMAN payloads and full show-page URLs so
+    // exported and printed labels keep scanning after base URL changes.
     const spoolMatch = result.match(/^web\+spoolman:s-(?<id>[0-9]+)$/i);
     if (spoolMatch && spoolMatch.groups) {
       setVisible(false);
@@ -57,7 +57,8 @@ const QRCodeScannerModal = () => {
             onScan={onScan}
             formats={["qr_code"]}
             onError={(err: unknown) => {
-              // Translate the scanner library's browser-specific failures into actionable UI copy.
+              // Map browser/scanner-library failures onto translated messages instead of
+              // exposing raw exception names in the modal.
               const error = err as Error;
               console.error(error);
               if (error.name === "NotAllowedError") {

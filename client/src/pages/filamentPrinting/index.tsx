@@ -2,25 +2,34 @@ import { PageHeader } from "@refinedev/antd";
 import { useTranslate } from "@refinedev/core";
 import { theme } from "antd";
 import { Content } from "antd/es/layout/layout";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import FilamentQRCodePrintingDialog from "../printing/filamentQrCodePrintingDialog";
-import FilamentSelectModal from "../printing/filamentSelectModal";
-
-dayjs.extend(utc);
 
 const { useToken } = theme;
 
 export const FilamentPrinting = () => {
   const { token } = useToken();
   const t = useTranslate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const filamentIds = searchParams.getAll("filaments").map(Number);
-  // The URL drives the two-step flow so refresh/back navigation can reopen the selector or the print dialog predictably.
-  const step = filamentIds.length > 0 ? 1 : 0;
+  const returnUrl = searchParams.get("return");
+  const selectionPath = useMemo(() => {
+    const params = new URLSearchParams();
+    if (returnUrl) {
+      params.set("return", returnUrl);
+    }
+    const query = params.toString();
+    return `/filament/labels${query ? `?${query}` : ""}`;
+  }, [returnUrl]);
+
+  useEffect(() => {
+    if (filamentIds.length === 0) {
+      navigate(selectionPath, { replace: true });
+    }
+  }, [filamentIds.length, navigate, selectionPath]);
 
   return (
     <>
@@ -48,25 +57,7 @@ export const FilamentPrinting = () => {
             lineHeight: 1.5,
           }}
         >
-          {step === 0 && (
-            <FilamentSelectModal
-              description={t("printing.filamentSelect.description")}
-              searchPlaceholder={t("printing.filamentSelect.searchPlaceholder", {
-                defaultValue: "Search by filament ID, vendor, name, or material",
-              })}
-              onPrint={(selectedFilamentIds) => {
-                setSearchParams((prev) => {
-                  const newParams = new URLSearchParams(prev);
-                  newParams.delete("filaments");
-                  selectedFilamentIds.forEach((id) => newParams.append("filaments", id.toString()));
-                  // Persist a stable return target so the print dialog can always send the user back to the selector.
-                  newParams.set("return", "/filament/print");
-                  return newParams;
-                });
-              }}
-            />
-          )}
-          {step === 1 && <FilamentQRCodePrintingDialog filamentIds={filamentIds} />}
+          {filamentIds.length > 0 && <FilamentQRCodePrintingDialog filamentIds={filamentIds} />}
         </Content>
       </PageHeader>
     </>

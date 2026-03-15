@@ -24,7 +24,8 @@ interface SpoolQRCodePrintingDialog {
   spoolIds: number[];
 }
 
-// Assemble spool label data, presets, and template tags on top of the shared QR printing workflow.
+// Adapt spool records into the generic QR print dialog while keeping spool print
+// presets isolated from the export-specific preset buckets.
 const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
   const t = useTranslate();
   const baseUrlSetting = useGetSetting("base_url");
@@ -40,24 +41,21 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     })
     .filter((item) => item !== null) as ISpool[];
 
-  // Selected preset state
   const [selectedPresetState, setSelectedPresetState] = useSavedState<string | undefined>("selectedPreset", undefined);
 
-  // Keep a local copy of the settings which is what's actually displayed. Use the remote state only for saving.
-  // This decouples the debounce stuff from the UI
+  // Edit a local preset copy first so the form stays responsive and only persists to
+  // saved settings when the user explicitly clicks save.
   const [localPresets, setLocalPresets] = useState<SpoolQRCodePrintSettings[] | undefined>();
   const remotePresets = useGetPrintPresets();
   const setRemotePresets = useSetPrintPresets();
 
   const localOrRemotePresets = localPresets ?? remotePresets;
 
-  // Keep edits local until the user explicitly saves so partially edited presets do not overwrite stored defaults.
   const savePresetsRemote = () => {
     if (!localPresets) return;
     setRemotePresets(localPresets);
   };
 
-  // New presets need an id immediately so the selector can switch to them before they are persisted.
   const addNewPreset = () => {
     if (!localOrRemotePresets) return;
     const newId = uuidv4();
@@ -73,7 +71,6 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     setSelectedPresetState(newId);
     return newPreset;
   };
-  // Duplicates get a fresh id so later edits do not mutate the original preset in place.
   const duplicateCurrentPreset = () => {
     if (!localOrRemotePresets) return;
     const newPreset = {
@@ -84,7 +81,6 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     setLocalPresets([...localOrRemotePresets, newPreset]);
     setSelectedPresetState(newPreset.labelSettings.printSettings.id);
   };
-  // Replace only the active preset inside the working copy shown by this dialog.
   const updateCurrentPreset = (newSettings: SpoolQRCodePrintSettings) => {
     if (!localOrRemotePresets) return;
     setLocalPresets(
@@ -93,7 +89,6 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
       ),
     );
   };
-  // Clearing the selection lets the fallback logic choose the next valid preset on the next render.
   const deleteCurrentPreset = () => {
     if (!localOrRemotePresets) return;
     setLocalPresets(
@@ -104,7 +99,6 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
 
   let curPreset: SpoolQRCodePrintSettings;
   if (localOrRemotePresets === undefined) {
-    // Use a temporary preset while settings are still loading so the dialog can render immediately.
     curPreset = {
       labelSettings: {
         printSettings: {
@@ -115,19 +109,18 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     };
   } else {
     if (localOrRemotePresets.length === 0) {
-      // First-time users still need one editable preset so the dialog never opens into an empty state.
+      // First-time print users should land in an editable preset immediately instead of
+      // an empty dialog with no selected settings object.
       const newSetting = addNewPreset();
       if (!newSetting) {
         console.error("Error adding new setting, this should never happen");
         return;
       }
 
-      // The rest of this render expects the working list to already contain the preset it should show.
       localOrRemotePresets.push(newSetting);
       curPreset = newSetting;
     } else {
       if (!selectedPresetState) {
-        // Default to the first saved preset until the user picks a different one.
         curPreset = localOrRemotePresets[0];
         setSelectedPresetState(localOrRemotePresets[0].labelSettings.printSettings.id);
       } else {
@@ -137,15 +130,9 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
         if (foundSetting) {
           curPreset = foundSetting;
         } else {
-          // Fall back to a temporary preset when the remembered selection no longer exists.
-          curPreset = {
-            labelSettings: {
-              printSettings: {
-                id: "TEMP",
-                name: t("printing.generic.newSetting"),
-              },
-            },
-          };
+          // Recover to the first saved preset when the remembered selection no longer exists.
+          curPreset = localOrRemotePresets[0];
+          setSelectedPresetState(localOrRemotePresets[0].labelSettings.printSettings.id);
         }
       }
     }
@@ -164,7 +151,6 @@ Spool Weight: {filament.spool_weight} g
 {filament.comment}
 {filament.vendor.comment}`;
 
-  // Template help needs both built-in fields and dynamic extra fields so the preview stays in sync with custom schemas.
   const spoolTags = [
     { tag: "id" },
     { tag: "registered" },
@@ -228,6 +214,8 @@ Spool Weight: {filament.spool_weight} g
     });
   }
 
+  // Expose spool, filament, and vendor placeholders because the same tag picker drives
+  // preview text and printed label templates.
   const templateTags = [...spoolTags, ...filamentTags, ...vendorTags];
 
   return (
@@ -248,7 +236,7 @@ Spool Weight: {filament.spool_weight} g
         }}
         extraSettingsStart={
           <>
-            <Form.Item label={t("printing.generic.settings")}>
+            <Form.Item label={t("printing.generic.spoolPrintPresets")}>
               <Flex gap={8}>
                 <Select
                   value={selectedPresetState}
