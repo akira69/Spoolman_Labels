@@ -10,6 +10,7 @@ import { useSavedState } from "../../utils/saveload";
 import { useGetFilamentsByIds } from "../filaments/functions";
 import { IFilament } from "../filaments/model";
 import {
+  getConfiguredBaseUrl,
   SpoolQRCodePrintSettings,
   renderLabelContents,
   useGetPrintSettings as useGetPrintPresets,
@@ -27,10 +28,8 @@ interface FilamentQRCodePrintingDialogProps {
 const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDialogProps) => {
   const t = useTranslate();
   const baseUrlSetting = useGetSetting("base_url");
-  const baseUrlRoot =
-    baseUrlSetting.data?.value !== undefined && JSON.parse(baseUrlSetting.data?.value) !== ""
-      ? JSON.parse(baseUrlSetting.data?.value)
-      : window.location.origin;
+  // Accept both JSON-backed settings and legacy plain strings so old `base_url` values do not crash the dialog.
+  const baseUrlRoot = getConfiguredBaseUrl(baseUrlSetting.data?.value, window.location.origin);
   const [messageApi, contextHolder] = message.useMessage();
   const [useHTTPUrl, setUseHTTPUrl] = useSavedState("print-useHTTPUrl-filament", false);
 
