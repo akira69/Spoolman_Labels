@@ -68,7 +68,9 @@ export const VendorEdit = () => {
     [watchedAllValues],
   );
   const hasFormChanges =
-    initialComparableState !== null && watchedComparableState !== null && initialComparableState !== watchedComparableState;
+    initialComparableState !== null &&
+    watchedComparableState !== null &&
+    initialComparableState !== watchedComparableState;
   const saveButtonState = {
     ...saveButtonProps,
     type: hasFormChanges ? ("primary" as const) : ("default" as const),
