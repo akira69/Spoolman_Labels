@@ -76,14 +76,6 @@ export const SpoolEdit = () => {
   const initialWeightValue = Form.useWatch("initial_weight", form);
   const spoolWeightValue = Form.useWatch("spool_weight", form);
 
-  // Add the filament_id field to the form
-  if (formProps.initialValues) {
-    formProps.initialValues["filament_id"] = formProps.initialValues["filament"].id;
-
-    // Parse the extra fields from string values into real types
-    formProps.initialValues = ParsedExtras(formProps.initialValues);
-  }
-
   //
   // Set up the filament selection options
   //
@@ -114,6 +106,14 @@ export const SpoolEdit = () => {
     }
   }, [selectedFilamentID, internalSelectOptions, externalSelectOptions]);
   const watchedAllValues = Form.useWatch([], form);
+
+  // Initialize form fields and parse extra fields
+  useEffect(() => {
+    if (formProps.initialValues) {
+      formProps.initialValues["filament_id"] = formProps.initialValues["filament"].id;
+      formProps.initialValues = ParsedExtras(formProps.initialValues);
+    }
+  }, [formProps, formProps.initialValues?.id]);
 
   // Override the form's onFinish method to stringify the extra fields
   const originalOnFinish = formProps.onFinish;

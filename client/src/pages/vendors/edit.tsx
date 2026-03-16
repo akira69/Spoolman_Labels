@@ -3,7 +3,7 @@ import { HttpError, useTranslate } from "@refinedev/core";
 import { Alert, DatePicker, Form, Input, InputNumber, message, Typography } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import dayjs from "dayjs";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { toComparableState } from "../../utils/formState";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -41,10 +41,12 @@ export const VendorEdit = () => {
   });
   const watchedAllValues = Form.useWatch([], formProps.form);
 
-  // Parse the extra fields from string values into real types
-  if (formProps.initialValues) {
-    formProps.initialValues = ParsedExtras(formProps.initialValues);
-  }
+  // Initialize form fields and parse extra fields
+  useEffect(() => {
+    if (formProps.initialValues) {
+      formProps.initialValues = ParsedExtras(formProps.initialValues);
+    }
+  }, [formProps, formProps.initialValues?.id]);
 
   // Override the form's onFinish method to stringify the extra fields
   const originalOnFinish = formProps.onFinish;

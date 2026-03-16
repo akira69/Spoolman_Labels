@@ -66,13 +66,13 @@ export const FilamentEdit = () => {
   });
   const watchedAllValues = Form.useWatch([], formProps.form);
 
-  // Add the vendor_id field to the form
-  if (formProps.initialValues) {
-    formProps.initialValues["vendor_id"] = formProps.initialValues["vendor"]?.id;
-
-    // Parse the extra fields from string values into real types
-    formProps.initialValues = ParsedExtras(formProps.initialValues);
-  }
+  // Initialize form fields and parse extra fields
+  useEffect(() => {
+    if (formProps.initialValues) {
+      formProps.initialValues["vendor_id"] = formProps.initialValues["vendor"]?.id;
+      formProps.initialValues = ParsedExtras(formProps.initialValues);
+    }
+  }, [formProps, formProps.initialValues?.id]);
 
   // Update colorType state
   useEffect(() => {
