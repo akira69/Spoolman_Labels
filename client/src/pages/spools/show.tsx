@@ -124,9 +124,15 @@ export const SpoolShow = () => {
   return (
     <Show
       isLoading={isLoading}
-      title={record ? formatTitle(record) : ""}
+      title={
+        record ? (
+          <span style={{ whiteSpace: "normal", overflowWrap: "anywhere", lineHeight: 1.2 }}>{formatTitle(record)}</span>
+        ) : (
+          ""
+        )
+      }
       headerButtons={({ defaultButtons }) => (
-        <>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
           <Button type="primary" icon={<ToolOutlined />} onClick={() => record && openSpoolAdjustModal(record)}>
             {t("spool.titles.adjust")}
           </Button>
@@ -155,7 +161,7 @@ export const SpoolShow = () => {
 
           {defaultButtons}
           {spoolAdjustModal}
-        </>
+        </div>
       )}
     >
       <Row gutter={[32, 24]}>

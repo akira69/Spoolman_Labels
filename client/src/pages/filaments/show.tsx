@@ -58,9 +58,15 @@ export const FilamentShow = () => {
   return (
     <Show
       isLoading={isLoading}
-      title={record ? formatTitle(record) : ""}
+      title={
+        record ? (
+          <span style={{ whiteSpace: "normal", overflowWrap: "anywhere", lineHeight: 1.2 }}>{formatTitle(record)}</span>
+        ) : (
+          ""
+        )
+      }
       headerButtons={({ defaultButtons }) => (
-        <>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
           <Button type="primary" onClick={gotoSpools}>
             {t("filament.fields.spools")}
           </Button>
@@ -78,7 +84,7 @@ export const FilamentShow = () => {
             {t("printing.qrcode.selectButton")}
           </Button>
           {defaultButtons}
-        </>
+        </div>
       )}
     >
       <Row gutter={[32, 24]}>

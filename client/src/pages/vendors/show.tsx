@@ -29,7 +29,16 @@ export const VendorShow = () => {
   };
 
   return (
-    <Show isLoading={isLoading} title={record ? formatTitle(record) : ""}>
+    <Show
+      isLoading={isLoading}
+      title={
+        record ? (
+          <span style={{ whiteSpace: "normal", overflowWrap: "anywhere", lineHeight: 1.2 }}>{formatTitle(record)}</span>
+        ) : (
+          ""
+        )
+      }
+    >
       <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
         {`${t("vendor.fields.registered")} ${
           record?.registered ? dayjs.utc(record.registered).local().format("YYYY-MM-DD HH:mm:ss") : "-"
