@@ -371,6 +371,7 @@ interface FilteredColumnProps {
   filters?: ColumnFilterItem[];
   filteredValue?: string[];
   allowMultipleFilters?: boolean;
+  includeEmptyFilter?: boolean;
   onFilterDropdownOpen?: () => void;
   loadingFilters?: boolean;
 }
@@ -585,6 +586,7 @@ interface FilteredQueryColumnProps<Obj extends Entity> extends BaseColumnProps<O
   filterValueQuery: UseQueryResult<string[] | ColumnFilterItem[], unknown>;
   allowMultipleFilters?: boolean;
   includeEmptyFilter?: boolean;
+  includeEmptyOption?: boolean; // alias
   emptyFilterLabel?: string;
 }
 
@@ -603,7 +605,7 @@ export function FilteredQueryColumn<Obj extends Entity>(props: FilteredQueryColu
       return item;
     });
   }
-  if (props.includeEmptyFilter !== false) {
+  if ((props.includeEmptyOption ?? props.includeEmptyFilter) !== false) {
     filters.push({
       text: props.emptyFilterLabel ?? "<empty>",
       value: "<empty>",

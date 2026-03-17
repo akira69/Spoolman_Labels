@@ -8,7 +8,9 @@ import {
 } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
+import { useQuery } from "@tanstack/react-query";
 import { Button, Dropdown } from "antd";
+import { ColumnFilterItem } from "antd/es/table/interface";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useMemo, useState } from "react";
@@ -35,6 +37,7 @@ import { hasMeaningfulFilters, removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
 import { useCurrencyFormatter } from "../../utils/settings";
+import { getAPIURL } from "../../utils/url";
 import { IFilament } from "./model";
 
 dayjs.extend(utc);
@@ -58,10 +61,19 @@ function translateColumnI18nKey(columnName: string): string {
   return `filament.fields.${columnName}`;
 }
 
+function getColumnLabel(t: (key: string, options?: unknown) => string, columnName: string): string {
+  if (columnName === "spool_count") {
+    return t("filament.fields.spool_count", { defaultValue: "Spool Count" });
+  }
+
+  return t(translateColumnI18nKey(columnName));
+}
+
 const namespace = "filamentList-v2";
 
 const allColumns: (keyof IFilamentCollapsed & string)[] = [
   "id",
+  "spool_count",
   "vendor.name",
   "name",
   "material",
@@ -80,12 +92,35 @@ const defaultColumns = allColumns.filter(
   (column_id) => ["registered", "density", "diameter", "spool_weight"].indexOf(column_id) === -1,
 );
 
+function useSpoolmanSpoolCounts(enabled: boolean = false) {
+  return useQuery<number[], unknown, ColumnFilterItem[]>({
+    enabled,
+    queryKey: ["filamentSpoolCounts"],
+    queryFn: async () => {
+      const response = await fetch(getAPIURL() + "/filament/spool-count");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
+    select: (data) => {
+      return data
+        .sort((a, b) => a - b)
+        .map((count) => ({
+          text: String(count),
+          value: String(count),
+        }));
+    },
+  });
+}
+
 export const FilamentList = () => {
   const t = useTranslate();
   const invalidate = useInvalidate();
   const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.filament);
   const currencyFormatter = useCurrencyFormatter();
+  const querySpoolCounts = useSpoolmanSpoolCounts(true);
 
   const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
 
@@ -213,7 +248,7 @@ export const FilamentList = () => {
 
                 return {
                   key: column_id,
-                  label: t(translateColumnI18nKey(column_id)),
+                  label: getColumnLabel(t, column_id),
                 };
               }),
               selectedKeys: showColumns,
@@ -249,6 +284,18 @@ export const FilamentList = () => {
             id: "id",
             i18ncat: "filament",
             width: 70,
+          }),
+          FilteredQueryColumn({
+            ...commonProps,
+            id: "spool_count",
+            dataId: "spool_count",
+            title: t("filament.fields.spool_count"),
+            filterValueQuery: querySpoolCounts,
+            // Spool count is always a computed number, so an <empty> bucket would be
+            // misleading noise rather than a real "missing value" state.
+            includeEmptyOption: false,
+            width: 120,
+            transform: (value) => value ?? 0,
           }),
           FilteredQueryColumn({
             ...commonProps,
