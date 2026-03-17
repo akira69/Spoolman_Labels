@@ -6,8 +6,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useNavigate } from "react-router";
 import { ExtraFieldDisplay } from "../../components/extraFields";
+import ColorHexPreview from "../../components/colorHexPreview";
 import { NumberFieldUnit } from "../../components/numberField";
-import SpoolIcon from "../../components/spoolIcon";
 import VendorLogo from "../../components/vendorLogo";
 import { enrichText } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -16,7 +16,7 @@ import { getBasePath, stripBasePath } from "../../utils/url";
 import { IFilament } from "./model";
 dayjs.extend(utc);
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 export const FilamentShow = () => {
   const t = useTranslate();
@@ -54,13 +54,6 @@ export const FilamentShow = () => {
     const url = `/vendor/show/${item.vendor.id}`;
     return <a href={url}>{item.vendor.name}</a>;
   };
-
-  const colorObj = record?.multi_color_hexes
-    ? {
-        colors: record.multi_color_hexes.split(","),
-        vertical: record.multi_color_direction === "longitudinal",
-      }
-    : record?.color_hex;
 
   return (
     <Show
@@ -101,8 +94,16 @@ export const FilamentShow = () => {
           <Title level={5}>{t("filament.fields.name")}</Title>
           <TextField value={record?.name} />
           <Title level={5}>{t("filament.fields.color_hex")}</Title>
-          {colorObj && <SpoolIcon color={colorObj} size="large" no_margin />}
-          {record?.color_hex && <TextField value={`#${record?.color_hex}`} />}
+          {multiColorLabel && (
+            <Text type="secondary" style={{ display: "block", marginTop: -10, marginBottom: 8 }}>
+              {multiColorLabel}
+            </Text>
+          )}
+          <ColorHexPreview
+            colorHex={record?.color_hex}
+            multiColorHexes={record?.multi_color_hexes}
+            multiColorDirection={record?.multi_color_direction}
+          />
           <Title level={5}>{t("filament.fields.material")}</Title>
           <TextField value={record?.material} />
           <Title level={5}>{t("filament.fields.price")}</Title>
