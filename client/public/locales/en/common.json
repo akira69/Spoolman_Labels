@@ -194,8 +194,8 @@
         },
         "spoolSelect": {
             "title": "Select Spools",
-            "description": "Select spools to print labels for.",
-            "searchPlaceholder": "Search vendor, name, material, lot #",
+            "description": "Search for and select spool labels to print:",
+            "searchPlaceholder": "Search by spool ID, filament, material, location, or lot number",
             "showArchived": "Show Archived",
             "noSpoolsSelected": "You have not selected any spools.",
             "selectAll": "Select/Unselect All",
@@ -204,8 +204,8 @@
         },
         "filamentSelect": {
             "title": "Select Filaments",
-            "description": "Select filaments to print labels for.",
-            "searchPlaceholder": "Search vendor, name, material, article #",
+            "description": "Search for and select filament labels to print:",
+            "searchPlaceholder": "Search by filament ID, vendor, name, material, or color",
             "noFilamentsSelected": "You have not selected any filaments.",
             "selectAll": "Select/Unselect All",
             "selectedTotal_one": "{{count}} filament selected",
