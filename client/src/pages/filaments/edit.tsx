@@ -68,9 +68,13 @@ export const FilamentEdit = () => {
 
   // Initialize form fields and parse extra fields
   useEffect(() => {
-    if (formProps.initialValues) {
-      formProps.initialValues["vendor_id"] = formProps.initialValues["vendor"]?.id;
-      formProps.initialValues = ParsedExtras(formProps.initialValues);
+    if (formProps.initialValues && formProps.form) {
+      const updated = {
+        ...formProps.initialValues,
+        vendor_id: formProps.initialValues["vendor"]?.id,
+      };
+      const parsed = ParsedExtras(updated);
+      formProps.form.setFieldsValue(parsed);
     }
   }, [formProps, formProps.initialValues?.id]);
 

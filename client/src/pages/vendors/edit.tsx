@@ -43,8 +43,9 @@ export const VendorEdit = () => {
 
   // Initialize form fields and parse extra fields
   useEffect(() => {
-    if (formProps.initialValues) {
-      formProps.initialValues = ParsedExtras(formProps.initialValues);
+    if (formProps.initialValues && formProps.form) {
+      const parsed = ParsedExtras(formProps.initialValues);
+      formProps.form.setFieldsValue(parsed);
     }
   }, [formProps, formProps.initialValues?.id]);
 

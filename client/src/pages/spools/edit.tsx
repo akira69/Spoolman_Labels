@@ -109,11 +109,15 @@ export const SpoolEdit = () => {
 
   // Initialize form fields and parse extra fields
   useEffect(() => {
-    if (formProps.initialValues) {
-      formProps.initialValues["filament_id"] = formProps.initialValues["filament"].id;
-      formProps.initialValues = ParsedExtras(formProps.initialValues);
+    if (formProps.initialValues && form) {
+      const updated = {
+        ...formProps.initialValues,
+        filament_id: formProps.initialValues["filament"].id,
+      };
+      const parsed = ParsedExtras(updated);
+      form.setFieldsValue(parsed);
     }
-  }, [formProps, formProps.initialValues?.id]);
+  }, [formProps, formProps.initialValues?.id, form]);
 
   // Override the form's onFinish method to stringify the extra fields
   const originalOnFinish = formProps.onFinish;
