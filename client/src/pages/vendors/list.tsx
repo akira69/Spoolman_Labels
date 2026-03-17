@@ -1,7 +1,7 @@
 import { EditOutlined, EyeOutlined, FilterOutlined, PlusSquareOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown, Table } from "antd";
+import { Button, Dropdown } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useCallback, useMemo, useState } from "react";
@@ -18,6 +18,7 @@ import {
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
 import { useSpoolmanVendorExternalIds, useSpoolmanVendors } from "../../components/otherModels";
+import ResizableTable from "../../components/resizableTable";
 import VendorLogo from "../../components/vendorLogo";
 import { removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -174,7 +175,8 @@ export const VendorList = () => {
         </>
       )}
     >
-      <Table
+      <ResizableTable
+        columnResizeKey="vendor-list-table"
         {...tableProps}
         sticky
         tableLayout="auto"
