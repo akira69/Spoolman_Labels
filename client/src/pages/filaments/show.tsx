@@ -32,6 +32,13 @@ export const FilamentShow = () => {
   const { data, isLoading } = query;
 
   const record = data?.data;
+  // Show the direction alongside the preview so identical color sets still read differently to the user.
+  const multiColorLabel =
+    record?.multi_color_hexes && record.multi_color_direction === "longitudinal"
+      ? `${t("filament.fields.longitudinal")} ${t("filament.fields.multi_color")}`
+      : record?.multi_color_hexes
+        ? `${t("filament.fields.coaxial")} ${t("filament.fields.multi_color")}`
+        : null;
   const showFormulaFields = useMemo(
     () => getFormulaFieldsForSurface(formulaFields.data, FormulaFieldSurface.show),
     [formulaFields.data],

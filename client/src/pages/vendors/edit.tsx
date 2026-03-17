@@ -22,6 +22,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { useVendorLogoManifest } from "../../components/otherModels";
 import VendorLogo from "../../components/vendorLogo";
+import { toComparableState } from "../../utils/formState";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { getAPIURL } from "../../utils/url";
 import { suggestVendorLogoOptions, suggestVendorLogoPaths } from "../../utils/vendorLogo";
@@ -70,8 +71,8 @@ export const VendorEdit = () => {
   // Initialize form fields and parse extra fields
   useEffect(() => {
     if (formProps.initialValues && formProps.form) {
-      const parsed = ParsedExtras(formProps.initialValues);
-      formProps.form.setFieldsValue(parsed);
+      const parsed = ParsedExtras(formProps.initialValues as IVendor);
+      formProps.form.setFieldsValue(parsed as IVendor);
     }
   }, [formProps, formProps.initialValues?.id]);
 
@@ -105,7 +106,7 @@ export const VendorEdit = () => {
       originalOnFinish?.({
         extra: {},
         ...stringifiedAllValues,
-      });
+      } as IVendor);
     }
   };
 

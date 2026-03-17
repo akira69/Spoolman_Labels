@@ -113,9 +113,9 @@ export const SpoolEdit = () => {
       const updated = {
         ...formProps.initialValues,
         filament_id: formProps.initialValues["filament"].id,
-      };
-      const parsed = ParsedExtras(updated);
-      form.setFieldsValue(parsed);
+      } as ISpoolRequest;
+      const parsed = ParsedExtras(updated as unknown as ISpool);
+      form.setFieldsValue(parsed as unknown as ISpool);
     }
   }, [formProps, formProps.initialValues?.id, form]);
 

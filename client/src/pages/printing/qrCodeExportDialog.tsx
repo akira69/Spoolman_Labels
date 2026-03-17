@@ -21,6 +21,9 @@ interface QRCodeExportDialogProps {
   extraSettings?: ReactElement;
   extraSettingsStart?: ReactElement;
   extraFormatSettings?: ReactElement;
+  extraTitleSettings?: ReactElement;
+  extraInfoSettings?: ReactElement;
+  extraExportSettings?: ReactElement;
   extraButtons?: ReactElement;
   baseUrlRoot: string;
   useHTTPUrl: boolean;
@@ -38,6 +41,9 @@ const QRCodeExportDialog = ({
   extraSettings,
   extraSettingsStart,
   extraFormatSettings,
+  extraTitleSettings,
+  extraInfoSettings,
+  extraExportSettings,
   extraButtons,
   baseUrlRoot,
   useHTTPUrl,
@@ -170,6 +176,9 @@ const QRCodeExportDialog = ({
             </Row>
           </Form.Item>
 
+          {extraTitleSettings}
+          {extraInfoSettings}
+          {extraExportSettings}
           {extraSettings}
         </>
       }

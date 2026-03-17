@@ -74,9 +74,9 @@ export const FilamentEdit = () => {
       const updated = {
         ...formProps.initialValues,
         vendor_id: formProps.initialValues["vendor"]?.id,
-      };
+      } as unknown as IFilament;
       const parsed = ParsedExtras(updated);
-      formProps.form.setFieldsValue(parsed);
+      formProps.form.setFieldsValue(parsed as IFilament);
     }
   }, [formProps, formProps.initialValues?.id]);
 
@@ -102,7 +102,7 @@ export const FilamentEdit = () => {
       originalOnFinish?.({
         extra: {},
         ...stringifiedAllValues,
-      });
+      } as IFilament);
     }
   };
 

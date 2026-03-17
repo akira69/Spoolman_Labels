@@ -101,19 +101,20 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
   const currentPresets = localCurrentPresets ?? remoteCurrentPresets;
   const otherPresets = remoteOtherPresets ?? [];
 
-  const remotePresetsComparable = useMemo(() => JSON.stringify(remotePresets ?? []), [remotePresets]);
+  const remotePresetsComparable = useMemo(() => JSON.stringify(remoteCurrentPresets ?? []), [remoteCurrentPresets]);
   const localPresetsComparable = useMemo(
-    () => JSON.stringify(localPresets ?? remotePresets ?? []),
-    [localPresets, remotePresets],
+    () => JSON.stringify(localCurrentPresets ?? remoteCurrentPresets ?? []),
+    [localCurrentPresets, remoteCurrentPresets],
   );
-  const hasUnsavedPresetChanges = localPresets !== undefined && localPresetsComparable !== remotePresetsComparable;
+  const hasUnsavedPresetChanges =
+    localCurrentPresets !== undefined && localPresetsComparable !== remotePresetsComparable;
 
   const savePresetsRemote = async (): Promise<boolean> => {
-    if (!localPresets || !hasUnsavedPresetChanges) return false;
+    if (!localCurrentPresets || !hasUnsavedPresetChanges) return false;
     // Only persist when the local working copy diverges from the remote source; this
     // keeps the Save Preset button as a true "needs action" indicator.
-    await setRemotePresets.mutateAsync(localPresets);
-    setLocalPresets(undefined);
+    await setRemotePresets.mutateAsync(localCurrentPresets);
+    setLocalCurrentPresets(undefined);
     return true;
   };
 

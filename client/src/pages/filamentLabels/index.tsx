@@ -69,7 +69,7 @@ export const FilamentLabels = () => {
             description={t("printing.filamentSelect.description")}
             initialSelectedIds={initialSelectedIds}
             onPrint={(ids) => handleNavigate("print", ids)}
-            onExport={(ids) => handleNavigate("export", ids)}
+            onExport={(ids: number[]) => handleNavigate("export", ids)}
           />
         </Content>
       </PageHeader>

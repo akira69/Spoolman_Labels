@@ -11,7 +11,9 @@ import { IFilament } from "../filaments/model";
 
 interface Props {
   description?: string;
+  initialSelectedIds?: number[];
   onPrint: (selectedFilamentIds: number[]) => void;
+  onExport?: (selectedFilamentIds: number[]) => void;
   searchPlaceholder?: string;
 }
 

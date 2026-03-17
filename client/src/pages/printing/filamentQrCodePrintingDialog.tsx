@@ -102,7 +102,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
 
   const savePresetsRemote = async () => {
     if (!localCurrentPresets) return;
-    await setRemotePresets(localCurrentPresets);
+    await setRemotePresets.mutateAsync(localCurrentPresets);
   };
 
   useEffect(() => {

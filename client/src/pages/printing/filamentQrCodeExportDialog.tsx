@@ -112,7 +112,7 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
   // Keep edits local until the user explicitly saves so imported spool presets can be tried without immediate persistence.
   const savePresetsRemote = async () => {
     if (!localCurrentPresets) return;
-    await setRemoteFilamentPresets(localCurrentPresets);
+    await setRemoteFilamentPresets.mutateAsync(localCurrentPresets);
   };
 
   useEffect(() => {
