@@ -153,7 +153,7 @@ def test_add_boolean_field():
         json={
             "name": "My boolean field",
             "field_type": "boolean",
-            "default_value": json.dumps(True),  # noqa: FBT003
+            "default_value": json.dumps(True),
         },
     )
     assert_httpx_success(result)
@@ -167,7 +167,7 @@ def test_add_boolean_field():
     "multi_choice",
     [True, False],
 )
-def test_add_choice_field(multi_choice: bool):  # noqa: FBT001
+def test_add_choice_field(multi_choice: bool):
     """Test adding a choice field for spools."""
     result = httpx.post(
         f"{URL}/api/v1/field/spool/mychoicefield",

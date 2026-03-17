@@ -1,3 +1,4 @@
+import { Fragment, useMemo } from "react";
 import { InboxOutlined, PrinterOutlined, ToTopOutlined, ToolOutlined } from "@ant-design/icons";
 import { DateField, NumberField, Show, TextField } from "@refinedev/antd";
 import { useInvalidate, useShow, useTranslate } from "@refinedev/core";
@@ -8,8 +9,9 @@ import { ExtraFieldDisplay } from "../../components/extraFields";
 import ColorHexPreview from "../../components/colorHexPreview";
 import { NumberFieldUnit } from "../../components/numberField";
 import VendorLogo from "../../components/vendorLogo";
+import { buildFormulaValues, formatFormulaValue, getFormulaFieldsForSurface } from "../../utils/formulaFields";
 import { enrichText } from "../../utils/parsing";
-import { EntityType, useGetFields } from "../../utils/queryFields";
+import { FormulaFieldSurface, EntityType, useGetDerivedFields, useGetFields } from "../../utils/queryFields";
 import { useCurrencyFormatter } from "../../utils/settings";
 import { getBasePath, stripBasePath } from "../../utils/url";
 import { IFilament } from "../filaments/model";
@@ -24,6 +26,7 @@ const { confirm } = Modal;
 export const SpoolShow = () => {
   const t = useTranslate();
   const extraFields = useGetFields(EntityType.spool);
+  const formulaFields = useGetDerivedFields(EntityType.spool);
   const currencyFormatter = useCurrencyFormatter();
   const invalidate = useInvalidate();
 
@@ -33,6 +36,14 @@ export const SpoolShow = () => {
   const { data, isLoading } = query;
 
   const record = data?.data;
+  const showFormulaFields = useMemo(
+    () => getFormulaFieldsForSurface(formulaFields.data, FormulaFieldSurface.show),
+    [formulaFields.data],
+  );
+  const derivedValues = useMemo(
+    () => (record ? buildFormulaValues(record, showFormulaFields) : {}),
+    [record, showFormulaFields],
+  );
 
   const spoolPrice = (item?: ISpool) => {
     const price = item?.price ?? item?.filament.price;
@@ -280,6 +291,13 @@ export const SpoolShow = () => {
           )}
         </Col>
       </Row>
+      {showFormulaFields.length > 0 && <Title level={4}>{t("settings.formula_fields.formula.header")}</Title>}
+      {showFormulaFields.map((field) => (
+        <Fragment key={field.key}>
+          <Title level={5}>{field.name}</Title>
+          <TextField value={formatFormulaValue(derivedValues[field.key])} />
+        </Fragment>
+      ))}
     </Show>
   );
 };

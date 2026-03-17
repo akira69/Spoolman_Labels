@@ -95,5 +95,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests*/*" = ["ANN201", "ASYNC210", "S101", "PLR2004", "D103", "TID252"]
+"tests*/*" = ["ANN201", "ASYNC210", "S101", "PLR2004", "D103", "TID252", "FBT001", "FBT003"]
 "migrations/versions/*" = ["N999"]
+"scripts/*" = ["ANN401", "C901", "D103", "EXE001", "PLC0415", "PLR2004", "TRY004"]
+"spoolman/derived_fields.py" = ["ANN401", "BLE001", "C901", "D103", "FBT001", "PERF203", "PLR0911", "PLR0912", "PLR0915", "PLR2004", "TRY004"]

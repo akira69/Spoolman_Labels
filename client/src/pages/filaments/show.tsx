@@ -1,3 +1,4 @@
+import { Fragment, useMemo } from "react";
 import { DateField, NumberField, Show, TextField } from "@refinedev/antd";
 import { useShow, useTranslate } from "@refinedev/core";
 import { PrinterOutlined } from "@ant-design/icons";
@@ -9,8 +10,9 @@ import { ExtraFieldDisplay } from "../../components/extraFields";
 import ColorHexPreview from "../../components/colorHexPreview";
 import { NumberFieldUnit } from "../../components/numberField";
 import VendorLogo from "../../components/vendorLogo";
+import { buildFormulaValues, formatFormulaValue, getFormulaFieldsForSurface } from "../../utils/formulaFields";
 import { enrichText } from "../../utils/parsing";
-import { EntityType, useGetFields } from "../../utils/queryFields";
+import { FormulaFieldSurface, EntityType, useGetDerivedFields, useGetFields } from "../../utils/queryFields";
 import { useCurrencyFormatter } from "../../utils/settings";
 import { getBasePath, stripBasePath } from "../../utils/url";
 import { IFilament } from "./model";
@@ -22,6 +24,7 @@ export const FilamentShow = () => {
   const t = useTranslate();
   const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.filament);
+  const formulaFields = useGetDerivedFields(EntityType.filament);
   const currencyFormatter = useCurrencyFormatter();
   const { query } = useShow<IFilament>({
     liveMode: "auto",
@@ -29,6 +32,14 @@ export const FilamentShow = () => {
   const { data, isLoading } = query;
 
   const record = data?.data;
+  const showFormulaFields = useMemo(
+    () => getFormulaFieldsForSurface(formulaFields.data, FormulaFieldSurface.show),
+    [formulaFields.data],
+  );
+  const derivedValues = useMemo(
+    () => (record ? buildFormulaValues(record, showFormulaFields) : {}),
+    [record, showFormulaFields],
+  );
 
   const formatTitle = (item: IFilament) => {
     let vendorPrefix = "";
@@ -202,6 +213,13 @@ export const FilamentShow = () => {
           )}
         </Col>
       </Row>
+      {showFormulaFields.length > 0 && <Title level={4}>{t("settings.formula_fields.formula.header")}</Title>}
+      {showFormulaFields.map((field) => (
+        <Fragment key={field.key}>
+          <Title level={5}>{field.name}</Title>
+          <TextField value={formatFormulaValue(derivedValues[field.key])} />
+        </Fragment>
+      ))}
     </Show>
   );
 };
