@@ -3,9 +3,10 @@ import { HttpError, useTranslate } from "@refinedev/core";
 import { Alert, ColorPicker, DatePicker, Form, Input, InputNumber, message, Radio, Select, Typography } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { MultiColorPicker } from "../../components/multiColorPicker";
+import { toComparableState } from "../../utils/formState";
 import { formatNumberOnUserInput, numberParser, numberParserAllowEmpty } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { getCurrencySymbol, useCurrency } from "../../utils/settings";
@@ -18,6 +19,27 @@ in order for Ant design's form to work properly. ParsedExtras does this for us.
 We also need to stringify them again before sending them back to the API, which is done by overriding
 the form's onFinish method. Form.Item's normalize should do this, but it doesn't seem to work.
 */
+
+const comparableDefaults = {
+  name: "",
+  vendor_id: null,
+  material: "",
+  price: null,
+  density: null,
+  diameter: null,
+  weight: null,
+  spool_weight: null,
+  settings_extruder_temp: null,
+  settings_bed_temp: null,
+  article_number: "",
+  external_id: "",
+  comment: "",
+  color_hex: "",
+  multi_color_direction: "",
+  multi_color_hexes: "",
+  extra: {},
+} as const;
+// This list is the source of truth for which inputs participate in the Save-button dirty check.
 
 export const FilamentEdit = () => {
   const t = useTranslate();
@@ -44,14 +66,19 @@ export const FilamentEdit = () => {
   });
   const watchedColorHex = Form.useWatch(["color_hex"], formProps.form);
   const watchedMultiColorDirection = Form.useWatch(["multi_color_direction"], formProps.form);
+  const watchedAllValues = Form.useWatch([], formProps.form);
 
-  // Add the vendor_id field to the form
-  if (formProps.initialValues) {
-    formProps.initialValues["vendor_id"] = formProps.initialValues["vendor"]?.id;
-
-    // Parse the extra fields from string values into real types
-    formProps.initialValues = ParsedExtras(formProps.initialValues);
-  }
+  // Initialize form fields and parse extra fields
+  useEffect(() => {
+    if (formProps.initialValues && formProps.form) {
+      const updated = {
+        ...formProps.initialValues,
+        vendor_id: formProps.initialValues["vendor"]?.id,
+      };
+      const parsed = ParsedExtras(updated);
+      formProps.form.setFieldsValue(parsed);
+    }
+  }, [formProps, formProps.initialValues?.id]);
 
   // Update colorType state
   useEffect(() => {
@@ -79,8 +106,35 @@ export const FilamentEdit = () => {
     }
   };
 
+  const initialComparableState = useMemo(
+    () =>
+      toComparableState(formProps.initialValues, comparableDefaults, {
+        // Single-color mode should ignore any dormant multi-color payload when deciding whether Save is needed.
+        multi_color_hexes: (normalized: Record<string, unknown>) =>
+          colorType === "single" ? "" : ((normalized.multi_color_hexes as string | undefined) ?? ""),
+      }),
+    [formProps.initialValues, colorType],
+  );
+  const watchedComparableState = useMemo(
+    () =>
+      toComparableState(watchedAllValues, comparableDefaults, {
+        multi_color_hexes: (normalized: Record<string, unknown>) =>
+          colorType === "single" ? "" : ((normalized.multi_color_hexes as string | undefined) ?? ""),
+      }),
+    [watchedAllValues, colorType],
+  );
+  const hasFormChanges =
+    initialComparableState !== null &&
+    watchedComparableState !== null &&
+    initialComparableState !== watchedComparableState;
+  const saveButtonState = {
+    ...saveButtonProps,
+    type: hasFormChanges ? ("primary" as const) : ("default" as const),
+    disabled: saveButtonProps.disabled || !hasFormChanges,
+  };
+
   return (
-    <Edit saveButtonProps={saveButtonProps}>
+    <Edit saveButtonProps={saveButtonState}>
       {contextHolder}
       <Form {...formProps} layout="vertical">
         <Form.Item

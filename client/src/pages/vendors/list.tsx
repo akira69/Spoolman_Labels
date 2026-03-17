@@ -20,7 +20,7 @@ import { useLiveify } from "../../components/liveify";
 import { useSpoolmanVendorExternalIds, useSpoolmanVendors } from "../../components/otherModels";
 import ResizableTable from "../../components/resizableTable";
 import VendorLogo from "../../components/vendorLogo";
-import { removeUndefined } from "../../utils/filtering";
+import { hasMeaningfulFilters, removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
 import { IVendor } from "./model";
@@ -123,13 +123,15 @@ export const VendorList = () => {
     tableState,
     sorter: true,
   };
+  // Ignore empty filter shells so the Clear Filters button only lights up for filters that would affect results.
+  const hasActiveFilters = hasMeaningfulFilters(filters);
 
   return (
     <List
       headerButtons={({ defaultButtons }) => (
         <>
           <Button
-            type="primary"
+            type={hasActiveFilters ? "primary" : "default"}
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");

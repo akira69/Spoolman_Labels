@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { useSpoolmanLocations } from "../../components/otherModels";
+import { toComparableState } from "../../utils/formState";
 import { searchMatches } from "../../utils/filtering";
 import { formatNumberOnUserInput, numberParser, numberParserAllowEmpty } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -27,6 +28,21 @@ the form's onFinish method. Form.Item's normalize should do this, but it doesn't
 type ISpoolRequest = ISpoolParsedExtras & {
   filament_id: number | string;
 };
+
+const comparableDefaults = {
+  first_used: null,
+  last_used: null,
+  filament_id: null,
+  price: null,
+  initial_weight: null,
+  spool_weight: null,
+  used_weight: null,
+  location: "",
+  lot_nr: "",
+  comment: "",
+  extra: {},
+} as const;
+// This list is the source of truth for which inputs participate in the Save-button dirty check.
 
 export const SpoolEdit = () => {
   const t = useTranslate();
@@ -60,14 +76,6 @@ export const SpoolEdit = () => {
   const initialWeightValue = Form.useWatch("initial_weight", form);
   const spoolWeightValue = Form.useWatch("spool_weight", form);
 
-  // Add the filament_id field to the form
-  if (formProps.initialValues) {
-    formProps.initialValues["filament_id"] = formProps.initialValues["filament"].id;
-
-    // Parse the extra fields from string values into real types
-    formProps.initialValues = ParsedExtras(formProps.initialValues);
-  }
-
   //
   // Set up the filament selection options
   //
@@ -97,6 +105,19 @@ export const SpoolEdit = () => {
       return null;
     }
   }, [selectedFilamentID, internalSelectOptions, externalSelectOptions]);
+  const watchedAllValues = Form.useWatch([], form);
+
+  // Initialize form fields and parse extra fields
+  useEffect(() => {
+    if (formProps.initialValues && form) {
+      const updated = {
+        ...formProps.initialValues,
+        filament_id: formProps.initialValues["filament"].id,
+      };
+      const parsed = ParsedExtras(updated);
+      form.setFieldsValue(parsed);
+    }
+  }, [formProps, formProps.initialValues?.id, form]);
 
   // Override the form's onFinish method to stringify the extra fields
   const originalOnFinish = formProps.onFinish;
@@ -230,8 +251,26 @@ export const SpoolEdit = () => {
     }
   }, [initialUsedWeight]);
 
+  const initialComparableState = useMemo(
+    () => toComparableState(formProps.initialValues, comparableDefaults),
+    [formProps.initialValues],
+  );
+  const watchedComparableState = useMemo(
+    () => toComparableState(watchedAllValues, comparableDefaults),
+    [watchedAllValues],
+  );
+  const hasFormChanges =
+    initialComparableState !== null &&
+    watchedComparableState !== null &&
+    initialComparableState !== watchedComparableState;
+  const saveButtonState = {
+    ...saveButtonProps,
+    type: hasFormChanges ? ("primary" as const) : ("default" as const),
+    disabled: saveButtonProps.disabled || !hasFormChanges,
+  };
+
   return (
-    <Edit saveButtonProps={saveButtonProps}>
+    <Edit saveButtonProps={saveButtonState}>
       {contextHolder}
       <Form {...formProps} layout="vertical">
         <Form.Item

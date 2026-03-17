@@ -18,7 +18,7 @@ import {
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import dayjs from "dayjs";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { useVendorLogoManifest } from "../../components/otherModels";
 import VendorLogo from "../../components/vendorLogo";
@@ -33,6 +33,15 @@ in order for Ant design's form to work properly. ParsedExtras does this for us.
 We also need to stringify them again before sending them back to the API, which is done by overriding
 the form's onFinish method. Form.Item's normalize should do this, but it doesn't seem to work.
 */
+
+const comparableDefaults = {
+  name: "",
+  comment: "",
+  empty_spool_weight: null,
+  external_id: "",
+  extra: {},
+} as const;
+// This list is the source of truth for which inputs participate in the Save-button dirty check.
 
 export const VendorEdit = () => {
   const { Text } = Typography;
@@ -56,11 +65,15 @@ export const VendorEdit = () => {
       setHasChanged(true);
     },
   });
+  const watchedAllValues = Form.useWatch([], formProps.form);
 
-  // Parse the extra fields from string values into real types
-  if (formProps.initialValues) {
-    formProps.initialValues = ParsedExtras(formProps.initialValues);
-  }
+  // Initialize form fields and parse extra fields
+  useEffect(() => {
+    if (formProps.initialValues && formProps.form) {
+      const parsed = ParsedExtras(formProps.initialValues);
+      formProps.form.setFieldsValue(parsed);
+    }
+  }, [formProps, formProps.initialValues?.id]);
 
   // Override the form's onFinish method to stringify the extra fields
   const originalOnFinish = formProps.onFinish;
@@ -224,8 +237,26 @@ export const VendorEdit = () => {
     ? dayjs(formProps.initialValues.registered).format("YYYY-MM-DD HH:mm:ss")
     : "-";
 
+  const initialComparableState = useMemo(
+    () => toComparableState(formProps.initialValues, comparableDefaults),
+    [formProps.initialValues],
+  );
+  const watchedComparableState = useMemo(
+    () => toComparableState(watchedAllValues, comparableDefaults),
+    [watchedAllValues],
+  );
+  const hasFormChanges =
+    initialComparableState !== null &&
+    watchedComparableState !== null &&
+    initialComparableState !== watchedComparableState;
+  const saveButtonState = {
+    ...saveButtonProps,
+    type: hasFormChanges ? ("primary" as const) : ("default" as const),
+    disabled: saveButtonProps.disabled || !hasFormChanges,
+  };
+
   return (
-    <Edit saveButtonProps={saveButtonProps}>
+    <Edit saveButtonProps={saveButtonState}>
       {contextHolder}
       <Form {...formProps} layout="vertical">
         <Row gutter={16} align="top">
