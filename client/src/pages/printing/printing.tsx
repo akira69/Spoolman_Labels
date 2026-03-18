@@ -25,60 +25,37 @@ export interface QRCodePrintSettings {
   showContent?: boolean;
   showQRCodeMode?: "no" | "simple" | "withIcon";
   textSize?: number;
-  showManufacturerLogo?: boolean;
-  logoHeightMm?: number;
-  logoAlign?: "left" | "center" | "right";
-  showTitle?: boolean;
-  titleAreaHeightMm?: number; // Legacy field; no longer used.
-  titleTextSize?: number; // Legacy field; migrated to titleMaxTextSize.
-  titleMaxTextSize?: number;
-  titleFitToWidth?: boolean;
-  titleAlign?: "left" | "center" | "right";
-  qrCodeSizeMm?: number;
-  qrCodePosition?: "left" | "right";
-  qrCodeAlign?: "top" | "center" | "bottom";
-  infoAlign?: "left" | "center" | "right";
-  infoVerticalAlign?: "top" | "center" | "bottom";
   printSettings: PrintSettings;
 }
 
 export interface SpoolQRCodePrintSettings {
   template?: string;
-  titleTemplate?: string;
   filenameTemplate?: string;
   labelSettings: QRCodePrintSettings;
 }
 
-export function mergePrintPresets(
-  ...presetLists: Array<SpoolQRCodePrintSettings[] | undefined>
-): SpoolQRCodePrintSettings[] | undefined {
-  const merged: SpoolQRCodePrintSettings[] = [];
-  const seenIds = new Set<string>();
-  const hasUnloadedList = presetLists.some((list) => list === undefined);
-
-  for (const list of presetLists) {
-    if (!list) continue;
-    for (const preset of list) {
-      const id = preset.labelSettings?.printSettings?.id;
-      if (!id || seenIds.has(id)) continue;
-      seenIds.add(id);
-      merged.push(preset);
-    }
+export function getConfiguredBaseUrl(rawValue: string | undefined, fallback: string): string {
+  if (rawValue === undefined) {
+    return fallback;
   }
 
-  if (merged.length === 0 && hasUnloadedList) {
-    return undefined;
+  try {
+    const parsed = JSON.parse(rawValue);
+    return typeof parsed === "string" && parsed.trim() !== "" ? parsed : fallback;
+  } catch {
+    const trimmed = rawValue.trim();
+    return trimmed !== "" ? trimmed : fallback;
   }
-
-  return merged;
 }
 
+// Load saved print presets and backfill missing ids so older settings remain selectable in the current UI.
 export function useGetPrintSettings(settingKey = "print_presets"): SpoolQRCodePrintSettings[] | undefined {
   const { data } = useGetSetting(settingKey);
   if (!data) return;
   const parsed: SpoolQRCodePrintSettings[] =
     data && data.value ? JSON.parse(data.value) : ([] as SpoolQRCodePrintSettings[]);
-  // Loop through all parsed and generate a new ID field if it's not set
+  // Backfill IDs onto older presets so select/update flows keep working after
+  // new print/export settings are introduced.
   return parsed.map((settings) => {
     if (!settings.labelSettings.printSettings.id) {
       settings.labelSettings.printSettings.id = uuidv4();
@@ -87,37 +64,25 @@ export function useGetPrintSettings(settingKey = "print_presets"): SpoolQRCodePr
   });
 }
 
-export function useSetPrintSettings(
-  settingKey = "print_presets",
-): (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => Promise<unknown> {
-  const mut = useSetSetting(settingKey);
-
-  return (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => {
-    return mut.mutateAsync(spoolQRCodePrintSettings);
-  };
+export function useSetPrintSettings(settingKey = "print_presets") {
+  return useSetSetting<SpoolQRCodePrintSettings[]>(settingKey);
 }
 
-interface GenericObject {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-  extra: { [key: string]: string };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getTagValue(tag: string, obj: GenericObject): any {
-  // Split tag by .
+// Resolve dot-path placeholders, including JSON-backed extra fields, for label templates.
+function getTagValue(tag: string, obj: object): unknown {
+  const record = obj as { [key: string]: unknown; extra?: { [key: string]: string } };
   const tagParts = tag.split(".");
   if (tagParts[0] === "extra") {
-    const extraValue = obj.extra[tagParts[1]];
+    const extraValue = record.extra?.[tagParts[1]];
     if (extraValue === undefined) {
       return "?";
     }
     return JSON.parse(extraValue);
   }
 
-  const value = obj[tagParts[0]] ?? "?";
-  // check if value is itself an object. If so, recursively call this and remove the first part of the tag
-  if (typeof value === "object") {
+  const value = record[tagParts[0]] ?? "?";
+  // Nested tags like `vendor.name` recurse through the related object tree.
+  if (typeof value === "object" && value !== null) {
     return getTagValue(tagParts.slice(1).join("."), value);
   }
   return value;
@@ -133,42 +98,20 @@ function applyNewline(text: string): ReactElement[] {
 }
 
 function applyTextFormatting(text: string): ReactElement[] {
-  // Supports **bold** and ==inverted== blocks (can be mixed in one template).
-  const regex = /(\*\*[\w\W]*?\*\*|==[\w\W]*?==)/g;
+  const regex = /\*\*([\w\W]*?)\*\*/g;
   const parts = text.split(regex);
+  // Map over the parts and wrap matched text with <b> tags
   const elements = parts.map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      const content = part.slice(2, -2);
-      const node = applyTextFormatting(content);
-      return <b key={index}>{node}</b>;
-    }
-
-    if (part.startsWith("==") && part.endsWith("==")) {
-      const content = part.slice(2, -2);
-      const node = applyTextFormatting(content);
-      return (
-        <span
-          key={index}
-          style={{
-            backgroundColor: "#000",
-            color: "#fff",
-            padding: "0 0.6mm",
-            display: "inline-block",
-          }}
-        >
-          {node}
-        </span>
-      );
-    }
-
+    // Even index: outside asterisks, odd index: inside asterisks (to be bolded)
     const node = applyNewline(part);
-    return <span key={index}>{node}</span>;
+    return index % 2 === 0 ? <span key={index}>{node}</span> : <b key={index}>{node}</b>;
   });
   return elements;
 }
 
-export function renderTemplateText(template: string, obj: GenericObject): string {
-  // Find all {tags} in the template string and loop over them
+export function renderTemplateText(template: string, obj: object): string {
+  // Expand plain `{tag}` placeholders and optional wrapper blocks like
+  // `{prefix {tag} suffix}`, dropping the whole wrapper when the tag is missing.
   const matches = [...template.matchAll(/{(?:[^}{]|{[^}{]*})*}/gs)];
   let renderedText = template;
   matches.forEach((match) => {
@@ -184,7 +127,7 @@ export function renderTemplateText(template: string, obj: GenericObject): string
         if (tagValue === "?") {
           renderedText = renderedText.replace(match[0], "");
         } else {
-          renderedText = renderedText.replace(match[0], structure[1] + tagValue + structure[3]);
+          renderedText = renderedText.replace(match[0], structure[1] + String(tagValue) + structure[3]);
         }
       }
     }
@@ -192,7 +135,7 @@ export function renderTemplateText(template: string, obj: GenericObject): string
   return renderedText;
 }
 
-export function renderLabelContents(template: string, obj: GenericObject): ReactElement {
+export function renderLabelContents(template: string, obj: object): ReactElement {
   const renderedText = renderTemplateText(template, obj);
   // Split string on \n into individual lines
   return <>{applyTextFormatting(renderedText)}</>;

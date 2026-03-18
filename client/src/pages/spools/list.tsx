@@ -10,7 +10,7 @@ import {
 } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown, Modal } from "antd";
+import { Button, Dropdown, Modal, Table } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useCallback, useMemo, useState } from "react";
@@ -27,7 +27,6 @@ import {
   SpoolIconColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
-import ResizableTable from "../../components/resizableTable";
 import {
   useSpoolmanFilamentFilter,
   useSpoolmanLocations,
@@ -256,7 +255,6 @@ export const SpoolList = () => {
     tableState,
     sorter: true,
   };
-  const hasActiveFilters = (filters?.length ?? 0) > 0;
 
   return (
     <List
@@ -281,7 +279,7 @@ export const SpoolList = () => {
             {showArchived ? t("buttons.hideArchived") : t("buttons.showArchived")}
           </Button>
           <Button
-            type={hasActiveFilters ? "primary" : "default"}
+            type="primary"
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");
@@ -328,8 +326,7 @@ export const SpoolList = () => {
       )}
     >
       {spoolAdjustModal}
-      <ResizableTable
-        columnResizeKey="spool-list-table"
+      <Table
         {...tableProps}
         sticky
         tableLayout="auto"
@@ -430,7 +427,6 @@ export const SpoolList = () => {
             id: "location",
             i18ncat: "spool",
             filterValueQuery: useSpoolmanLocations(),
-            emptyFilterLabel: "",
             width: 120,
           }),
           FilteredQueryColumn({

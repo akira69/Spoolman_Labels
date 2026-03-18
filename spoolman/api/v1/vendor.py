@@ -14,15 +14,12 @@ from spoolman.database import vendor
 from spoolman.database.database import get_db_session
 from spoolman.database.utils import SortOrder
 from spoolman.extra_fields import EntityType, get_extra_fields, validate_extra_field_dict
-from spoolman.vendor_logos import convert_web_logo_to_print_logo, sync_logo_pack_from_github_if_needed
 from spoolman.ws import websocket_manager
 
 router = APIRouter(
     prefix="/vendor",
     tags=["vendor"],
 )
-
-RESERVED_VENDOR_EXTRA_KEYS = {"logo_url", "print_logo_url"}
 
 # ruff: noqa: D103
 
@@ -67,37 +64,6 @@ class VendorUpdateParameters(VendorParameters):
         return v
 
 
-class VendorLogoPackSyncResult(BaseModel):
-    updated: bool = Field(description="Whether a newer logo pack was downloaded.")
-    message: str = Field(description="Result summary.")
-    source_repo: str = Field(description="GitHub repository used as source.")
-    source_ref: str = Field(description="Git branch/ref used as source.")
-    source_url: str = Field(description="Source URL shown to users.")
-    web_logo_count: int = Field(description="Number of web logos currently available.")
-    print_logo_count: int = Field(description="Number of print logos currently available.")
-    local_signature: str | None = Field(None, description="Previous local pack signature before check.")
-    remote_signature: str = Field(description="Latest signature detected from GitHub.")
-    synced_at_utc: str | None = Field(None, description="UTC timestamp of last successful pack sync.")
-
-
-class VendorLogoConvertRequest(BaseModel):
-    logo_url: str = Field(description="Source web logo URL or local logo path.")
-    vendor_name: str | None = Field(None, max_length=64, description="Optional vendor name for filename slug.")
-
-    @field_validator("logo_url")
-    @classmethod
-    def validate_logo_url(cls: type["VendorLogoConvertRequest"], value: str) -> str:
-        trimmed = value.strip()
-        if trimmed == "":
-            raise ValueError("Logo URL is required.")
-        return trimmed
-
-
-class VendorLogoConvertResult(BaseModel):
-    print_logo_url: str = Field(description="Generated print logo URL.")
-    message: str = Field(description="Result summary.")
-
-
 @router.get(
     "",
     name="Find vendor",
@@ -136,22 +102,6 @@ async def find(
             ),
         ),
     ] = None,
-    vendor_id: Annotated[
-        str | None,
-        Query(alias="id", title="Vendor ID", description="Partial match against vendor ID values."),
-    ] = None,
-    registered: Annotated[
-        str | None,
-        Query(title="Registered", description="Partial match against registration timestamps."),
-    ] = None,
-    empty_spool_weight: Annotated[
-        str | None,
-        Query(title="Empty Spool Weight", description="Partial match against empty spool weight values as text."),
-    ] = None,
-    comment: Annotated[
-        str | None,
-        Query(title="Comment", description="Partial case-insensitive match against vendor comments."),
-    ] = None,
     sort: Annotated[
         str | None,
         Query(
@@ -178,10 +128,6 @@ async def find(
         db=db,
         name=name,
         external_id=external_id,
-        vendor_id=vendor_id,
-        registered=registered,
-        empty_spool_weight=empty_spool_weight,
-        comment=comment,
         sort_by=sort_by,
         limit=limit,
         offset=offset,
@@ -212,48 +158,6 @@ async def notify_any(
                 await websocket.send_json({"status": "healthy"})
     except WebSocketDisconnect:
         websocket_manager.disconnect(("vendor",), websocket)
-
-
-@router.post(
-    "/logo-pack/sync-from-github",
-    name="Check and sync vendor logo pack from GitHub",
-    description=(
-        "Checks for updates to the vendor logo source repository and downloads files only when there are changes."
-    ),
-    response_model=VendorLogoPackSyncResult,
-)
-async def sync_logo_pack_from_github() -> VendorLogoPackSyncResult:
-    result = await asyncio.to_thread(sync_logo_pack_from_github_if_needed)
-    return VendorLogoPackSyncResult(
-        updated=result.updated,
-        message=result.message,
-        source_repo=result.source_repo,
-        source_ref=result.source_ref,
-        source_url=result.source_url,
-        web_logo_count=result.web_logo_count,
-        print_logo_count=result.print_logo_count,
-        local_signature=result.local_signature,
-        remote_signature=result.remote_signature,
-        synced_at_utc=result.synced_at_utc,
-    )
-
-
-@router.post(
-    "/logo-pack/convert-web-to-print",
-    name="Convert vendor web logo to print logo",
-    description="Converts a web logo into a black-and-white print logo stored in runtime vendor logos.",
-    response_model=VendorLogoConvertResult,
-)
-async def convert_web_logo_to_print(body: VendorLogoConvertRequest) -> VendorLogoConvertResult | JSONResponse:
-    try:
-        print_logo_url = await asyncio.to_thread(convert_web_logo_to_print_logo, body.logo_url, body.vendor_name)
-    except (ValueError, RuntimeError, OSError) as exc:
-        return JSONResponse(status_code=400, content=Message(message=str(exc)).model_dump())
-
-    return VendorLogoConvertResult(
-        print_logo_url=print_logo_url,
-        message="Generated print logo from web logo.",
-    )
 
 
 @router.get(
@@ -305,11 +209,11 @@ async def create(  # noqa: ANN201
     db: Annotated[AsyncSession, Depends(get_db_session)],
     body: VendorParameters,
 ):
-    if body.extra:
-        all_fields = await get_extra_fields(db, EntityType.vendor)
-        extra_to_validate = {k: v for k, v in body.extra.items() if k not in RESERVED_VENDOR_EXTRA_KEYS}
+    # Fetch extra field definitions once at endpoint entry
+    all_fields = await get_extra_fields(db, EntityType.vendor) if body.extra else None
+    if body.extra and all_fields:
         try:
-            validate_extra_field_dict(all_fields, extra_to_validate)
+            validate_extra_field_dict(all_fields, body.extra)
         except ValueError as e:
             return JSONResponse(status_code=400, content=Message(message=str(e)).model_dump())
 
@@ -346,11 +250,11 @@ async def update(  # noqa: ANN201
 ):
     patch_data = body.model_dump(exclude_unset=True)
 
-    if body.extra:
-        all_fields = await get_extra_fields(db, EntityType.vendor)
-        extra_to_validate = {k: v for k, v in body.extra.items() if k not in RESERVED_VENDOR_EXTRA_KEYS}
+    # Fetch extra field definitions once at endpoint entry
+    all_fields = await get_extra_fields(db, EntityType.vendor) if body.extra else None
+    if body.extra and all_fields:
         try:
-            validate_extra_field_dict(all_fields, extra_to_validate)
+            validate_extra_field_dict(all_fields, body.extra)
         except ValueError as e:
             return JSONResponse(status_code=400, content=Message(message=str(e)).dict())
 

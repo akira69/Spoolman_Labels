@@ -31,14 +31,10 @@ export const FilamentExport = () => {
     }
   }, [filamentIds.length, navigate, selectionPath]);
 
-  const exportFilamentTitle = t("printing.qrcode.exportFilamentTitle");
-  const pageTitle =
-    exportFilamentTitle === "printing.qrcode.exportFilamentTitle" ? "Export Filament Labels" : exportFilamentTitle;
-
   return (
     <>
       <PageHeader
-        title={pageTitle}
+        title={t("printing.qrcode.exportFilamentTitle")}
         onBack={() => {
           const returnUrl = searchParams.get("return");
           if (returnUrl) {

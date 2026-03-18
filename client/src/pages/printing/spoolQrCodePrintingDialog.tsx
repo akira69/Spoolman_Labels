@@ -1,8 +1,7 @@
 import { CopyOutlined, DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
-import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Typography, message } from "antd";
+import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Table, Typography, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import ResizableTable from "../../components/resizableTable";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -11,6 +10,7 @@ import { useSavedState } from "../../utils/saveload";
 import { useGetSpoolsByIds } from "../spools/functions";
 import { ISpool } from "../spools/model";
 import {
+  getConfiguredBaseUrl,
   SpoolQRCodePrintSettings,
   renderLabelContents,
   useGetPrintSettings as useGetPrintPresets,
@@ -24,13 +24,13 @@ interface SpoolQRCodePrintingDialog {
   spoolIds: number[];
 }
 
+// Adapt spool records into the generic QR print dialog while keeping spool print
+// presets isolated from the export-specific preset buckets.
 const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
   const t = useTranslate();
   const baseUrlSetting = useGetSetting("base_url");
-  const baseUrlRoot =
-    baseUrlSetting.data?.value !== undefined && JSON.parse(baseUrlSetting.data?.value) !== ""
-      ? JSON.parse(baseUrlSetting.data?.value)
-      : window.location.origin;
+  // Accept both JSON-backed settings and legacy plain strings so old `base_url` values do not crash the dialog.
+  const baseUrlRoot = getConfiguredBaseUrl(baseUrlSetting.data?.value, window.location.origin);
   const [messageApi, contextHolder] = message.useMessage();
   const [useHTTPUrl, setUseHTTPUrl] = useSavedState("print-useHTTPUrl", false);
 
@@ -41,23 +41,21 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     })
     .filter((item) => item !== null) as ISpool[];
 
-  // Selected preset state
   const [selectedPresetState, setSelectedPresetState] = useSavedState<string | undefined>("selectedPreset", undefined);
 
-  // Keep a local copy of the settings which is what's actually displayed. Use the remote state only for saving.
-  // This decouples the debounce stuff from the UI
+  // Edit a local preset copy first so the form stays responsive and only persists to
+  // saved settings when the user explicitly clicks save.
   const [localPresets, setLocalPresets] = useState<SpoolQRCodePrintSettings[] | undefined>();
   const remotePresets = useGetPrintPresets();
   const setRemotePresets = useSetPrintPresets();
 
   const localOrRemotePresets = localPresets ?? remotePresets;
 
-  const savePresetsRemote = async () => {
+  const savePresetsRemote = () => {
     if (!localPresets) return;
-    await setRemotePresets(localPresets);
+    setRemotePresets.mutate(localPresets);
   };
 
-  // Functions to update settings
   const addNewPreset = () => {
     if (!localOrRemotePresets) return;
     const newId = uuidv4();
@@ -99,10 +97,8 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     setSelectedPresetState(undefined);
   };
 
-  // Initialize presets
   let curPreset: SpoolQRCodePrintSettings;
   if (localOrRemotePresets === undefined) {
-    // DB not loaded yet, use a temporary one
     curPreset = {
       labelSettings: {
         printSettings: {
@@ -112,33 +108,29 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
       },
     };
   } else {
-    // DB is loaded, find the selected setting
     if (localOrRemotePresets.length === 0) {
-      // DB loaded, but no settings found, add a new one and select it
+      // First-time print users should land in an editable preset immediately instead of
+      // an empty dialog with no selected settings object.
       const newSetting = addNewPreset();
       if (!newSetting) {
         console.error("Error adding new setting, this should never happen");
         return;
       }
 
-      // Mutate the allPrintSettings list so that the rest of the UI will work fine
       localOrRemotePresets.push(newSetting);
       curPreset = newSetting;
     } else {
-      // DB loaded and at least 1 setting exists
       if (!selectedPresetState) {
-        // No setting has been selected, select the first one
         curPreset = localOrRemotePresets[0];
         setSelectedPresetState(localOrRemotePresets[0].labelSettings.printSettings.id);
       } else {
-        // A setting has been selected, find it
         const foundSetting = localOrRemotePresets.find(
           (settings) => settings.labelSettings.printSettings.id === selectedPresetState,
         );
         if (foundSetting) {
           curPreset = foundSetting;
         } else {
-          // Selected setting not found, reset to first available preset.
+          // Recover to the first saved preset when the remembered selection no longer exists.
           curPreset = localOrRemotePresets[0];
           setSelectedPresetState(localOrRemotePresets[0].labelSettings.printSettings.id);
         }
@@ -147,11 +139,10 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
   }
 
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
-  const titleTemplate = curPreset.titleTemplate ?? `==**{filament.name}**== {filament.color_hex}`;
-  const infoTemplate =
+  const template =
     curPreset.template ??
-    `{filament.material} ({filament.article_number})
-Spool ID: #{id}
+    `**{filament.vendor.name} - {filament.name}
+#{id} - {filament.material}**
 Spool Weight: {filament.spool_weight} g
 {ET: {filament.settings_extruder_temp} °C}
 {BT: {filament.settings_bed_temp} °C}
@@ -223,6 +214,8 @@ Spool Weight: {filament.spool_weight} g
     });
   }
 
+  // Expose spool, filament, and vendor placeholders because the same tag picker drives
+  // preview text and printed label templates.
   const templateTags = [...spoolTags, ...filamentTags, ...vendorTags];
 
   return (
@@ -243,7 +236,7 @@ Spool Weight: {filament.spool_weight} g
         }}
         extraSettingsStart={
           <>
-            <Form.Item label={t("printing.generic.settings")}>
+            <Form.Item label={t("printing.generic.spoolPrintPresets")}>
               <Flex gap={8}>
                 <Select
                   value={selectedPresetState}
@@ -301,29 +294,24 @@ Spool Weight: {filament.spool_weight} g
         }
         items={items.map((spool) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/spool/show/${spool.id}` : `WEB+SPOOLMAN:S-${spool.id}`,
-          amlName: `spool-${spool.id}`,
-          vendor: spool.filament.vendor,
-          title: <>{renderLabelContents(titleTemplate, spool)}</>,
-          label: <>{renderLabelContents(infoTemplate, spool)}</>,
+          label: (
+            <p
+              style={{
+                padding: "1mm 1mm 1mm 0",
+                margin: 0,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {renderLabelContents(template, spool)}
+            </p>
+          ),
           errorLevel: "H",
         }))}
-        extraTitleSettings={
-          <Form.Item label={t("printing.qrcode.titleTemplate")} tooltip={t("printing.qrcode.titleTemplateTooltipSpool")}>
-            <TextArea
-              value={titleTemplate}
-              rows={4}
-              onChange={(newValue) => {
-                curPreset.titleTemplate = newValue.target.value;
-                updateCurrentPreset(curPreset);
-              }}
-            />
-          </Form.Item>
-        }
-        extraInfoSettings={
+        extraSettings={
           <>
-            <Form.Item label={t("printing.qrcode.infoTemplate")}>
+            <Form.Item label={t("printing.qrcode.template")}>
               <TextArea
-                value={infoTemplate}
+                value={template}
                 rows={8}
                 onChange={(newValue) => {
                   curPreset.template = newValue.target.value;
@@ -332,8 +320,7 @@ Spool Weight: {filament.spool_weight} g
               />
             </Form.Item>
             <Modal open={templateHelpOpen} footer={null} onCancel={() => setTemplateHelpOpen(false)}>
-              <ResizableTable
-                columnResizeKey="spool-print-template-tags"
+              <Table
                 size="small"
                 showHeader={false}
                 pagination={false}
@@ -356,13 +343,9 @@ Spool Weight: {filament.spool_weight} g
               type="primary"
               size="large"
               icon={<SaveOutlined />}
-              onClick={async () => {
-                try {
-                  await savePresetsRemote();
-                  messageApi.success(t("notifications.saveSuccessful"));
-                } catch (error) {
-                  messageApi.error(error instanceof Error ? error.message : "Save failed");
-                }
+              onClick={() => {
+                savePresetsRemote();
+                messageApi.success(t("notifications.saveSuccessful"));
               }}
             >
               {t("printing.generic.saveSetting")}

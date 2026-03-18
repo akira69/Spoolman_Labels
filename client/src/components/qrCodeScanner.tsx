@@ -17,7 +17,8 @@ const QRCodeScannerModal = () => {
     }
     const result = detectedCodes[0].rawValue;
 
-    // Check for the spoolman ID format
+    // Accept both compact WEB+SPOOLMAN payloads and full show-page URLs so
+    // exported and printed labels keep scanning after base URL changes.
     const spoolMatch = result.match(/^web\+spoolman:s-(?<id>[0-9]+)$/i);
     if (spoolMatch && spoolMatch.groups) {
       setVisible(false);
@@ -45,13 +46,7 @@ const QRCodeScannerModal = () => {
 
   return (
     <>
-      <FloatButton
-        type="primary"
-        onClick={() => setVisible(true)}
-        icon={<CameraOutlined />}
-        shape="circle"
-        style={{ right: "var(--camera-button-right)", bottom: "var(--camera-button-bottom)" }}
-      />
+      <FloatButton type="primary" onClick={() => setVisible(true)} icon={<CameraOutlined />} shape="circle" />
       <Modal open={visible} destroyOnHidden onCancel={() => setVisible(false)} footer={null} title={t("scanner.title")}>
         <Space direction="vertical" style={{ width: "100%" }}>
           <p>{t("scanner.description")}</p>
@@ -62,6 +57,8 @@ const QRCodeScannerModal = () => {
             onScan={onScan}
             formats={["qr_code"]}
             onError={(err: unknown) => {
+              // Map browser/scanner-library failures onto translated messages instead of
+              // exposing raw exception names in the modal.
               const error = err as Error;
               console.error(error);
               if (error.name === "NotAllowedError") {
