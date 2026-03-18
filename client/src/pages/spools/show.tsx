@@ -1,13 +1,12 @@
-import { DeleteOutlined, EditOutlined, InboxOutlined, PrinterOutlined, ToTopOutlined, ToolOutlined } from "@ant-design/icons";
-import { DateField, Show, TextField } from "@refinedev/antd";
-import { useDelete, useInvalidate, useShow, useTranslate } from "@refinedev/core";
+import { InboxOutlined, PrinterOutlined, ToTopOutlined, ToolOutlined } from "@ant-design/icons";
+import { DateField, NumberField, Show, TextField } from "@refinedev/antd";
+import { useInvalidate, useShow, useTranslate } from "@refinedev/core";
 import { Button, Col, Modal, Row, Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import { useNavigate } from "react-router";
 import { ExtraFieldDisplay } from "../../components/extraFields";
-import ColorHexPreview from "../../components/colorHexPreview";
 import { NumberFieldUnit } from "../../components/numberField";
+import SpoolIcon from "../../components/spoolIcon";
 import VendorLogo from "../../components/vendorLogo";
 import { enrichText } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -19,16 +18,14 @@ import { ISpool } from "./model";
 
 dayjs.extend(utc);
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 const { confirm } = Modal;
 
 export const SpoolShow = () => {
   const t = useTranslate();
-  const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.spool);
   const currencyFormatter = useCurrencyFormatter();
   const invalidate = useInvalidate();
-  const { mutate: deleteSpoolMutation } = useDelete();
 
   const { query } = useShow<ISpool>({
     liveMode: "auto",
@@ -45,8 +42,10 @@ export const SpoolShow = () => {
     return currencyFormatter.format(price);
   };
 
+  // Provides the function to open the spool adjustment modal and the modal component itself
   const { openSpoolAdjustModal, spoolAdjustModal } = useSpoolAdjustModal();
 
+  // Function for opening an ant design modal that asks for confirmation for archiving a spool
   const archiveSpool = async (spool: ISpool, archive: boolean) => {
     await setSpoolArchived(spool, archive);
     invalidate({
@@ -60,6 +59,7 @@ export const SpoolShow = () => {
     if (spool === undefined) {
       return;
     }
+    // If the spool has no remaining weight, archive it immediately since it's likely not a mistake
     if (spool.remaining_weight != undefined && spool.remaining_weight <= 0) {
       await archiveSpool(spool, true);
     } else {
@@ -74,35 +74,6 @@ export const SpoolShow = () => {
         },
       });
     }
-  };
-
-  const deleteSpoolPopup = (spool: ISpool | undefined) => {
-    if (!spool) {
-      return;
-    }
-    confirm({
-      title: t("buttons.confirm"),
-      content: `${t("buttons.delete")} #${spool.id}?`,
-      okText: t("buttons.delete"),
-      okButtonProps: { danger: true },
-      cancelText: t("buttons.cancel"),
-      onOk: () =>
-        new Promise<void>((resolve, reject) => {
-          deleteSpoolMutation(
-            {
-              resource: "spool",
-              id: spool.id,
-            },
-            {
-              onSuccess: () => {
-                navigate("/spool");
-                resolve();
-              },
-              onError: () => reject(new Error("delete failed")),
-            },
-          );
-        }),
-    });
   };
 
   const formatFilament = (item: IFilament) => {
@@ -121,13 +92,18 @@ export const SpoolShow = () => {
     return `${vendorPrefix}${name}${material}`;
   };
 
-  const filamentURL = (item: IFilament) => `/filament/show/${item.id}`;
-  const multiColorLabel =
-    record?.filament.multi_color_hexes && record.filament.multi_color_direction === "longitudinal"
-      ? "Longitudinal Multi"
-      : record?.filament.multi_color_hexes
-        ? "Coextruded Multi"
-        : null;
+  const filamentURL = (item: IFilament) => {
+    const URL = `/filament/show/${item.id}`;
+    return <a href={URL}>{formatFilament(item)}</a>;
+  };
+
+  const vendorURL = (item: IFilament) => {
+    if (!item.vendor) {
+      return null;
+    }
+    const url = `/vendor/show/${item.vendor.id}`;
+    return <a href={url}>{item.vendor.name}</a>;
+  };
 
   const formatTitle = (item: ISpool) => {
     return t("spool.titles.show_title", {
@@ -137,11 +113,18 @@ export const SpoolShow = () => {
     });
   };
 
+  const colorObj = record?.filament.multi_color_hexes
+    ? {
+        colors: record.filament.multi_color_hexes.split(","),
+        vertical: record.filament.multi_color_direction === "longitudinal",
+      }
+    : record?.filament.color_hex;
+
   return (
     <Show
       isLoading={isLoading}
       title={record ? formatTitle(record) : ""}
-      headerButtons={() => (
+      headerButtons={({ defaultButtons }) => (
         <>
           <Button type="primary" icon={<ToolOutlined />} onClick={() => record && openSpoolAdjustModal(record)}>
             {t("spool.titles.adjust")}
@@ -159,169 +142,128 @@ export const SpoolShow = () => {
           >
             {t("printing.qrcode.selectButton")}
           </Button>
-          <Button icon={<EditOutlined />} type="primary" onClick={() => record && navigate(`/spool/edit/${record.id}`)}>
-            {t("buttons.edit")}
-          </Button>
+          {record?.archived ? (
+            <Button icon={<ToTopOutlined />} onClick={() => archiveSpool(record, false)}>
+              {t("buttons.unArchive")}
+            </Button>
+          ) : (
+            <Button danger icon={<InboxOutlined />} onClick={() => archiveSpoolPopup(record)}>
+              {t("buttons.archive")}
+            </Button>
+          )}
+
+          {defaultButtons}
           {spoolAdjustModal}
         </>
       )}
     >
-      <div className="show-floating-actions">
-        {record?.archived ? (
-          <Button icon={<ToTopOutlined />} onClick={() => archiveSpool(record, false)}>
-            {t("buttons.unArchive")}
-          </Button>
-        ) : (
-          <Button danger icon={<InboxOutlined />} onClick={() => archiveSpoolPopup(record)}>
-            {t("buttons.archive")}
-          </Button>
-        )}
-        <Button danger icon={<DeleteOutlined />} onClick={() => deleteSpoolPopup(record)}>
-          {t("buttons.delete")}
-        </Button>
-      </div>
-      <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-        {`${t("spool.fields.registered")} ${
-          record?.registered ? dayjs.utc(record.registered).local().format("YYYY-MM-DD HH:mm:ss") : "-"
-        }`}
-      </Text>
-      <Row gutter={[24, 16]} align="top">
+      <Row gutter={[32, 24]}>
         <Col xs={24} lg={16}>
-          {record && (
-            <Title level={5}>
-              <a className="app-link" href={filamentURL(record.filament)}>{`${formatFilament(record.filament)} Filament`}</a>
-            </Title>
-          )}
-          <Title level={5}>{t("filament.fields.color_hex")}</Title>
-          {multiColorLabel && (
-            <Text type="secondary" style={{ display: "block", marginTop: -10, marginBottom: 8 }}>
-              {multiColorLabel}
-            </Text>
-          )}
-          <ColorHexPreview
-            colorHex={record?.filament.color_hex}
-            multiColorHexes={record?.filament.multi_color_hexes}
-            multiColorDirection={record?.filament.multi_color_direction}
+          <Title level={5}>{t("spool.fields.id")}</Title>
+          <NumberField value={record?.id ?? ""} />
+          <Title level={5}>{t("spool.fields.filament")}</Title>
+          {colorObj && <SpoolIcon color={colorObj} size="large" no_margin />}
+          <TextField value={record ? filamentURL(record?.filament) : ""} />
+          <Title level={5}>{t("spool.fields.price")}</Title>
+          <TextField value={spoolPrice(record)} />
+          <Title level={5}>{t("spool.fields.registered")}</Title>
+          <DateField
+            value={dayjs.utc(record?.registered).local()}
+            title={dayjs.utc(record?.registered).local().format()}
+            format="YYYY-MM-DD HH:mm:ss"
           />
+          <Title level={5}>{t("spool.fields.first_used")}</Title>
+          <DateField
+            hidden={!record?.first_used}
+            value={dayjs.utc(record?.first_used).local()}
+            title={dayjs.utc(record?.first_used).local().format()}
+            format="YYYY-MM-DD HH:mm:ss"
+          />
+          <Title level={5}>{t("spool.fields.last_used")}</Title>
+          <DateField
+            hidden={!record?.last_used}
+            value={dayjs.utc(record?.last_used).local()}
+            title={dayjs.utc(record?.last_used).local().format()}
+            format="YYYY-MM-DD HH:mm:ss"
+          />
+          <Title level={5}>{t("spool.fields.remaining_length")}</Title>
+          <NumberFieldUnit
+            value={record?.remaining_length ?? ""}
+            unit="mm"
+            options={{
+              maximumFractionDigits: 1,
+              minimumFractionDigits: 1,
+            }}
+          />
+          <Title level={5}>{t("spool.fields.used_length")}</Title>
+          <NumberFieldUnit
+            value={record?.used_length ?? ""}
+            unit="mm"
+            options={{
+              maximumFractionDigits: 1,
+              minimumFractionDigits: 1,
+            }}
+          />
+          <Title level={5}>{t("spool.fields.remaining_weight")}</Title>
+          <NumberFieldUnit
+            value={record?.remaining_weight ?? ""}
+            unit="g"
+            options={{
+              maximumFractionDigits: 1,
+              minimumFractionDigits: 1,
+            }}
+          />
+          <Title level={5}>{t("spool.fields.used_weight")}</Title>
+          <NumberFieldUnit
+            value={record?.used_weight ?? ""}
+            unit="g"
+            options={{
+              maximumFractionDigits: 1,
+              minimumFractionDigits: 1,
+            }}
+          />
+          <Title level={5}>{t("spool.fields.location")}</Title>
+          <TextField value={record?.location} />
+          <Title level={5}>{t("spool.fields.lot_nr")}</Title>
+          <TextField value={record?.lot_nr} />
+          <Title level={5}>{t("spool.fields.comment")}</Title>
+          <TextField value={enrichText(record?.comment)} />
+          <Title level={5}>{t("spool.fields.archived")}</Title>
+          <TextField value={record?.archived ? t("yes") : t("no")} />
+          <Title level={4}>{t("settings.extra_fields.tab")}</Title>
+          {extraFields?.data?.map((field, index) => (
+            <ExtraFieldDisplay key={index} field={field} value={record?.extra[field.key]} />
+          ))}
         </Col>
         <Col xs={24} lg={8}>
-          <div>
-            <strong>{t("filament.fields.vendor")}:</strong>{" "}
-            {record?.filament.vendor?.id ? (
-              <a className="app-link" href={`/vendor/show/${record.filament.vendor.id}`}>{record.filament.vendor.name}</a>
-            ) : (
-              <span>{record?.filament.vendor?.name ?? "-"}</span>
-            )}
-          </div>
-          <div
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 8,
-              padding: 8,
-              border: "1px solid #d9d9d9",
-              marginTop: 8,
-            }}
-          >
-            <VendorLogo
-              vendor={record?.filament.vendor}
-              showFallbackText
-              imgStyle={{
-                display: "block",
-                width: "100%",
-                maxHeight: "56px",
-                objectFit: "contain",
-                objectPosition: "left center",
-              }}
-              fallbackStyle={{
-                width: "100%",
-                fontWeight: 700,
-                fontSize: "20px",
-                lineHeight: 1.1,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                color: "#111",
-              }}
-            />
-          </div>
-        </Col>
-      </Row>
-      <Title level={5}>{t("spool.fields.price")}</Title>
-      <TextField value={spoolPrice(record)} />
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Title level={5}>{t("spool.fields.first_used")}</Title>
-          {record?.first_used ? (
-            <DateField
-              value={dayjs.utc(record.first_used).local()}
-              title={dayjs.utc(record.first_used).local().format()}
-              format="YYYY-MM-DD HH:mm:ss"
-            />
-          ) : (
-            <TextField value="-" />
-          )}
-        </Col>
-        <Col xs={24} md={12}>
-          <Title level={5}>{t("spool.fields.last_used")}</Title>
-          {record?.last_used ? (
-            <DateField
-              value={dayjs.utc(record.last_used).local()}
-              title={dayjs.utc(record.last_used).local().format()}
-              format="YYYY-MM-DD HH:mm:ss"
-            />
-          ) : (
-            <TextField value="-" />
+          <Title level={5}>{t("filament.fields.vendor")}</Title>
+          <TextField value={record ? vendorURL(record.filament) : ""} />
+          {record?.filament.vendor && (
+            <div style={{ marginTop: 12 }}>
+              <VendorLogo
+                vendor={record.filament.vendor}
+                showFallbackText
+                imgStyle={{
+                  display: "block",
+                  width: "100%",
+                  maxWidth: "100%",
+                  maxHeight: "72px",
+                  objectFit: "contain",
+                  objectPosition: "left center",
+                }}
+                fallbackStyle={{
+                  width: "100%",
+                  fontWeight: 700,
+                  fontSize: "1.5rem",
+                  lineHeight: 1.15,
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
+                }}
+              />
+            </div>
           )}
         </Col>
       </Row>
-      <Title level={5}>{t("spool.fields.remaining_length")}</Title>
-      <NumberFieldUnit
-        value={record?.remaining_length ?? ""}
-        unit="mm"
-        options={{
-          maximumFractionDigits: 1,
-          minimumFractionDigits: 1,
-        }}
-      />
-      <Title level={5}>{t("spool.fields.used_length")}</Title>
-      <NumberFieldUnit
-        value={record?.used_length ?? ""}
-        unit="mm"
-        options={{
-          maximumFractionDigits: 1,
-          minimumFractionDigits: 1,
-        }}
-      />
-      <Title level={5}>{t("spool.fields.remaining_weight")}</Title>
-      <NumberFieldUnit
-        value={record?.remaining_weight ?? ""}
-        unit="g"
-        options={{
-          maximumFractionDigits: 1,
-          minimumFractionDigits: 1,
-        }}
-      />
-      <Title level={5}>{t("spool.fields.used_weight")}</Title>
-      <NumberFieldUnit
-        value={record?.used_weight ?? ""}
-        unit="g"
-        options={{
-          maximumFractionDigits: 1,
-          minimumFractionDigits: 1,
-        }}
-      />
-      <Title level={5}>{t("spool.fields.location")}</Title>
-      <TextField value={record?.location} />
-      <Title level={5}>{t("spool.fields.lot_nr")}</Title>
-      <TextField value={record?.lot_nr} />
-      <Title level={5}>{t("spool.fields.comment")}</Title>
-      <TextField value={enrichText(record?.comment)} />
-      <Title level={5}>{t("spool.fields.archived")}</Title>
-      <TextField value={record?.archived ? t("yes") : t("no")} />
-      <Title level={4}>{t("settings.extra_fields.tab")}</Title>
-      {extraFields?.data?.map((field, index) => (
-        <ExtraFieldDisplay key={index} field={field} value={record?.extra[field.key]} />
-      ))}
     </Show>
   );
 };

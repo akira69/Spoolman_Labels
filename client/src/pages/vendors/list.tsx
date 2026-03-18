@@ -1,12 +1,13 @@
 import { EditOutlined, EyeOutlined, FilterOutlined, PlusSquareOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown } from "antd";
+import { Button, Dropdown, Table } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
+  type Action,
   ActionsColumn,
   CustomFieldColumn,
   DateColumn,
@@ -16,9 +17,8 @@ import {
   SortedColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
-import ResizableTable from "../../components/resizableTable";
-import VendorLogo from "../../components/vendorLogo";
 import { useSpoolmanVendorExternalIds, useSpoolmanVendors } from "../../components/otherModels";
+import VendorLogo from "../../components/vendorLogo";
 import { removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
@@ -38,7 +38,6 @@ export const VendorList = () => {
 
   const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
 
-  // Load initial state
   const initialState = useInitialTableState(namespace);
 
   // Fetch data from the API
@@ -72,6 +71,18 @@ export const VendorList = () => {
 
   // Create state for the columns to show
   const [showColumns, setShowColumns] = useState<string[]>(initialState.showColumns ?? allColumns);
+  const logoFilterValue = useMemo(() => {
+    const logoFilter = filters.find((filter) => "field" in filter && filter.field === "logo");
+    if (!logoFilter || !("value" in logoFilter)) {
+      return null;
+    }
+
+    return Array.isArray(logoFilter.value)
+      ? logoFilter.value.filter((value): value is string => typeof value === "string")
+      : typeof logoFilter.value === "string"
+        ? [logoFilter.value]
+        : null;
+  }, [filters]);
 
   // Store state in local storage
   const tableState: TableState = {
@@ -97,7 +108,7 @@ export const VendorList = () => {
   }
 
   const { editUrl, showUrl, cloneUrl } = useNavigation();
-  const actions = (record: IVendor) => [
+  const actions = (record: IVendor): Action[] => [
     { name: t("buttons.show"), icon: <EyeOutlined />, link: showUrl("vendor", record.id) },
     { name: t("buttons.edit"), icon: <EditOutlined />, link: editUrl("vendor", record.id) },
     { name: t("buttons.clone"), icon: <PlusSquareOutlined />, link: cloneUrl("vendor", record.id) },
@@ -111,14 +122,13 @@ export const VendorList = () => {
     tableState,
     sorter: true,
   };
-  const hasActiveFilters = (filters?.length ?? 0) > 0;
 
   return (
     <List
       headerButtons={({ defaultButtons }) => (
         <>
           <Button
-            type={hasActiveFilters ? "primary" : "default"}
+            type="primary"
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");
@@ -142,10 +152,7 @@ export const VendorList = () => {
 
                 return {
                   key: column_id,
-                  label:
-                    column_id === "logo"
-                      ? t("vendor.fields.logo")
-                      : t(`vendor.fields.${column_id}`),
+                  label: column_id === "logo" ? t("vendor.fields.logo") : t(`vendor.fields.${column_id}`),
                 };
               }),
               selectedKeys: showColumns,
@@ -167,14 +174,18 @@ export const VendorList = () => {
         </>
       )}
     >
-      <ResizableTable
-        columnResizeKey="vendor-list-table"
+      <Table
         {...tableProps}
         sticky
         tableLayout="auto"
         scroll={{ x: "max-content" }}
         dataSource={dataSource}
         rowKey="id"
+        onChange={(pagination, filters, sorter, extra) => {
+          if (tableProps.onChange) {
+            tableProps.onChange(pagination, filters, sorter, extra);
+          }
+        }}
         columns={removeUndefined([
           SortedColumn({
             ...commonProps,
@@ -186,30 +197,61 @@ export const VendorList = () => {
             ? {
                 title: t("vendor.fields.logo"),
                 key: "logo",
+                dataIndex: "logo",
                 width: 180,
-                render: (_: unknown, record: IVendor) => (
-                  <VendorLogo
-                    vendor={record}
-                    showFallbackText
-                    imgStyle={{
-                      display: "block",
-                      width: "100%",
-                      maxWidth: "160px",
-                      maxHeight: "24px",
-                      objectFit: "contain",
-                      objectPosition: "left center",
-                    }}
-                    fallbackStyle={{
-                      width: "100%",
-                      fontWeight: 600,
-                      fontSize: "12px",
-                      lineHeight: 1.2,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  />
-                ),
+                filterMultiple: false,
+                filteredValue: logoFilterValue,
+                filters: [
+                  { text: t("vendor.logo_filter.has_logo"), value: "has-logo" },
+                  { text: t("vendor.logo_filter.no_logo"), value: "no-logo" },
+                ],
+                render: (_: unknown, record: IVendor) => {
+                  const rowActions = actions(record);
+                  return (
+                    <Dropdown
+                      menu={{
+                        items: rowActions.map((action) => ({
+                          key: action.name,
+                          label: action.name,
+                          icon: action.icon,
+                        })),
+                        onClick: (item) => {
+                          const action = rowActions.find((candidate) => candidate.name === item.key);
+                          if (action?.link) {
+                            navigate(action.link);
+                          } else {
+                            action?.onClick?.();
+                          }
+                        },
+                      }}
+                      trigger={["click"]}
+                    >
+                      <div style={{ cursor: "pointer" }}>
+                        <VendorLogo
+                          vendor={record}
+                          showFallbackText
+                          imgStyle={{
+                            display: "block",
+                            width: "100%",
+                            maxWidth: "160px",
+                            maxHeight: "24px",
+                            objectFit: "contain",
+                            objectPosition: "left center",
+                          }}
+                          fallbackStyle={{
+                            width: "100%",
+                            fontWeight: 600,
+                            fontSize: "12px",
+                            lineHeight: 1.2,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        />
+                      </div>
+                    </Dropdown>
+                  );
+                },
               }
             : undefined,
           FilteredQueryColumn({

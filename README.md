@@ -1,5 +1,3 @@
-<br/>
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/Donkie/Spoolman/assets/2332094/4e6e80ac-c7be-4ad2-9a33-dedc1b5ba30e">
   <source media="(prefers-color-scheme: light)" srcset="https://github.com/Donkie/Spoolman/assets/2332094/3c120b3a-1422-42f6-a16b-8d5a07c33000">
@@ -40,15 +38,3 @@ Spoolman is a self-hosted web service designed to help you efficiently manage yo
 
 ## Installation
 Please see the [Installation page on the Wiki](https://github.com/Donkie/Spoolman/wiki/Installation) for details how to install Spoolman.
-
-## Syncing Manufacturer Logos
-If you want to bundle manufacturer logos locally for UI + label rendering, run:
-
-```bash
-./scripts/sync_vendor_logos.sh
-```
-
-This pulls the `logos` set from `MarksMakerSpace/filament-profiles` into `client/public/vendor-logos`.
-
-In the Manufacturers list, use `Sync Logos` to auto-map existing manufacturers to bundled logos.
-The matching normalizes casing and separators (for example `Bambu Lab`, `bambu-lab`, `BAMBU LAB`).

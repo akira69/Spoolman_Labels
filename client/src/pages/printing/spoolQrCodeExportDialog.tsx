@@ -1,9 +1,8 @@
 import { CopyOutlined, DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
-import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Typography, message } from "antd";
+import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Table, Typography, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import ResizableTable from "../../components/resizableTable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { useGetSetting } from "../../utils/querySettings";
@@ -11,6 +10,7 @@ import { useSavedState } from "../../utils/saveload";
 import { useGetSpoolsByIds } from "../spools/functions";
 import { ISpool } from "../spools/model";
 import {
+  getConfiguredBaseUrl,
   SpoolQRCodePrintSettings,
   renderLabelContents,
   renderTemplateText,
@@ -25,11 +25,13 @@ interface SpoolQRCodeExportDialog {
   spoolIds: number[];
 }
 
+// Adapt spool records into the generic QR export dialog and keep export presets isolated from filament presets.
 const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
   const t = useTranslate();
   const currentPresetType = "spool";
   const otherPresetType = "filament";
   const defaultPresetName = t("printing.generic.defaultSettings");
+  const importedPresetSuffix = `(${otherPresetType} preset basis)`;
   const isDefaultPresetName = (name?: string) => {
     const normalizedName = (name ?? "").trim().toLowerCase();
     const normalizedDefault = defaultPresetName.trim().toLowerCase();
@@ -49,7 +51,11 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
     }
     return `${normalizedBaseName}-${String(maxSuffix + 1).padStart(2, "0")}`;
   };
-  const buildNewPreset = (id: string, name: string, sourcePreset?: SpoolQRCodePrintSettings): SpoolQRCodePrintSettings => {
+  const buildNewPreset = (
+    id: string,
+    name: string,
+    sourcePreset?: SpoolQRCodePrintSettings,
+  ): SpoolQRCodePrintSettings => {
     const copiedSourcePrintSettings = sourcePreset?.labelSettings?.printSettings ?? {};
     return {
       ...sourcePreset,
@@ -78,10 +84,8 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
   };
 
   const baseUrlSetting = useGetSetting("base_url");
-  const baseUrlRoot =
-    baseUrlSetting.data?.value !== undefined && JSON.parse(baseUrlSetting.data?.value) !== ""
-      ? JSON.parse(baseUrlSetting.data?.value)
-      : window.location.origin;
+  // Accept both JSON-backed settings and legacy plain strings so old `base_url` values do not crash the dialog.
+  const baseUrlRoot = getConfiguredBaseUrl(baseUrlSetting.data?.value, window.location.origin);
   const [messageApi, contextHolder] = message.useMessage();
   const [useHTTPUrl, setUseHTTPUrl] = useSavedState("export-useHTTPUrl", false);
 
@@ -105,11 +109,20 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
   const currentPresets = localCurrentPresets ?? remoteSpoolPresets;
   const otherPresets = remoteFilamentPresets ?? [];
 
+  // Keep edits local until the user explicitly saves so imported filament presets can be tried without persistence.
   const savePresetsRemote = async () => {
     if (!localCurrentPresets) return;
     await setRemoteSpoolPresets(localCurrentPresets);
-    setLocalCurrentPresets(undefined);
   };
+
+  useEffect(() => {
+    // Keep the saved local list active until the refetched settings catch up, otherwise the
+    // selector can briefly fall back to the default preset immediately after save.
+    if (!localCurrentPresets || !remoteSpoolPresets) return;
+    if (JSON.stringify(localCurrentPresets) === JSON.stringify(remoteSpoolPresets)) {
+      setLocalCurrentPresets(undefined);
+    }
+  }, [localCurrentPresets, remoteSpoolPresets]);
 
   const getSelectedPreset = () => {
     const parsed = parsePresetValue(selectedPresetState);
@@ -122,15 +135,11 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
 
   const promotePresetToCurrentType = (preset: SpoolQRCodePrintSettings): SpoolQRCodePrintSettings | undefined => {
     if (!currentPresets) return;
+    // Imported filament presets become spool-owned copies immediately so later edits never touch the source preset.
+    const baseName = (preset.labelSettings.printSettings?.name ?? defaultPresetName).trim() || defaultPresetName;
+    const promotedName = getNextPresetName(`${baseName} ${importedPresetSuffix}`, currentPresets);
     const promotedPreset: SpoolQRCodePrintSettings = {
-      ...preset,
-      labelSettings: {
-        ...preset.labelSettings,
-        printSettings: {
-          ...preset.labelSettings.printSettings,
-          id: uuidv4(),
-        },
-      },
+      ...buildNewPreset(uuidv4(), promotedName, preset),
     };
     const nextPresets = [...currentPresets, promotedPreset];
     setLocalCurrentPresets(nextPresets);
@@ -138,6 +147,7 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
     return promotedPreset;
   };
 
+  // New presets derive from the currently selected settings object so export variants start from what the user sees.
   const addNewPreset = () => {
     if (!currentPresets) return;
     const newId = uuidv4();
@@ -149,6 +159,7 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
     setSelectedPresetState(toPresetValue(currentPresetType, newId));
     return newPreset;
   };
+  // Duplicates get a fresh id so the cloned export preset can diverge from its source immediately.
   const duplicateCurrentPreset = () => {
     if (!currentPresets) return;
     const newPreset = {
@@ -159,6 +170,7 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
     setLocalCurrentPresets([...currentPresets, newPreset]);
     setSelectedPresetState(toPresetValue(currentPresetType, newPreset.labelSettings.printSettings.id));
   };
+  // Edits to a filament-derived preset first promote it into the spool bucket before any persistence is possible.
   const updateCurrentPreset = (newSettings: SpoolQRCodePrintSettings) => {
     if (!currentPresets) return;
     const parsed = parsePresetValue(selectedPresetState);
@@ -184,14 +196,13 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
     if (!currentPresets) return;
     const parsed = parsePresetValue(selectedPresetState);
     if (!parsed || parsed.type !== currentPresetType) return;
-    setLocalCurrentPresets(
-      currentPresets.filter((qPreset) => qPreset.labelSettings.printSettings.id !== parsed.id),
-    );
+    setLocalCurrentPresets(currentPresets.filter((qPreset) => qPreset.labelSettings.printSettings.id !== parsed.id));
     setSelectedPresetState(undefined);
   };
 
   let curPreset: SpoolQRCodePrintSettings;
   if (currentPresets === undefined) {
+    // Use a temporary preset while settings load so the export dialog can render immediately.
     curPreset = {
       labelSettings: {
         printSettings: {
@@ -202,6 +213,7 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
     };
   } else {
     if (currentPresets.length === 0) {
+      // Seed the spool bucket with one editable preset the first time export settings are opened.
       const defaultId = uuidv4();
       const defaultPreset = buildNewPreset(defaultId, defaultPresetName);
       setLocalCurrentPresets([defaultPreset]);
@@ -210,24 +222,11 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
     } else {
       const parsedSelectedPreset = parsePresetValue(selectedPresetState);
       if (parsedSelectedPreset && parsedSelectedPreset.type === otherPresetType) {
-        const importedPreset = otherPresets.find(
-          (settings) => settings.labelSettings.printSettings.id === parsedSelectedPreset.id,
-        );
-        if (importedPreset) {
-          curPreset = {
-            ...importedPreset,
-            labelSettings: {
-              ...importedPreset.labelSettings,
-              printSettings: { ...importedPreset.labelSettings.printSettings },
-            },
-          };
-        } else {
-          const preferredPreset =
-            currentPresets.find((settings) => isDefaultPresetName(settings.labelSettings.printSettings?.name)) ??
-            currentPresets[0];
-          curPreset = preferredPreset;
-          setSelectedPresetState(toPresetValue(currentPresetType, preferredPreset.labelSettings.printSettings.id));
-        }
+        const preferredPreset =
+          currentPresets.find((settings) => isDefaultPresetName(settings.labelSettings.printSettings?.name)) ??
+          currentPresets[0];
+        curPreset = preferredPreset;
+        setSelectedPresetState(toPresetValue(currentPresetType, preferredPreset.labelSettings.printSettings.id));
       } else if (parsedSelectedPreset) {
         const foundSetting = currentPresets.find(
           (settings) => settings.labelSettings.printSettings.id === parsedSelectedPreset.id,
@@ -252,7 +251,8 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
   }
 
   const hasUnsavedChanges =
-    localCurrentPresets !== undefined && JSON.stringify(localCurrentPresets) !== JSON.stringify(remoteSpoolPresets ?? []);
+    localCurrentPresets !== undefined &&
+    JSON.stringify(localCurrentPresets) !== JSON.stringify(remoteSpoolPresets ?? []);
 
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
   const titleTemplate = curPreset.titleTemplate ?? `==**{filament.name}**== {filament.color_hex}`;
@@ -333,6 +333,7 @@ Spool Weight: {filament.spool_weight} g
     });
   }
 
+  // Expose spool, filament, and vendor placeholders because the same tag picker drives label text and export filenames.
   const templateTags = [...spoolTags, ...filamentTags, ...vendorTags];
 
   return (
@@ -367,6 +368,15 @@ Spool Weight: {filament.spool_weight} g
                   onChange={(value) => {
                     const parsed = parsePresetValue(value);
                     if (!parsed) return;
+                    if (parsed.type === otherPresetType) {
+                      const sourcePreset = otherPresets.find(
+                        (settings) => settings.labelSettings.printSettings.id === parsed.id,
+                      );
+                      if (sourcePreset) {
+                        promotePresetToCurrentType(sourcePreset);
+                      }
+                      return;
+                    }
                     setSelectedPresetState(value);
                   }}
                   options={
@@ -375,14 +385,16 @@ Spool Weight: {filament.spool_weight} g
                           {
                             label: t("printing.generic.spoolImagePresets"),
                             options: currentPresets.map((settings) => ({
-                              label: settings.labelSettings.printSettings?.name || t("printing.generic.defaultSettings"),
+                              label:
+                                settings.labelSettings.printSettings?.name || t("printing.generic.defaultSettings"),
                               value: toPresetValue(currentPresetType, settings.labelSettings.printSettings.id),
                             })),
                           },
                           {
                             label: t("printing.generic.filamentImagePresets"),
                             options: otherPresets.map((settings) => ({
-                              label: settings.labelSettings.printSettings?.name || t("printing.generic.defaultSettings"),
+                              label:
+                                settings.labelSettings.printSettings?.name || t("printing.generic.defaultSettings"),
                               value: toPresetValue(otherPresetType, settings.labelSettings.printSettings.id),
                             })),
                           },
@@ -428,6 +440,9 @@ Spool Weight: {filament.spool_weight} g
                   updateCurrentPreset(curPreset);
                 }}
               />
+              <div style={{ minHeight: 22, paddingTop: 4 }}>
+                {hasUnsavedChanges && <Text type="danger">Unsaved Preset Changes</Text>}
+              </div>
             </Form.Item>
           </>
         }
@@ -440,7 +455,10 @@ Spool Weight: {filament.spool_weight} g
           errorLevel: "H",
         }))}
         extraExportSettings={
-          <Form.Item label={t("printing.qrcode.filenameTemplate")} tooltip={t("printing.qrcode.filenameTemplateTooltipSpool")}>
+          <Form.Item
+            label={t("printing.qrcode.filenameTemplate")}
+            tooltip={t("printing.qrcode.filenameTemplateTooltipSpool")}
+          >
             <Input
               value={filenameTemplate}
               onChange={(newValue) => {
@@ -451,7 +469,10 @@ Spool Weight: {filament.spool_weight} g
           </Form.Item>
         }
         extraTitleSettings={
-          <Form.Item label={t("printing.qrcode.titleTemplate")} tooltip={t("printing.qrcode.titleTemplateTooltipSpool")}>
+          <Form.Item
+            label={t("printing.qrcode.titleTemplate")}
+            tooltip={t("printing.qrcode.titleTemplateTooltipSpool")}
+          >
             <TextArea
               value={titleTemplate}
               rows={4}
@@ -475,8 +496,7 @@ Spool Weight: {filament.spool_weight} g
               />
             </Form.Item>
             <Modal open={templateHelpOpen} footer={null} onCancel={() => setTemplateHelpOpen(false)}>
-              <ResizableTable
-                columnResizeKey="spool-export-template-tags"
+              <Table
                 size="small"
                 showHeader={false}
                 pagination={false}

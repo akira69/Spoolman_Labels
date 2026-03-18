@@ -11,6 +11,7 @@ interface LogoMatchScore {
   score: number;
 }
 
+// Vendor logo extras may be stored as JSON strings or legacy plain text; accept either form for previews.
 export function parseExtraString(value: string | undefined): string | undefined {
   if (!value) {
     return undefined;
@@ -59,9 +60,14 @@ function slugFromManifestPath(path: string, type: "web" | "print"): string {
   if (type === "web") {
     return base.replace(/-web$/i, "");
   }
-  return base;
+  // Generated print logos append hash/suffix markers; strip those so auto-match still keys off the vendor slug.
+  return base
+    .replace(/-[0-9a-f]{10}-print-auto$/i, "")
+    .replace(/-print-auto$/i, "")
+    .replace(/-print$/i, "");
 }
 
+// Rank manifest entries conservatively so auto-matching prefers vendor-specific files over generic logo names.
 function scoreLogoPath(name: string, path: string, type: "web" | "print"): number {
   const targetSlug = slugifyVendorName(name);
   if (!targetSlug) {
@@ -110,6 +116,7 @@ function rankPaths(name: string, paths: string[], type: "web" | "print"): LogoMa
     .sort((a, b) => b.score - a.score);
 }
 
+// Only strong matches should auto-populate preview/logo suggestions; weaker matches stay manual choices.
 function findBestPath(name: string, paths: string[], type: "web" | "print"): string | undefined {
   const ranked = rankPaths(name, paths, type);
   if (ranked.length === 0) {
@@ -128,7 +135,7 @@ export function suggestVendorLogoOptions(
   type: "web" | "print",
   limit = 5,
 ): string[] {
-  const paths = type === "web" ? manifest.web_files ?? [] : manifest.print_files ?? [];
+  const paths = type === "web" ? (manifest.web_files ?? []) : (manifest.print_files ?? []);
   const ranked = rankPaths(name, paths, type);
   return ranked.slice(0, limit).map((entry) => entry.path);
 }
@@ -139,6 +146,7 @@ export function suggestVendorLogoPaths(name: string, manifest: VendorLogoManifes
   return { webPath, printPath };
 }
 
+// Try explicit overrides first, then slug-based runtime paths so local logo packs still resolve without saved URLs.
 export function getVendorLogoCandidates(vendor: IVendor | undefined, usePrintLogo: boolean): string[] {
   if (!vendor) {
     return [];
@@ -157,10 +165,9 @@ export function getVendorLogoCandidates(vendor: IVendor | undefined, usePrintLog
   const slug = slugifyVendorName(vendor.name);
   if (slug) {
     const basePath = getBasePath();
-    const printCandidates = [
-      `${basePath}/vendor-logos/print/${slug}.png`,
-      `${basePath}/vendor-logos/${slug}.png`,
-    ];
+    // After any explicit URL, fall back to the conventional runtime file paths so blank
+    // logo fields can still resolve to local logo-pack files derived from the vendor name.
+    const printCandidates = [`${basePath}/vendor-logos/print/${slug}.png`, `${basePath}/vendor-logos/${slug}.png`];
     const webCandidates = [
       `${basePath}/vendor-logos/web/${slug}.png`,
       `${basePath}/vendor-logos/web/${slug}-web.png`,

@@ -41,6 +41,9 @@ const LogoLabelBlock = ({ vendor, label }: LogoLabelBlockProps) => {
             objectPosition: "left center",
           }}
           fallbackStyle={{
+            // Label previews render on a white canvas, so fallback text must stay dark
+            // even when the surrounding application theme is dark.
+            color: "#000",
             fontWeight: 700,
             fontSize: "3.2mm",
             lineHeight: 1,

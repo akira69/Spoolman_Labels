@@ -103,6 +103,7 @@ window.SPOOLMAN_BASE_PATH = "{base_path}";
 @app.get(env.get_base_path() + "/vendor-logos/{asset_path:path}", include_in_schema=False)
 def get_vendor_logo_asset(asset_path: str) -> FileResponse:
     """Serve vendor logo assets from runtime data directory first, then bundled assets."""
+    # Runtime-generated print logos should override bundled defaults without changing client URLs.
     resolved = resolve_vendor_logo_asset(asset_path)
     if resolved is None:
         raise HTTPException(status_code=404, detail="Logo asset not found.")

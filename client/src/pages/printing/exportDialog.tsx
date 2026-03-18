@@ -12,25 +12,22 @@ interface ExportDialogProps {
   printSettings: PrintSettings;
   setPrintSettings: (setPrintSettings: PrintSettings) => void;
   style?: string;
-  extraExportSettings?: ReactElement;
   extraSettings?: ReactElement;
   extraSettingsStart?: ReactElement;
+  extraFormatSettings?: ReactElement;
   extraButtons?: ReactElement;
   zipFileTypeName: string;
 }
 
-interface PreviewNamedElementProps {
-  "data-aml-name"?: string;
-}
-
+// Render one preview page per exported label and reuse that DOM for PNG/AML generation so preview stays authoritative.
 const ExportDialog = ({
   items,
   printSettings,
   setPrintSettings,
   style,
-  extraExportSettings,
   extraSettings,
   extraSettingsStart,
+  extraFormatSettings,
   extraButtons,
   zipFileTypeName,
 }: ExportDialogProps) => {
@@ -53,44 +50,21 @@ const ExportDialog = ({
 
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const previewExtension = exportFormat === "png" ? ".png" : ".aml";
-  const previewFilenameBasePx = 8;
-  const previewFilenameFontSizePx = Math.max(
-    1,
-    Math.round((previewFilenameBasePx / Math.max(previewScale, 0.01)) * 10) / 10,
-  );
-  const sanitizePreviewFilename = (value: string) => {
+  const sanitizeFilename = (value: string) => {
     const trimmed = value.trim();
     if (trimmed === "") {
       return "";
     }
-    return trimmed
-      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
-      .replace(/\s+/g, " ")
-      .replace(/\.+$/g, "");
+    return (
+      trimmed
+        // eslint-disable-next-line no-control-regex
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
+        .replace(/\s+/g, " ")
+        .replace(/\.+$/g, "")
+    );
   };
 
-  const previewFilenameBases = (() => {
-    const usedNames = new Set<string>();
-    const names: string[] = [];
-    let idx = 1;
-    for (const item of items) {
-      const rawName = ((item.props as PreviewNamedElementProps | undefined)?.["data-aml-name"] ?? `label-${idx}`).trim();
-      const baseName = sanitizePreviewFilename(rawName) || `label-${idx}`;
-      let safeName = baseName;
-      let nameSuffix = 1;
-      while (usedNames.has(safeName)) {
-        safeName = `${baseName}${String(nameSuffix).padStart(2, "0")}`;
-        nameSuffix += 1;
-      }
-      usedNames.add(safeName);
-      names.push(safeName);
-      idx += 1;
-    }
-    return names;
-  })();
-  const zipFilename = `${exportFormat.toUpperCase()} ${zipFileTypeName} labels.zip`;
-
+  // Exports deliberately stay one-label-per-page so preview names and downloaded files map 1:1 to a logical label.
   const pageBlocks: ReactElement[][] = [];
   for (const item of items) {
     pageBlocks.push([item]);
@@ -98,11 +72,14 @@ const ExportDialog = ({
 
   const pages = pageBlocks.map(function (pageItems, pageIdx) {
     const itemDivs = pageItems.map((item, itemIdx) => {
+      const rawPreviewName = (item.props as { "data-aml-name"?: string })["data-aml-name"] ?? `label-${itemIdx + 1}`;
+      const previewName = sanitizeFilename(rawPreviewName) || `label-${itemIdx + 1}`;
       return (
         <div
           key={itemIdx}
           className="print-page-item"
           style={{
+            position: "relative",
             width: `${itemWidth}mm`,
             height: `${itemHeight}mm`,
             paddingLeft: `${Math.max(printerMargin.left - margin.left, 0)}mm`,
@@ -111,47 +88,44 @@ const ExportDialog = ({
             paddingBottom: `${Math.max(printerMargin.bottom - margin.bottom, 0)}mm`,
           }}
         >
+          <div className="print-page-filename">
+            {previewName}.{exportFormat}
+          </div>
           {item}
         </div>
       );
     });
 
     return (
-      <div key={pageIdx} style={{ marginBottom: "3mm" }}>
+      <div
+        className="print-page"
+        key={pageIdx}
+        style={{
+          width: `${paperWidth}mm`,
+          height: `${paperHeight}mm`,
+          backgroundColor: "#FFF",
+          overflow: "hidden",
+        }}
+      >
         <div
-          className="print-page"
+          className="print-page-area"
           style={{
-            width: `${paperWidth}mm`,
-            height: `${paperHeight}mm`,
-            backgroundColor: "#FFF",
-            overflow: "hidden",
+            height: `${paperHeight - margin.top - margin.bottom}mm`,
+            width: `${paperWidth - margin.left - margin.right}mm`,
+            marginTop: `${margin.top}mm`,
+            marginLeft: `${margin.left}mm`,
+            marginRight: `${margin.right}mm`,
+            marginBottom: `${margin.bottom}mm`,
           }}
         >
           <div
-            className="print-page-area"
             style={{
-              height: `${paperHeight - margin.top - margin.bottom}mm`,
-              width: `${paperWidth - margin.left - margin.right}mm`,
-              marginTop: `${margin.top}mm`,
-              marginLeft: `${margin.left}mm`,
-              marginRight: `${margin.right}mm`,
-              marginBottom: `${margin.bottom}mm`,
+              display: "flex",
+              flexWrap: "wrap",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-              }}
-            >
-              {itemDivs}
-            </div>
+            {itemDivs}
           </div>
-        </div>
-        <div style={{ marginTop: 2, fontSize: `${previewFilenameFontSizePx}px`, lineHeight: 1.2, opacity: 0.75 }}>
-          <code style={{ fontSize: `${previewFilenameFontSizePx}px`, fontWeight: 400 }}>
-            {`${previewFilenameBases[pageIdx] ?? `label-${pageIdx + 1}`}${previewExtension}`}
-          </code>
         </div>
       </div>
     );
@@ -275,17 +249,6 @@ const ExportDialog = ({
     };
   };
 
-  const sanitizeFilename = (value: string) => {
-    const trimmed = value.trim();
-    if (trimmed === "") {
-      return "";
-    }
-    return trimmed
-      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
-      .replace(/\s+/g, " ")
-      .replace(/\.+$/g, "");
-  };
-
   const getUniqueExportItems = () => {
     const hasPrinted: Element[] = [];
     const itemsToPrint = getPrintItems();
@@ -293,8 +256,9 @@ const ExportDialog = ({
     const uniqueItems: { item: Element; safeName: string }[] = [];
     let idx = 1;
 
+    // Repeated copies share the same DOM shape, but export should still emit one file per unique label design.
     for (const item of itemsToPrint) {
-      // Prevent printing copies
+      // Prevent duplicate exports when the preview contains repeated copies.
       let isDuplicate = false;
       for (let i = 0; i < hasPrinted.length; i += 1) {
         if (item.isEqualNode(hasPrinted[i])) {
@@ -349,6 +313,7 @@ const ExportDialog = ({
       return;
     }
 
+    // ZIP exports reuse the same per-label rendering path so single-file and batch downloads stay consistent.
     const zip = new JSZip();
     for (const { item, safeName } of uniqueItems) {
       const url = await htmlToImage.toPng(item as HTMLElement, getExportImageOptions());
@@ -391,12 +356,6 @@ const ExportDialog = ({
             flexDirection: "column",
           }}
         >
-          {exportAsZip && (
-            <div style={{ marginBottom: 8, fontSize: 13, lineHeight: 1.2, opacity: 0.75, padding: "0 4px" }}>
-              {t("printing.generic.zipFilenamePreview")}:{" "}
-              <code style={{ fontSize: "13px", fontWeight: 400 }}>{zipFilename}</code>
-            </div>
-          )}
           <div
             style={{
               transform: "translateZ(0)",
@@ -422,6 +381,24 @@ const ExportDialog = ({
 
                 .print-page * {
                   box-sizing: border-box;
+                }
+
+                .print-page .print-page-filename {
+                  position: absolute;
+                  top: 0.5mm;
+                  left: 0.5mm;
+                  z-index: 2;
+                  pointer-events: none;
+                  font-size: 2mm;
+                  line-height: 1.2;
+                  color: #333;
+                  background: rgba(255, 255, 255, 0.9);
+                  border-radius: 1mm;
+                  padding: 0 0.8mm;
+                  max-width: calc(100% - 1mm);
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
                 }
 
                 ${style ?? ""}
@@ -462,7 +439,7 @@ const ExportDialog = ({
                   </Checkbox>
                 </div>
               </Form.Item>
-              {extraExportSettings}
+              {extraFormatSettings}
               <Form.Item label={t("printing.generic.exportDpi")} help={t("printing.generic.exportDpiHelp")}>
                 <Row>
                   <Col span={12}>

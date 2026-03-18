@@ -26,6 +26,7 @@ export interface QRCodePrintSettings {
   showQRCodeMode?: "no" | "simple" | "withIcon";
   textSize?: number;
   showManufacturerLogo?: boolean;
+  logoSource?: "print" | "color";
   logoHeightMm?: number;
   logoAlign?: "left" | "center" | "right";
   showTitle?: boolean;
@@ -49,6 +50,7 @@ export interface SpoolQRCodePrintSettings {
   labelSettings: QRCodePrintSettings;
 }
 
+// Merge shared defaults and saved presets without duplicating ids when multiple setting buckets are loaded together.
 export function mergePrintPresets(
   ...presetLists: Array<SpoolQRCodePrintSettings[] | undefined>
 ): SpoolQRCodePrintSettings[] | undefined {
@@ -73,12 +75,27 @@ export function mergePrintPresets(
   return merged;
 }
 
+export function getConfiguredBaseUrl(rawValue: string | undefined, fallback: string): string {
+  if (rawValue === undefined) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue);
+    return typeof parsed === "string" && parsed.trim() !== "" ? parsed : fallback;
+  } catch {
+    const trimmed = rawValue.trim();
+    return trimmed !== "" ? trimmed : fallback;
+  }
+}
+
+// Load saved print presets and backfill missing ids so older settings remain selectable in the current UI.
 export function useGetPrintSettings(settingKey = "print_presets"): SpoolQRCodePrintSettings[] | undefined {
   const { data } = useGetSetting(settingKey);
   if (!data) return;
   const parsed: SpoolQRCodePrintSettings[] =
     data && data.value ? JSON.parse(data.value) : ([] as SpoolQRCodePrintSettings[]);
-  // Loop through all parsed and generate a new ID field if it's not set
+  // Older presets did not store ids; generate them lazily so the editor can still target each entry.
   return parsed.map((settings) => {
     if (!settings.labelSettings.printSettings.id) {
       settings.labelSettings.printSettings.id = uuidv4();
@@ -89,35 +106,29 @@ export function useGetPrintSettings(settingKey = "print_presets"): SpoolQRCodePr
 
 export function useSetPrintSettings(
   settingKey = "print_presets",
-): (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => Promise<unknown> {
+): (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => void {
   const mut = useSetSetting(settingKey);
 
   return (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => {
-    return mut.mutateAsync(spoolQRCodePrintSettings);
+    mut.mutate(spoolQRCodePrintSettings);
   };
 }
 
-interface GenericObject {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-  extra: { [key: string]: string };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getTagValue(tag: string, obj: GenericObject): any {
-  // Split tag by .
+// Resolve dot-path placeholders, including JSON-backed extra fields, for title/label/filename templates.
+function getTagValue(tag: string, obj: object): unknown {
+  const record = obj as { [key: string]: unknown; extra?: { [key: string]: string } };
   const tagParts = tag.split(".");
   if (tagParts[0] === "extra") {
-    const extraValue = obj.extra[tagParts[1]];
+    const extraValue = record.extra?.[tagParts[1]];
     if (extraValue === undefined) {
       return "?";
     }
     return JSON.parse(extraValue);
   }
 
-  const value = obj[tagParts[0]] ?? "?";
-  // check if value is itself an object. If so, recursively call this and remove the first part of the tag
-  if (typeof value === "object") {
+  const value = record[tagParts[0]] ?? "?";
+  // Nested relations reuse the same lookup rules so templates can walk into vendor and filament fields.
+  if (typeof value === "object" && value !== null) {
     return getTagValue(tagParts.slice(1).join("."), value);
   }
   return value;
@@ -167,8 +178,8 @@ function applyTextFormatting(text: string): ReactElement[] {
   return elements;
 }
 
-export function renderTemplateText(template: string, obj: GenericObject): string {
-  // Find all {tags} in the template string and loop over them
+// Expand optional sections and scalar tags into plain text before the print/export renderers apply styling.
+export function renderTemplateText(template: string, obj: object): string {
   const matches = [...template.matchAll(/{(?:[^}{]|{[^}{]*})*}/gs)];
   let renderedText = template;
   matches.forEach((match) => {
@@ -184,7 +195,7 @@ export function renderTemplateText(template: string, obj: GenericObject): string
         if (tagValue === "?") {
           renderedText = renderedText.replace(match[0], "");
         } else {
-          renderedText = renderedText.replace(match[0], structure[1] + tagValue + structure[3]);
+          renderedText = renderedText.replace(match[0], structure[1] + String(tagValue) + structure[3]);
         }
       }
     }
@@ -192,8 +203,7 @@ export function renderTemplateText(template: string, obj: GenericObject): string
   return renderedText;
 }
 
-export function renderLabelContents(template: string, obj: GenericObject): ReactElement {
+export function renderLabelContents(template: string, obj: object): ReactElement {
   const renderedText = renderTemplateText(template, obj);
-  // Split string on \n into individual lines
   return <>{applyTextFormatting(renderedText)}</>;
 }
