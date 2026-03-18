@@ -86,18 +86,29 @@ export function useSpoolmanFilamentFilter(enabled: boolean = false) {
 }
 
 export function useSpoolmanFilamentNames(enabled: boolean = false) {
-  return useQuery<string[]>({
-    enabled,
-    queryKey: ["filamentNames"],
+  return useQuery<IFilament[], unknown, string[]>({
+    enabled: enabled,
+    queryKey: ["filaments"],
     queryFn: async () => {
-      const response = await fetch(getAPIURL() + "/filament/name");
+      const response = await fetch(getAPIURL() + "/filament");
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
       return response.json();
     },
     select: (data) => {
-      return data.filter((name) => name !== "").sort();
+      // Concatenate vendor name and filament name
+      let names = data
+        .filter((filament) => {
+          return filament.name !== null && filament.name !== undefined && filament.name !== "";
+        })
+        .map((filament) => {
+          return filament.name ?? "<unknown>";
+        })
+        .sort();
+      // Remove duplicates
+      names = [...new Set(names)];
+      return names;
     },
   });
 }
@@ -137,7 +148,9 @@ export function useSpoolmanVendorExternalIds(enabled: boolean = false) {
     select: (data) => {
       const externalIds = data
         .map((vendor) => vendor.external_id)
-        .filter((externalId): externalId is string => externalId !== null && externalId !== undefined && externalId !== "")
+        .filter(
+          (externalId): externalId is string => externalId !== null && externalId !== undefined && externalId !== "",
+        )
         .sort();
       return [...new Set(externalIds)];
     },
@@ -174,28 +187,6 @@ export function useSpoolmanArticleNumbers(enabled: boolean = false) {
     },
     select: (data) => {
       return data.sort();
-    },
-  });
-}
-
-export function useSpoolmanSpoolCounts(enabled: boolean = false) {
-  return useQuery<number[], unknown, ColumnFilterItem[]>({
-    enabled,
-    queryKey: ["filamentSpoolCounts"],
-    queryFn: async () => {
-      const response = await fetch(getAPIURL() + "/filament/spool-count");
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      return response.json();
-    },
-    select: (data) => {
-      return data
-        .sort((a, b) => a - b)
-        .map((count) => ({
-          text: String(count),
-          value: count,
-        }));
     },
   });
 }

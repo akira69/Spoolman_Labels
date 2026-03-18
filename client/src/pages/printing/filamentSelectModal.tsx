@@ -1,57 +1,53 @@
-import { EditOutlined, FilterOutlined } from "@ant-design/icons";
 import { useTable } from "@refinedev/antd";
-import { CrudFilter } from "@refinedev/core";
-import { Button, Checkbox, Col, Dropdown, Input, message, Pagination, Row, Space } from "antd";
+import { Button, Checkbox, Col, Input, message, Pagination, Row, Table } from "antd";
 import { t } from "i18next";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { FilteredQueryColumn, SortedColumn, SpoolIconColumn } from "../../components/column";
-import ResizableTable from "../../components/resizableTable";
-import {
-  useSpoolmanFilamentNames,
-  useSpoolmanMaterials,
-  useSpoolmanSpoolCounts,
-  useSpoolmanVendors,
-} from "../../components/otherModels";
+import { useSpoolmanFilamentNames, useSpoolmanMaterials, useSpoolmanVendors } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
-import { TableState, useSavedState } from "../../utils/saveload";
+import { TableState } from "../../utils/saveload";
 import { IFilament } from "../filaments/model";
 
 interface Props {
   description?: string;
   initialSelectedIds?: number[];
   onExport?: (selectedIds: number[]) => void;
-  onPrint?: (selectedIds: number[]) => void;
+  onPrint: (selectedFilamentIds: number[]) => void;
+  searchPlaceholder?: string;
 }
 
 interface IFilamentCollapsed extends IFilament {
   "vendor.name": string | null;
 }
 
+// Flatten vendor name into each row so shared table helpers can sort and filter it like a top-level field.
 function collapseFilament(element: IFilament): IFilamentCollapsed {
   return { ...element, "vendor.name": element.vendor?.name ?? null };
 }
 
-const namespace = "filamentSelectModal-v1";
-const allColumns: string[] = ["id", "spool_count", "vendor.name", "name", "material"];
+const MIN_TABLE_SCROLL_Y = 180;
+const TABLE_BOTTOM_GAP = 16;
 
-function getColumnLabel(columnId: string): string {
-  if (columnId === "vendor.name") {
-    return t("filament.fields.vendor_name");
-  }
-  return t(`filament.fields.${columnId.replace(".", "_")}`);
-}
-
-const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrint }: Props) => {
+// Combine server-side paging with lightweight local selection so the print flow can stay inside one dialog.
+const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrint, searchPlaceholder }: Props) => {
   const [selectedItems, setSelectedItems] = useState<number[]>(initialSelectedIds ?? []);
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState("");
-  const [showColumns, setShowColumns] = useSavedState<string[]>(`${namespace}-showColumns`, allColumns);
+  const [tableScrollY, setTableScrollY] = useState<number>(300);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { tableProps, sorters, filters, setFilters, currentPage, pageSize, setCurrentPage, setPageSize } =
     useTable<IFilamentCollapsed>({
       resource: "filament",
+      meta: {
+        queryParams: {
+          ...(debouncedSearch.length > 0 ? { search: debouncedSearch } : {}),
+        },
+      },
       syncWithLocation: false,
       pagination: {
         mode: "server",
@@ -77,87 +73,125 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
   const tableState: TableState = {
     sorters,
     filters,
-    pagination: { currentPage: currentPage, pageSize },
-    showColumns,
+    pagination: { currentPage, pageSize },
   };
 
-  const dataSource: IFilamentCollapsed[] = useMemo(
-    () => (tableProps.dataSource || []).map((record) => ({ ...record })),
-    [tableProps.dataSource],
-  );
+  const dataSource = [...(tableProps.dataSource ?? [])];
   const selectedSet = useMemo(() => new Set(selectedItems), [selectedItems]);
+  const paginationTotal = tableProps.pagination ? (tableProps.pagination.total ?? 0) : 0;
 
-  const paginationTotal = tableProps.pagination ? tableProps.pagination.total ?? 0 : 0;
-  const handlePageChange = (page: number, nextPageSize?: number) => {
-    if (typeof nextPageSize === "number" && nextPageSize !== pageSize) {
-      setPageSize(nextPageSize);
+  useEffect(() => {
+    const computeScrollHeight = () => {
+      if (!tableContainerRef.current) {
+        return;
+      }
+      // Recompute against the current viewport so the table can fill the dialog without introducing a second pager row.
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const tableTop = tableContainerRef.current.getBoundingClientRect().top;
+      const availableHeight = Math.floor(viewportHeight - tableTop - TABLE_BOTTOM_GAP);
+      setTableScrollY(Math.max(MIN_TABLE_SCROLL_Y, availableHeight));
+    };
+
+    computeScrollHeight();
+
+    const onViewportResize = () => computeScrollHeight();
+    window.addEventListener("resize", onViewportResize);
+    window.addEventListener("orientationchange", onViewportResize);
+    window.visualViewport?.addEventListener("resize", onViewportResize);
+    window.visualViewport?.addEventListener("scroll", onViewportResize);
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => computeScrollHeight()) : undefined;
+    if (resizeObserver && rootRef.current) {
+      resizeObserver.observe(rootRef.current);
     }
-    setCurrentPage(page);
-  };
-  const handlePageSizeChange = (_current: number, size: number) => {
+
+    return () => {
+      window.removeEventListener("resize", onViewportResize);
+      window.removeEventListener("orientationchange", onViewportResize);
+      window.visualViewport?.removeEventListener("resize", onViewportResize);
+      window.visualViewport?.removeEventListener("scroll", onViewportResize);
+      resizeObserver?.disconnect();
+    };
+  }, []);
+  const handlePageChange = useCallback(
+    (page: number, nextPageSize?: number) => {
+      if (typeof nextPageSize === "number" && nextPageSize !== pageSize) {
+        setPageSize(nextPageSize);
+      }
+      setCurrentPage(page);
+    },
+    [pageSize],
+  );
+  const handlePageSizeChange = useCallback((_current: number, size: number) => {
     setPageSize(size);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const applySearchFilter = (nextSearch: string) => {
-    const trimmedSearch = nextSearch.trim();
-    const nextFilters: CrudFilter[] = [];
-    (filters ?? []).forEach((filter) => {
-      if ("field" in filter && filter.field !== "search") {
-        nextFilters.push(filter);
-      }
-    });
-    if (trimmedSearch.length > 0) {
-      nextFilters.push({
-        field: "search",
-        operator: "contains",
-        value: [trimmedSearch],
+  // Debounce search input to avoid excessive API calls while typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm, setCurrentPage]);
+
+  // Bulk toggles only touch the rows currently visible after paging and server-side filtering.
+  const selectUnselectFiltered = useCallback(
+    (select: boolean) => {
+      setSelectedItems((prevSelected) => {
+        const nextSelected = new Set(prevSelected);
+        dataSource.forEach((filament) => {
+          if (select) {
+            nextSelected.add(filament.id);
+          } else {
+            nextSelected.delete(filament.id);
+          }
+        });
+        return Array.from(nextSelected);
       });
-    }
-    setFilters(nextFilters, "replace");
-    setCurrentPage(1);
-  };
+    },
+    [dataSource],
+  );
 
-  const selectUnselectFiltered = (select: boolean) => {
-    setSelectedItems((prevSelected) => {
-      const nextSelected = new Set(prevSelected);
-      dataSource.forEach((filament) => {
-        if (select) {
-          nextSelected.add(filament.id);
-        } else {
-          nextSelected.delete(filament.id);
-        }
-      });
-      return Array.from(nextSelected);
-    });
-  };
-
-  const handleSelectItem = (item: number) => {
+  const handleSelectItem = useCallback((item: number) => {
     setSelectedItems((prevSelected) =>
       prevSelected.includes(item) ? prevSelected.filter((selected) => selected !== item) : [...prevSelected, item],
     );
-  };
+  }, []);
 
-  const isAllFilteredSelected = dataSource.every((filament) => selectedSet.has(filament.id));
+  const isAllFilteredSelected = dataSource.length > 0 && dataSource.every((filament) => selectedSet.has(filament.id));
   const isSomeButNotAllFilteredSelected =
     dataSource.some((filament) => selectedSet.has(filament.id)) && !isAllFilteredSelected;
-  const hasActiveFilters = searchValue.trim().length > 0 || (filters?.length ?? 0) > 0;
 
   const commonProps = {
     t,
     navigate,
+    actions: () => [],
     dataSource,
     tableState,
     sorter: true,
   };
 
+  const resolvedDescription =
+    description ??
+    t("printing.filamentSelect.description", {
+      defaultValue: "Search for and select filament labels to print:",
+    });
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ??
+    t("printing.filamentSelect.searchPlaceholder", {
+      defaultValue: "Search by filament ID, vendor, name, or material",
+    });
+
   return (
     <>
       {contextHolder}
-      <div style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
-        {(description || tableProps.pagination) && (
+      <div ref={rootRef} style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
+        {(resolvedDescription || tableProps.pagination) && (
           <Row gutter={[12, 8]} align="middle" style={{ marginBottom: 8 }}>
-            <Col flex="auto">{description && <div style={{ margin: 0 }}>{description}</div>}</Col>
+            <Col flex="auto">{resolvedDescription && <div style={{ margin: 0 }}>{resolvedDescription}</div>}</Col>
             {tableProps.pagination && (
               <Col flex="none">
                 <Pagination
@@ -166,7 +200,7 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
                   pageSize={pageSize}
                   total={paginationTotal}
                   showSizeChanger
-                  pageSizeOptions={["25", "50", "100", "200"]}
+                  pageSizeOptions={["10", "20", "50", "100"]}
                   showQuickJumper
                   onChange={handlePageChange}
                   onShowSizeChange={handlePageSizeChange}
@@ -176,22 +210,17 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
           </Row>
         )}
         <Row gutter={[12, 8]} style={{ marginBottom: 8 }}>
-          <Col span={24}>
+          <Col xs={24} md={12}>
             <Input.Search
-              placeholder={t("printing.filamentSelect.searchPlaceholder")}
-              value={searchValue}
+              placeholder={resolvedSearchPlaceholder}
+              value={searchTerm}
               allowClear
               enterButton
               onChange={(event) => {
-                const value = event.target.value;
-                setSearchValue(value);
-                if (value === "") {
-                  applySearchFilter("");
-                }
+                setSearchTerm(event.target.value);
               }}
               onSearch={(value) => {
-                setSearchValue(value);
-                applySearchFilter(value);
+                setSearchTerm(value);
               }}
             />
           </Col>
@@ -199,38 +228,14 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
         <Row gutter={[12, 12]} align="middle" style={{ marginBottom: 8 }}>
           <Col flex="none">
             <Button
-              type={hasActiveFilters ? "primary" : "default"}
-              icon={<FilterOutlined />}
               onClick={() => {
-                setSearchValue("");
+                setSearchTerm("");
                 setFilters([], "replace");
                 setCurrentPage(1);
               }}
             >
               {t("buttons.clearFilters")}
             </Button>
-          </Col>
-          <Col flex="none">
-            <Dropdown
-              trigger={["click"]}
-              menu={{
-                items: allColumns.map((columnId) => ({
-                  key: columnId,
-                  label: getColumnLabel(columnId),
-                })),
-                selectedKeys: showColumns,
-                selectable: true,
-                multiple: true,
-                onDeselect: (info) => {
-                  setShowColumns(info.selectedKeys as string[]);
-                },
-                onSelect: (info) => {
-                  setShowColumns(info.selectedKeys as string[]);
-                },
-              }}
-            >
-              <Button type="primary" icon={<EditOutlined />}>{t("buttons.hideColumns")}</Button>
-            </Dropdown>
           </Col>
           <Col flex="auto">
             <div
@@ -256,54 +261,49 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
                   count: selectedItems.length,
                 })}
               </div>
-              <Space>
-                {onPrint && (
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      if (selectedItems.length === 0) {
-                        messageApi.open({
-                          type: "error",
-                          content: t("printing.filamentSelect.noFilamentsSelected"),
-                        });
-                        return;
-                      }
-                      onPrint(selectedItems);
-                    }}
-                  >
-                    {t("printing.qrcode.button")}
-                  </Button>
-                )}
-                {onExport && (
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      if (selectedItems.length === 0) {
-                        messageApi.open({
-                          type: "error",
-                          content: t("printing.filamentSelect.noFilamentsSelected"),
-                        });
-                        return;
-                      }
-                      onExport(selectedItems);
-                    }}
-                  >
-                    {t("printing.qrcode.exportButton")}
-                  </Button>
-                )}
-              </Space>
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (selectedItems.length === 0) {
+                    messageApi.open({
+                      type: "error",
+                      content: t("printing.filamentSelect.noFilamentsSelected"),
+                    });
+                    return;
+                  }
+                  onPrint(selectedItems);
+                }}
+              >
+                {t("printing.qrcode.button")}
+              </Button>
+              {onExport && (
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (selectedItems.length === 0) {
+                      messageApi.open({
+                        type: "error",
+                        content: t("printing.filamentSelect.noFilamentsSelected"),
+                      });
+                      return;
+                    }
+                    onExport(selectedItems);
+                  }}
+                >
+                  {t("printing.qrcode.exportButton")}
+                </Button>
+              )}
             </div>
           </Col>
         </Row>
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <ResizableTable
-            columnResizeKey="filament-select-modal-table"
+        <div ref={tableContainerRef} style={{ flex: 1, minHeight: 0 }}>
+          <Table
             {...tableProps}
             rowKey="id"
             tableLayout="fixed"
             pagination={false}
             dataSource={dataSource}
-            scroll={{ y: "calc(100vh - 360px)", x: "max-content" }}
+            scroll={{ y: tableScrollY, x: "max-content" }}
             columns={removeUndefined([
               {
                 width: 48,
@@ -319,26 +319,16 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
               }),
               FilteredQueryColumn({
                 ...commonProps,
-                id: "spool_count",
-                dataId: "spool_count",
-                i18ncat: "filament",
-                width: 120,
-                includeEmptyFilter: false,
-                filterValueQuery: useSpoolmanSpoolCounts(),
-                transform: (value) => value ?? 0,
-              }),
-              FilteredQueryColumn({
-                ...commonProps,
                 id: "vendor.name",
                 i18nkey: "filament.fields.vendor_name",
-                width: 200,
                 filterValueQuery: useSpoolmanVendors(),
+                width: 180,
               }),
               SpoolIconColumn({
                 ...commonProps,
                 id: "name",
                 i18ncat: "filament",
-                width: 360,
+                width: 320,
                 color: (record: IFilamentCollapsed) =>
                   record.multi_color_hexes
                     ? {
@@ -352,8 +342,8 @@ const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrin
                 ...commonProps,
                 id: "material",
                 i18ncat: "filament",
-                width: 140,
                 filterValueQuery: useSpoolmanMaterials(),
+                width: 140,
               }),
             ])}
           />

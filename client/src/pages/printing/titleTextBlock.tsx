@@ -14,7 +14,13 @@ const alignToFlex = (value: "left" | "center" | "right"): "flex-start" | "center
   return "flex-start";
 };
 
-const TitleTextBlock = ({ children, fitToWidth, align, maxTextSizeMm, onEffectiveTextSizeChange }: TitleTextBlockProps) => {
+const TitleTextBlock = ({
+  children,
+  fitToWidth,
+  align,
+  maxTextSizeMm,
+  onEffectiveTextSizeChange,
+}: TitleTextBlockProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);

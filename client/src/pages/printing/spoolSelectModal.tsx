@@ -1,20 +1,12 @@
-import { EditOutlined, FilterOutlined } from "@ant-design/icons";
 import { useTable } from "@refinedev/antd";
-import { CrudFilter } from "@refinedev/core";
-import { Button, Checkbox, Col, Dropdown, Input, message, Pagination, Row, Space } from "antd";
+import { Button, Checkbox, Col, message, Row, Space, Table } from "antd";
 import { t } from "i18next";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { FilteredQueryColumn, SortedColumn, SpoolIconColumn } from "../../components/column";
-import ResizableTable from "../../components/resizableTable";
-import {
-  useSpoolmanFilamentFilter,
-  useSpoolmanLocations,
-  useSpoolmanLotNumbers,
-  useSpoolmanMaterials,
-} from "../../components/otherModels";
+import { useSpoolmanFilamentFilter, useSpoolmanMaterials } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
-import { TableState, useSavedState } from "../../utils/saveload";
+import { TableState } from "../../utils/saveload";
 import { ISpool } from "../spools/model";
 
 interface Props {
@@ -30,6 +22,8 @@ interface ISpoolCollapsed extends ISpool {
   "filament.material"?: string;
 }
 
+// Flatten related filament fields onto the row so shared table columns can sort
+// and filter without reaching through nested objects.
 function collapseSpool(element: ISpool): ISpoolCollapsed {
   let filament_name: string;
   if (element.filament.vendor && "name" in element.filament.vendor) {
@@ -45,139 +39,85 @@ function collapseSpool(element: ISpool): ISpoolCollapsed {
   };
 }
 
-const namespace = "spoolSelectModal-v1";
-const allColumns: string[] = ["id", "filament.combined_name", "filament.material", "location", "lot_nr"];
-
-function getColumnLabel(columnId: string): string {
-  if (columnId === "filament.combined_name") {
-    return t("spool.fields.filament_name");
-  }
-  if (columnId === "filament.material") {
-    return t("spool.fields.material");
-  }
-  return t(`spool.fields.${columnId.replace(".", "_")}`);
-}
-
 const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }: Props) => {
   const [selectedItems, setSelectedItems] = useState<number[]>(initialSelectedIds ?? []);
   const [showArchived, setShowArchived] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState("");
-  const [selectedArchivedMap, setSelectedArchivedMap] = useState<Record<number, boolean>>({});
-  const [showColumns, setShowColumns] = useSavedState<string[]>(`${namespace}-showColumns`, allColumns);
 
-  const { tableProps, sorters, filters, setFilters, currentPage, pageSize, setCurrentPage, setPageSize } =
-    useTable<ISpoolCollapsed>({
-      resource: "spool",
-      meta: {
-        queryParams: {
-          ["allow_archived"]: showArchived,
-        },
+  const { tableProps, sorters, filters, currentPage, pageSize } = useTable<ISpoolCollapsed>({
+    resource: "spool",
+    meta: {
+      queryParams: {
+        ["allow_archived"]: showArchived,
       },
-      syncWithLocation: false,
-      pagination: {
-        mode: "server",
-        currentPage: 1,
-        pageSize: 50,
+    },
+    syncWithLocation: false,
+    pagination: {
+      mode: "off",
+      currentPage: 1,
+      pageSize: 10,
+    },
+    sorters: {
+      mode: "server",
+    },
+    filters: {
+      mode: "server",
+    },
+    queryOptions: {
+      select(data) {
+        return {
+          total: data.total,
+          data: data.data.map(collapseSpool),
+        };
       },
-      sorters: {
-        mode: "server",
-      },
-      filters: {
-        mode: "server",
-      },
-      queryOptions: {
-        select(data) {
-          return {
-            total: data.total,
-            data: data.data.map(collapseSpool),
-          };
-        },
-      },
-    });
+    },
+  });
 
+  // Shared column helpers expect table sort/filter state in this shape.
   const tableState: TableState = {
     sorters,
     filters,
     pagination: { currentPage: currentPage, pageSize },
-    showColumns,
   };
 
+  // Work on shallow copies so selection helpers can inspect row state without mutating
+  // Refine's cached query data.
   const dataSource: ISpoolCollapsed[] = useMemo(
     () => (tableProps.dataSource || []).map((record) => ({ ...record })),
     [tableProps.dataSource],
   );
-  const selectedSet = useMemo(() => new Set(selectedItems), [selectedItems]);
 
-  useEffect(() => {
-    if (dataSource.length === 0) {
-      return;
-    }
-    setSelectedArchivedMap((prev) => {
-      const next = { ...prev };
-      dataSource.forEach((spool) => {
-        next[spool.id] = spool.archived === true;
+  // Bulk selection applies only to the rows currently loaded in the modal.
+  const selectUnselectFiltered = useCallback(
+    (select: boolean) => {
+      setSelectedItems((prevSelected) => {
+        const nextSelected = new Set(prevSelected);
+        dataSource.forEach((spool) => {
+          if (select) {
+            nextSelected.add(spool.id);
+          } else {
+            nextSelected.delete(spool.id);
+          }
+        });
+        return Array.from(nextSelected);
       });
-      return next;
-    });
-  }, [dataSource]);
+    },
+    [dataSource],
+  );
 
-  const paginationTotal = tableProps.pagination ? tableProps.pagination.total ?? 0 : 0;
-  const handlePageChange = (page: number, nextPageSize?: number) => {
-    if (typeof nextPageSize === "number" && nextPageSize !== pageSize) {
-      setPageSize(nextPageSize);
-    }
-    setCurrentPage(page);
-  };
-  const handlePageSizeChange = (_current: number, size: number) => {
-    setPageSize(size);
-    setCurrentPage(1);
-  };
-
-  const applySearchFilter = (nextSearch: string) => {
-    const trimmedSearch = nextSearch.trim();
-    const nextFilters: CrudFilter[] = [];
-    (filters ?? []).forEach((filter) => {
-      if ("field" in filter && filter.field !== "search") {
-        nextFilters.push(filter);
-      }
-    });
-    if (trimmedSearch.length > 0) {
-      nextFilters.push({
-        field: "search",
-        operator: "contains",
-        value: [trimmedSearch],
-      });
-    }
-    setFilters(nextFilters, "replace");
-    setCurrentPage(1);
-  };
-
-  const selectUnselectFiltered = (select: boolean) => {
-    setSelectedItems((prevSelected) => {
-      const nextSelected = new Set(prevSelected);
-      dataSource.forEach((spool) => {
-        if (select) {
-          nextSelected.add(spool.id);
-        } else {
-          nextSelected.delete(spool.id);
-        }
-      });
-      return Array.from(nextSelected);
-    });
-  };
-
-  const handleSelectItem = (item: number) => {
+  const handleSelectItem = useCallback((item: number) => {
     setSelectedItems((prevSelected) =>
       prevSelected.includes(item) ? prevSelected.filter((selected) => selected !== item) : [...prevSelected, item],
     );
-  };
+  }, []);
 
-  const isAllFilteredSelected = dataSource.every((spool) => selectedSet.has(spool.id));
+  // Memoised Set for O(1) membership checks — avoids O(n²) when dataSource and
+  // selectedItems are both large (many loaded spools, many already selected).
+  const selectedSet = useMemo(() => new Set(selectedItems), [selectedItems]);
+  const isAllFilteredSelected = dataSource.length > 0 && dataSource.every((spool) => selectedSet.has(spool.id));
   const isSomeButNotAllFilteredSelected =
     dataSource.some((spool) => selectedSet.has(spool.id)) && !isAllFilteredSelected;
-  const hasActiveFilters = searchValue.trim().length > 0 || (filters?.length ?? 0) > 0;
 
   const commonProps = {
     t,
@@ -193,223 +133,122 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
   return (
     <>
       {contextHolder}
-      <div style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
-        {(description || tableProps.pagination) && (
-          <Row gutter={[12, 8]} align="middle" style={{ marginBottom: 8 }}>
-            <Col flex="auto">{description && <div style={{ margin: 0 }}>{description}</div>}</Col>
-            {tableProps.pagination && (
-              <Col flex="none">
-                <Pagination
-                  size="small"
-                  current={currentPage}
-                  pageSize={pageSize}
-                  total={paginationTotal}
-                  showSizeChanger
-                  pageSizeOptions={["25", "50", "100", "200"]}
-                  showQuickJumper
-                  onChange={handlePageChange}
-                  onShowSizeChange={handlePageSizeChange}
-                />
-              </Col>
-            )}
-          </Row>
-        )}
-        <Row gutter={[12, 8]} style={{ marginBottom: 8 }}>
-          <Col xs={24} md={12}>
-            <Input.Search
-              placeholder={t("printing.spoolSelect.searchPlaceholder")}
-              value={searchValue}
-              allowClear
-              enterButton
-              onChange={(event) => {
-                const value = event.target.value;
-                setSearchValue(value);
-                if (value === "") {
-                  applySearchFilter("");
-                }
-              }}
-              onSearch={(value) => {
-                setSearchValue(value);
-                applySearchFilter(value);
-              }}
-            />
-          </Col>
-        </Row>
-        <Row gutter={[12, 12]} align="middle" style={{ marginBottom: 8 }}>
-          <Col flex="none">
-            <Button
-              type={hasActiveFilters ? "primary" : "default"}
-              icon={<FilterOutlined />}
-              onClick={() => {
-                setSearchValue("");
-                setFilters([], "replace");
-                setCurrentPage(1);
+      <Space direction="vertical" style={{ width: "100%" }}>
+        {description && <div>{description}</div>}
+        <Table
+          {...tableProps}
+          rowKey="id"
+          tableLayout="auto"
+          dataSource={dataSource}
+          pagination={false}
+          scroll={{ y: 200 }}
+          columns={removeUndefined([
+            {
+              width: 50,
+              render: (_, item: ISpool) => (
+                <Checkbox checked={selectedSet.has(item.id)} onChange={() => handleSelectItem(item.id)} />
+              ),
+            },
+            SortedColumn({
+              ...commonProps,
+              id: "id",
+              i18ncat: "spool",
+              width: 80,
+            }),
+            SpoolIconColumn({
+              ...commonProps,
+              id: "filament.combined_name",
+              dataId: "filament.combined_name",
+              i18nkey: "spool.fields.filament_name",
+              color: (record: ISpoolCollapsed) => record.filament.color_hex,
+              filterValueQuery: useSpoolmanFilamentFilter(),
+            }),
+            FilteredQueryColumn({
+              ...commonProps,
+              id: "filament.material",
+              i18nkey: "spool.fields.material",
+              filterValueQuery: useSpoolmanMaterials(),
+            }),
+          ])}
+        />
+        <Row gutter={[10, 10]}>
+          <Col span={12}>
+            <Checkbox
+              checked={isAllFilteredSelected}
+              indeterminate={isSomeButNotAllFilteredSelected}
+              onChange={(e) => {
+                selectUnselectFiltered(e.target.checked);
               }}
             >
-              {t("buttons.clearFilters")}
-            </Button>
+              {t("printing.spoolSelect.selectAll")}
+            </Checkbox>
           </Col>
-          <Col flex="none">
-            <Dropdown
-              trigger={["click"]}
-              menu={{
-                items: allColumns.map((columnId) => ({
-                  key: columnId,
-                  label: getColumnLabel(columnId),
-                })),
-                selectedKeys: showColumns,
-                selectable: true,
-                multiple: true,
-                onDeselect: (info) => {
-                  setShowColumns(info.selectedKeys as string[]);
-                },
-                onSelect: (info) => {
-                  setShowColumns(info.selectedKeys as string[]);
-                },
-              }}
-            >
-              <Button type="primary" icon={<EditOutlined />}>{t("buttons.hideColumns")}</Button>
-            </Dropdown>
-          </Col>
-          <Col flex="auto">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "center",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <Checkbox
-                checked={isAllFilteredSelected}
-                indeterminate={isSomeButNotAllFilteredSelected}
-                onChange={(e) => {
-                  selectUnselectFiltered(e.target.checked);
-                }}
-              >
-                {t("printing.spoolSelect.selectAll")}
-              </Checkbox>
-              <Checkbox
-                checked={showArchived}
-                onChange={(e) => {
-                  setShowArchived(e.target.checked);
-                  if (!e.target.checked) {
-                    setSelectedItems((prevSelected) =>
-                      prevSelected.filter((selected) => selectedArchivedMap[selected] !== true),
-                    );
-                  }
-                }}
-              >
-                {t("printing.spoolSelect.showArchived")}
-              </Checkbox>
-              <div style={{ minWidth: 140, textAlign: "right" }}>
-                {t("printing.spoolSelect.selectedTotal", {
-                  count: selectedItems.length,
-                })}
-              </div>
-              <Space>
-                {onPrint && (
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      if (selectedItems.length === 0) {
-                        messageApi.open({
-                          type: "error",
-                          content: t("printing.spoolSelect.noSpoolsSelected"),
-                        });
-                        return;
-                      }
-                      onPrint(selectedItems);
-                    }}
-                  >
-                    {t("printing.qrcode.button")}
-                  </Button>
-                )}
-                {onExport && (
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      if (selectedItems.length === 0) {
-                        messageApi.open({
-                          type: "error",
-                          content: t("printing.spoolSelect.noSpoolsSelected"),
-                        });
-                        return;
-                      }
-                      onExport(selectedItems);
-                    }}
-                  >
-                    {t("printing.qrcode.exportButton")}
-                  </Button>
-                )}
-              </Space>
+          <Col span={12}>
+            <div style={{ float: "right" }}>
+              {t("printing.spoolSelect.selectedTotal", {
+                count: selectedItems.length,
+              })}
             </div>
           </Col>
+          <Col span={12}>
+            <Checkbox
+              checked={showArchived}
+              onChange={(e) => {
+                setShowArchived(e.target.checked);
+                if (!e.target.checked) {
+                  // Drop archived selections when that filter is hidden so the badge count
+                  // matches the set of choices the modal is showing.
+                  setSelectedItems((prevSelected) =>
+                    prevSelected.filter(
+                      (selected) => dataSource.find((spool) => spool.id === selected)?.archived !== true,
+                    ),
+                  );
+                }
+              }}
+            >
+              {t("printing.spoolSelect.showArchived")}
+            </Checkbox>
+          </Col>
+          <Col span={24}>
+            <Space>
+              {onPrint && (
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (selectedItems.length === 0) {
+                      messageApi.open({
+                        type: "error",
+                        content: t("printing.spoolSelect.noSpoolsSelected"),
+                      });
+                      return;
+                    }
+                    onPrint(selectedItems);
+                  }}
+                >
+                  {t("printing.qrcode.button")}
+                </Button>
+              )}
+              {onExport && (
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (selectedItems.length === 0) {
+                      messageApi.open({
+                        type: "error",
+                        content: t("printing.spoolSelect.noSpoolsSelected"),
+                      });
+                      return;
+                    }
+                    onExport(selectedItems);
+                  }}
+                >
+                  {t("printing.qrcode.exportButton")}
+                </Button>
+              )}
+            </Space>
+          </Col>
         </Row>
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <ResizableTable
-            columnResizeKey="spool-select-modal-table"
-            {...tableProps}
-            rowKey="id"
-            tableLayout="fixed"
-            pagination={false}
-            dataSource={dataSource}
-            scroll={{ y: "calc(100vh - 360px)", x: "max-content" }}
-            columns={removeUndefined([
-              {
-                width: 48,
-                render: (_, item: ISpool) => (
-                  <Checkbox checked={selectedSet.has(item.id)} onChange={() => handleSelectItem(item.id)} />
-                ),
-              },
-              SortedColumn({
-                ...commonProps,
-                id: "id",
-                i18ncat: "spool",
-                width: 70,
-              }),
-              SpoolIconColumn({
-                ...commonProps,
-                id: "filament.combined_name",
-                dataId: "filament.combined_name",
-                i18nkey: "spool.fields.filament_name",
-                width: 360,
-                color: (record: ISpoolCollapsed) =>
-                  record.filament.multi_color_hexes
-                    ? {
-                        colors: record.filament.multi_color_hexes.split(","),
-                        vertical: record.filament.multi_color_direction === "longitudinal",
-                      }
-                    : record.filament.color_hex,
-                filterValueQuery: useSpoolmanFilamentFilter(),
-              }),
-              FilteredQueryColumn({
-                ...commonProps,
-                id: "filament.material",
-                i18nkey: "spool.fields.material",
-                filterValueQuery: useSpoolmanMaterials(),
-                width: 140,
-              }),
-              FilteredQueryColumn({
-                ...commonProps,
-                id: "location",
-                i18ncat: "spool",
-                filterValueQuery: useSpoolmanLocations(),
-                emptyFilterLabel: "",
-                width: 160,
-              }),
-              FilteredQueryColumn({
-                ...commonProps,
-                id: "lot_nr",
-                i18ncat: "spool",
-                filterValueQuery: useSpoolmanLotNumbers(),
-                width: 160,
-              }),
-            ])}
-          />
-        </div>
-      </div>
+      </Space>
     </>
   );
 };

@@ -9,7 +9,6 @@ import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../compo
 import { useVendorLogoManifest } from "../../components/otherModels";
 import VendorLogo from "../../components/vendorLogo";
 import { EntityType, useGetFields } from "../../utils/queryFields";
-import { suggestVendorLogoPaths } from "../../utils/vendorLogo";
 import { IVendor, IVendorParsedExtras } from "./model";
 
 dayjs.extend(utc);
@@ -69,30 +68,6 @@ export const VendorCreate = (props: IResourceComponentsProps & CreateOrCloneProp
       }
     });
   }, [form, extraFields.data, formProps.initialValues]);
-
-  useEffect(() => {
-    if (!watchedName || !logoManifest.data) {
-      return;
-    }
-
-    const existingLogo = typeof watchedExtra?.logo_url === "string" ? watchedExtra.logo_url.trim() : "";
-    const existingPrintLogo = typeof watchedExtra?.print_logo_url === "string" ? watchedExtra.print_logo_url.trim() : "";
-    if (existingLogo && existingPrintLogo) {
-      return;
-    }
-
-    const { webPath, printPath } = suggestVendorLogoPaths(watchedName, logoManifest.data);
-    if (!webPath && !printPath) {
-      return;
-    }
-
-    if (!existingLogo && webPath) {
-      form.setFieldValue(["extra", "logo_url"], webPath);
-    }
-    if (!existingPrintLogo && printPath) {
-      form.setFieldValue(["extra", "print_logo_url"], printPath);
-    }
-  }, [watchedName, watchedExtra?.logo_url, watchedExtra?.print_logo_url, logoManifest.data, form]);
 
   return (
     <Create

@@ -18,7 +18,7 @@ import {
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import dayjs from "dayjs";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { useVendorLogoManifest } from "../../components/otherModels";
 import VendorLogo from "../../components/vendorLogo";
@@ -39,10 +39,8 @@ export const VendorEdit = () => {
   const t = useTranslate();
   const [messageApi, contextHolder] = message.useMessage();
   const [hasChanged, setHasChanged] = useState(false);
-  const [allowAutoSuggest, setAllowAutoSuggest] = useState(true);
-  const [isSyncingLogoPack, setIsSyncingLogoPack] = useState(false);
   const [isConvertingPrintLogo, setIsConvertingPrintLogo] = useState(false);
-  const [savedComparableState, setSavedComparableState] = useState<string | null>(null);
+  const suppressLiveWarningUntilRef = useRef(0);
   const extraFields = useGetFields(EntityType.vendor);
   const logoManifest = useVendorLogoManifest();
 
@@ -50,14 +48,12 @@ export const VendorEdit = () => {
     liveMode: "manual",
     redirect: false,
     onLiveEvent() {
+      if (Date.now() < suppressLiveWarningUntilRef.current) {
+        return;
+      }
       // Warn the user if the vendor has been updated since the form was opened
       messageApi.warning(t("vendor.form.vendor_updated"));
       setHasChanged(true);
-    },
-    onMutationSuccess: () => {
-      if (watchedComparableState) {
-        setSavedComparableState(watchedComparableState);
-      }
     },
   });
 
@@ -70,6 +66,8 @@ export const VendorEdit = () => {
   const originalOnFinish = formProps.onFinish;
   formProps.onFinish = (allValues: IVendorParsedExtras) => {
     if (allValues !== undefined && allValues !== null) {
+      // A successful save can emit our own live update event; ignore that brief echo.
+      suppressLiveWarningUntilRef.current = Date.now() + 2000;
       const cleanedValues: IVendorParsedExtras = {
         ...allValues,
         extra: { ...(allValues.extra ?? {}) },
@@ -82,6 +80,8 @@ export const VendorEdit = () => {
         }
         const trimmedValue = rawValue.trim();
         if (trimmedValue === "") {
+          // Keep blank logo fields truly unset so preview/fallback logic can continue
+          // using auto-matched local files instead of an empty explicit override.
           delete cleanedValues.extra?.[key];
           continue;
         }
@@ -96,13 +96,13 @@ export const VendorEdit = () => {
     }
   };
 
-  const watchedAllValues = Form.useWatch([], formProps.form);
   const watchedName = Form.useWatch(["name"], formProps.form);
   const watchedExtra = Form.useWatch(["extra"], formProps.form) as { [key: string]: unknown } | undefined;
   const logoUrlValue = typeof watchedExtra?.logo_url === "string" ? watchedExtra.logo_url.trim() : "";
   const printLogoUrlValue = typeof watchedExtra?.print_logo_url === "string" ? watchedExtra.print_logo_url.trim() : "";
   const hasCustomWebLogo = logoUrlValue !== "";
   const hasCustomPrintLogo = printLogoUrlValue !== "";
+  // Build a synthetic vendor record from unsaved form state so the shared preview component works before save.
   const logoPreviewVendor: IVendor = {
     id: 0,
     registered: "",
@@ -132,7 +132,7 @@ export const VendorEdit = () => {
   );
   const logoSuggestionsLabel = (
     <>
-      {t("vendor.fields.logo_suggestions")} {" "}
+      {t("vendor.fields.logo_suggestions")}{" "}
       <Tooltip title={t("vendor.fields_help.logo_suggestions")}>
         <QuestionCircleOutlined />
       </Tooltip>
@@ -140,7 +140,7 @@ export const VendorEdit = () => {
   );
   const printLogoSuggestionsLabel = (
     <>
-      {t("vendor.fields.print_logo_suggestions")} {" "}
+      {t("vendor.fields.print_logo_suggestions")}{" "}
       <Tooltip title={t("vendor.fields_help.print_logo_suggestions")}>
         <QuestionCircleOutlined />
       </Tooltip>
@@ -154,79 +154,32 @@ export const VendorEdit = () => {
     if (!watchedName || !logoManifest.data) {
       return { webPath: undefined, printPath: undefined };
     }
+    // Suggestions are hints for preview and quick-pick only; they should not silently
+    // become saved vendor config until the user chooses a path.
     return suggestVendorLogoPaths(watchedName, logoManifest.data);
   }, [watchedName, logoManifest.data]);
-  const hasAutoWebLogo = !!autoSuggestedPaths.webPath && logoUrlValue === autoSuggestedPaths.webPath;
-  const hasAutoPrintLogo = !!autoSuggestedPaths.printPath && printLogoUrlValue === autoSuggestedPaths.printPath;
+  const hasAutoWebLogo = !hasCustomWebLogo && !!autoSuggestedPaths.webPath;
+  const hasAutoPrintLogo = !hasCustomPrintLogo && !!autoSuggestedPaths.printPath;
+  const hasLoadedLogoManifest = !!logoManifest.data;
+  const currentPrintLogoExistsInManifest =
+    printLogoUrlValue !== "" &&
+    hasLoadedLogoManifest &&
+    (logoManifest.data?.print_files ?? []).includes(printLogoUrlValue);
+  const hasReplaceableMissingPrintLogo =
+    printLogoUrlValue.startsWith("/vendor-logos/") && hasLoadedLogoManifest && !currentPrintLogoExistsInManifest;
+  const canConvertPrintLogo = logoUrlValue !== "" && (printLogoUrlValue === "" || hasReplaceableMissingPrintLogo);
   const noneOptionValue = "__none__";
   const clearLogoField = (field: "logo_url" | "print_logo_url") => {
-    setAllowAutoSuggest(false);
     formProps.form?.setFieldValue(["extra", field], "");
   };
 
-  const normalizeForCompare = (value: unknown): unknown => {
-    if (dayjs.isDayjs(value)) {
-      return value.toISOString();
-    }
-    if (Array.isArray(value)) {
-      return value.map(normalizeForCompare);
-    }
-    if (value && typeof value === "object") {
-      const objValue = value as Record<string, unknown>;
-      return Object.keys(objValue)
-        .sort()
-        .reduce<Record<string, unknown>>((acc, key) => {
-          const normalizedValue = normalizeForCompare(objValue[key]);
-          if (normalizedValue !== undefined) {
-            acc[key] = normalizedValue;
-          }
-          return acc;
-        }, {});
-    }
-    return value;
-  };
-
-  const toComparableState = (value: unknown): string => {
-    const normalized = normalizeForCompare(value) as Record<string, unknown> | undefined;
-    const normalizedExtra = { ...(normalized?.extra as Record<string, unknown> | undefined) };
-    const normalizeLogoValue = (logoValue: unknown): string | undefined => {
-      if (typeof logoValue !== "string") {
-        return undefined;
-      }
-      const trimmed = logoValue.trim();
-      return trimmed === "" ? undefined : trimmed;
-    };
-    const cleanedLogo = normalizeLogoValue(normalizedExtra.logo_url);
-    const cleanedPrintLogo = normalizeLogoValue(normalizedExtra.print_logo_url);
-    if (cleanedLogo === undefined) {
-      delete normalizedExtra.logo_url;
-    } else {
-      normalizedExtra.logo_url = cleanedLogo;
-    }
-    if (cleanedPrintLogo === undefined) {
-      delete normalizedExtra.print_logo_url;
-    } else {
-      normalizedExtra.print_logo_url = cleanedPrintLogo;
-    }
-
-    return JSON.stringify({
-      name: normalized?.name ?? "",
-      comment: normalized?.comment ?? "",
-      empty_spool_weight: normalized?.empty_spool_weight ?? null,
-      external_id: normalized?.external_id ?? "",
-      extra: normalizedExtra,
-    });
-  };
-
-  const initialComparableState = useMemo(() => {
-    if (!formProps.initialValues) {
-      return null;
-    }
-    return toComparableState(formProps.initialValues);
-  }, [formProps.initialValues]);
-
+  // Conversion only materializes a runtime print logo when the user already picked a web logo and no print override.
   const convertWebLogoToPrint = async () => {
-    if (!logoUrlValue) {
+    if (!canConvertPrintLogo) {
+      if (printLogoUrlValue) {
+        messageApi.warning(t("vendor.form.logo_convert_requires_empty_print_logo"));
+        return;
+      }
       messageApi.warning(t("vendor.form.logo_convert_requires_web_logo"));
       return;
     }
@@ -252,7 +205,6 @@ export const VendorEdit = () => {
         throw new Error(body.message ?? t("vendor.form.logo_convert_error"));
       }
 
-      setAllowAutoSuggest(false);
       formProps.form?.setFieldValue(["extra", "print_logo_url"], body.print_logo_url);
       await logoManifest.refetch();
       messageApi.success(body.message ?? t("vendor.form.logo_convert_success"));
@@ -262,112 +214,18 @@ export const VendorEdit = () => {
       setIsConvertingPrintLogo(false);
     }
   };
+  const convertLogoHelpText = printLogoUrlValue
+    ? hasReplaceableMissingPrintLogo
+      ? t("vendor.buttons.convert_logo_to_print_help")
+      : t("vendor.buttons.convert_logo_to_print_help_locked")
+    : t("vendor.buttons.convert_logo_to_print_help");
 
-  useEffect(() => {
-    if (initialComparableState !== null) {
-      setSavedComparableState(initialComparableState);
-    }
-  }, [initialComparableState]);
-
-  const watchedComparableState = useMemo(() => {
-    if (!watchedAllValues) {
-      return null;
-    }
-    return toComparableState(watchedAllValues);
-  }, [watchedAllValues]);
-
-  const hasFormChanges = useMemo(() => {
-    if (!savedComparableState || !watchedComparableState) {
-      return false;
-    }
-    return savedComparableState !== watchedComparableState;
-  }, [savedComparableState, watchedComparableState]);
-
-  const syncLogoPackFromGithub = async () => {
-    setIsSyncingLogoPack(true);
-    try {
-      const response = await fetch(getAPIURL() + "/vendor/logo-pack/sync-from-github", {
-        method: "POST",
-      });
-      const body = (await response.json()) as {
-        updated?: boolean;
-        web_logo_count?: number;
-        print_logo_count?: number;
-        message?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(body.message ?? t("settings.general.logo_sync.github_load_error"));
-      }
-
-      await logoManifest.refetch();
-
-      messageApi.success(
-        body.updated
-          ? t("settings.general.logo_sync.github_done_updated", {
-              web: body.web_logo_count ?? 0,
-              print: body.print_logo_count ?? 0,
-            })
-          : t("settings.general.logo_sync.github_done_no_changes", {
-              web: body.web_logo_count ?? 0,
-              print: body.print_logo_count ?? 0,
-            }),
-      );
-    } catch (error) {
-      messageApi.error(error instanceof Error ? error.message : t("settings.general.logo_sync.github_load_error"));
-    } finally {
-      setIsSyncingLogoPack(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!allowAutoSuggest || !watchedName || !logoManifest.data || !formProps.form) {
-      return;
-    }
-    if (hasCustomWebLogo && hasCustomPrintLogo) {
-      return;
-    }
-    if (!hasCustomWebLogo && autoSuggestedPaths.webPath && logoUrlValue !== autoSuggestedPaths.webPath) {
-      formProps.form.setFieldValue(["extra", "logo_url"], autoSuggestedPaths.webPath);
-    }
-    if (
-      !hasCustomPrintLogo &&
-      autoSuggestedPaths.printPath &&
-      printLogoUrlValue !== autoSuggestedPaths.printPath
-    ) {
-      formProps.form.setFieldValue(["extra", "print_logo_url"], autoSuggestedPaths.printPath);
-    }
-  }, [
-    allowAutoSuggest,
-    watchedName,
-    logoManifest.data,
-    hasCustomWebLogo,
-    hasCustomPrintLogo,
-    autoSuggestedPaths.webPath,
-    autoSuggestedPaths.printPath,
-    logoUrlValue,
-    printLogoUrlValue,
-    formProps.form,
-  ]);
-
-  const saveButtonState = {
-    ...saveButtonProps,
-    type: hasFormChanges ? ("primary" as const) : ("default" as const),
-    disabled: saveButtonProps.disabled || !hasFormChanges,
-  };
   const registeredDisplay = formProps.initialValues?.registered
     ? dayjs(formProps.initialValues.registered).format("YYYY-MM-DD HH:mm:ss")
     : "-";
 
   return (
-    <Edit
-      saveButtonProps={saveButtonState}
-      footerButtons={({ defaultButtons }) => (
-        <div className="floating-form-actions">
-          {defaultButtons}
-        </div>
-      )}
-    >
+    <Edit saveButtonProps={saveButtonProps}>
       {contextHolder}
       <Form {...formProps} layout="vertical">
         <Row gutter={16} align="top">
@@ -447,7 +305,6 @@ export const VendorEdit = () => {
                     style={{ width: "100%" }}
                     options={webLogoOptions}
                     placeholder="/vendor-logos/web/vendor.png"
-                    onChange={() => setAllowAutoSuggest(false)}
                   />
                 </Form.Item>
                 <Tooltip title={t("vendor.buttons.clear_logo_url")}>
@@ -460,7 +317,6 @@ export const VendorEdit = () => {
                 value={undefined}
                 placeholder={t("vendor.fields.logo_suggestions_placeholder")}
                 onChange={(value) => {
-                  setAllowAutoSuggest(false);
                   formProps.form?.setFieldValue(["extra", "logo_url"], value === noneOptionValue ? "" : value);
                 }}
                 options={[
@@ -533,7 +389,6 @@ export const VendorEdit = () => {
                     style={{ width: "100%" }}
                     options={printLogoOptions}
                     placeholder="/vendor-logos/print/vendor.png"
-                    onChange={() => setAllowAutoSuggest(false)}
                   />
                 </Form.Item>
                 <Tooltip title={t("vendor.buttons.clear_logo_url")}>
@@ -550,7 +405,6 @@ export const VendorEdit = () => {
                 value={undefined}
                 placeholder={t("vendor.fields.logo_suggestions_placeholder")}
                 onChange={(value) => {
-                  setAllowAutoSuggest(false);
                   formProps.form?.setFieldValue(["extra", "print_logo_url"], value === noneOptionValue ? "" : value);
                 }}
                 options={[
@@ -609,20 +463,14 @@ export const VendorEdit = () => {
               </div>
             </Form.Item>
             <Form.Item style={{ marginBottom: 8 }}>
-              <Tooltip title={t("vendor.buttons.convert_logo_to_print_help")}>
+              <Tooltip title={convertLogoHelpText}>
                 <Button
                   onClick={() => void convertWebLogoToPrint()}
                   loading={isConvertingPrintLogo}
-                  disabled={!logoUrlValue}
+                  disabled={!canConvertPrintLogo}
+                  type={canConvertPrintLogo ? "primary" : "default"}
                 >
                   {t("vendor.buttons.convert_logo_to_print")}
-                </Button>
-              </Tooltip>
-            </Form.Item>
-            <Form.Item>
-              <Tooltip title={t("settings.general.logo_sync.github_description")}>
-                <Button onClick={() => void syncLogoPackFromGithub()} loading={isSyncingLogoPack}>
-                  {t("settings.general.logo_sync.github_button")}
                 </Button>
               </Tooltip>
             </Form.Item>

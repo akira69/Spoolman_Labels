@@ -1,11 +1,10 @@
 import { DateField, TextField } from "@refinedev/antd";
 import { UseQueryResult } from "@tanstack/react-query";
-import { Button, Checkbox, Col, Dropdown, Input, Row, Space, Spin } from "antd";
+import { Button, Col, Dropdown, Row, Space, Spin } from "antd";
 import { ColumnFilterItem, ColumnType } from "antd/es/table/interface";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { AlignType } from "rc-table/lib/interface";
-import { Key, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { getFiltersForField, typeFilters } from "../utils/filtering";
 import { enrichText } from "../utils/parsing";
@@ -28,270 +27,6 @@ const FilterDropdownLoading = () => {
   );
 };
 
-function filterSearchTerm(item: ColumnFilterItem): string {
-  const extraSearchTerm = (item as ColumnFilterItem & { sortId?: string }).sortId;
-  if (extraSearchTerm) {
-    return extraSearchTerm.toLowerCase();
-  }
-  if (typeof item.text === "string") {
-    return item.text.toLowerCase();
-  }
-  if (item.value !== undefined && item.value !== null) {
-    return String(item.value).toLowerCase();
-  }
-  return "";
-}
-
-function valueKey(value: Key): string {
-  return String(value);
-}
-
-function normalizeSearchableValue(value: unknown): string {
-  if (value === null || value === undefined) {
-    return "";
-  }
-  if (Array.isArray(value)) {
-    return value.map((entry) => String(entry)).join(", ");
-  }
-  return String(value);
-}
-
-function getRecordValue(record: unknown, dataIndex: string | string[]): unknown {
-  if (Array.isArray(dataIndex)) {
-    return dataIndex.reduce<unknown>((current, part) => {
-      if (current === null || current === undefined || typeof current !== "object") {
-        return undefined;
-      }
-      return (current as Record<string, unknown>)[part];
-    }, record);
-  }
-
-  if (record !== null && record !== undefined && typeof record === "object") {
-    const recordObject = record as Record<string, unknown>;
-    if (Object.prototype.hasOwnProperty.call(recordObject, dataIndex)) {
-      return recordObject[dataIndex];
-    }
-  }
-
-  return dataIndex.split(".").reduce<unknown>((current, part) => {
-    if (current === null || current === undefined || typeof current !== "object") {
-      return undefined;
-    }
-    return (current as Record<string, unknown>)[part];
-  }, record);
-}
-
-function FilterDropdownContent(props: {
-  items: ColumnFilterItem[];
-  selectedKeys: Key[];
-  setSelectedKeys: (keys: Key[]) => void;
-  confirm: () => void;
-  clearFilters?: () => void;
-  allowMultipleFilters: boolean;
-  t: (key: string) => string;
-}) {
-  const { items, selectedKeys, setSelectedKeys, confirm, clearFilters, allowMultipleFilters, t } = props;
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredItems = useMemo(() => {
-    const search = searchQuery.trim().toLowerCase();
-    if (search.length === 0) {
-      return items;
-    }
-    return items.filter((item) => filterSearchTerm(item).includes(search));
-  }, [items, searchQuery]);
-
-  const filteredValues = useMemo(
-    () =>
-      filteredItems
-        .map((item) => item.value)
-        .filter((value): value is Key => value !== undefined && value !== null && typeof value !== "boolean"),
-    [filteredItems],
-  );
-
-  const selectedKeySet = useMemo(() => new Set(selectedKeys.map(valueKey)), [selectedKeys]);
-  const filteredValueKeySet = useMemo(() => new Set(filteredValues.map(valueKey)), [filteredValues]);
-  const dropdownWidth = useMemo(() => {
-    const minWidth = 240;
-    const maxWidth = minWidth * 2;
-    // Keep a stable width while typing/filtering by sizing from the full list.
-    const longestTextLength = items.reduce((maxLength, item) => {
-      return Math.max(maxLength, filterSearchTerm(item).length);
-    }, 0);
-    const estimatedWidth = 90 + Math.min(longestTextLength, 48) * 8;
-    const buttonLabelWidth = Math.max(
-      (t("buttons.selectAll").length + t("buttons.selectNone").length + 8) * 7,
-      minWidth,
-    );
-    return Math.min(Math.max(minWidth, estimatedWidth, buttonLabelWidth), maxWidth);
-  }, [items, t]);
-
-  const selectAllFiltered = () => {
-    if (filteredValues.length === 0) {
-      return;
-    }
-    if (!allowMultipleFilters) {
-      setSelectedKeys([filteredValues[0]]);
-      return;
-    }
-
-    const existing = new Map(selectedKeys.map((value) => [valueKey(value), value]));
-    filteredValues.forEach((value) => existing.set(valueKey(value), value));
-    setSelectedKeys(Array.from(existing.values()));
-  };
-
-  const selectNoneFiltered = () => {
-    if (!allowMultipleFilters) {
-      const firstNonFiltered = selectedKeys.find((value) => !filteredValueKeySet.has(valueKey(value)));
-      setSelectedKeys(firstNonFiltered ? [firstNonFiltered] : []);
-      return;
-    }
-    setSelectedKeys(selectedKeys.filter((value) => !filteredValueKeySet.has(valueKey(value))));
-  };
-
-  return (
-    <div style={{ padding: 8, width: dropdownWidth }}>
-      <Input
-        allowClear
-        size="small"
-        value={searchQuery}
-        placeholder={t("buttons.filter")}
-        style={{ width: "100%" }}
-        onChange={(event) => setSearchQuery(event.target.value)}
-      />
-      <div
-        style={{
-          marginTop: 8,
-          marginBottom: 8,
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-        }}
-      >
-        <Button size="small" block onClick={selectAllFiltered}>
-          {t("buttons.selectAll")}
-        </Button>
-        <Button size="small" block onClick={selectNoneFiltered}>
-          {t("buttons.selectNone")}
-        </Button>
-      </div>
-      <div style={{ maxHeight: 220, overflowY: "auto", paddingRight: 4 }}>
-        {filteredItems.map((item, index) => {
-          const optionValue = item.value;
-          if (optionValue === undefined || optionValue === null || typeof optionValue === "boolean") {
-            return null;
-          }
-          const checked = selectedKeySet.has(valueKey(optionValue));
-          return (
-            <div key={`${valueKey(optionValue)}-${index}`} style={{ padding: "2px 0" }}>
-              <Checkbox
-                checked={checked}
-                onChange={(event) => {
-                  const isChecked = event.target.checked;
-                  if (!allowMultipleFilters) {
-                    setSelectedKeys(isChecked ? [optionValue] : []);
-                    return;
-                  }
-
-                  if (isChecked) {
-                    setSelectedKeys([...selectedKeys, optionValue]);
-                  } else {
-                    setSelectedKeys(selectedKeys.filter((value) => valueKey(value) !== valueKey(optionValue)));
-                  }
-                }}
-              >
-                <span
-                  style={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "inline-block",
-                    maxWidth: dropdownWidth - 56,
-                    verticalAlign: "bottom",
-                  }}
-                >
-                  {item.text}
-                </span>
-              </Checkbox>
-            </div>
-          );
-        })}
-      </div>
-      <Space style={{ marginTop: 8 }}>
-        <Button
-          size="small"
-          type="primary"
-          onClick={() => {
-            confirm();
-          }}
-        >
-          {t("buttons.filter")}
-        </Button>
-        <Button
-          size="small"
-          onClick={() => {
-            setSelectedKeys([]);
-            clearFilters?.();
-            confirm();
-          }}
-        >
-          {t("buttons.clear")}
-        </Button>
-      </Space>
-    </div>
-  );
-}
-
-
-function SearchFilterDropdownContent(props: {
-  selectedKeys: Key[];
-  setSelectedKeys: (keys: Key[]) => void;
-  confirm: () => void;
-  clearFilters?: () => void;
-  t: (key: string) => string;
-  placeholder: string;
-}) {
-  const { selectedKeys, setSelectedKeys, confirm, clearFilters, t, placeholder } = props;
-  const currentValue = selectedKeys.length > 0 ? String(selectedKeys[0]) : "";
-
-  return (
-    <div style={{ padding: 8, width: 240 }}>
-      <Input
-        allowClear
-        size="small"
-        value={currentValue}
-        placeholder={placeholder}
-        onChange={(event) => {
-          const value = event.target.value;
-          setSelectedKeys(value ? [value] : []);
-        }}
-        onPressEnter={() => confirm()}
-      />
-      <Space style={{ marginTop: 8 }}>
-        <Button
-          size="small"
-          type="primary"
-          onClick={() => {
-            confirm();
-          }}
-        >
-          {t("buttons.filter")}
-        </Button>
-        <Button
-          size="small"
-          onClick={() => {
-            setSelectedKeys([]);
-            clearFilters?.();
-            confirm();
-          }}
-        >
-          {t("buttons.clear")}
-        </Button>
-      </Space>
-    </div>
-  );
-}
-
 interface Entity {
   id: number;
 }
@@ -311,9 +46,6 @@ interface BaseColumnProps<Obj extends Entity> {
   title?: string;
   align?: AlignType;
   sorter?: boolean;
-  searchable?: boolean;
-  searchPlaceholder?: string;
-  searchValueFormatter?: (rawValue: unknown, record: Obj) => string;
   t: (key: string) => string;
   navigate: (link: string) => void;
   dataSource: Obj[];
@@ -376,22 +108,9 @@ function Column<Obj extends Entity>(
   if (props.filters && props.filteredValue) {
     columnProps.filters = props.filters;
     columnProps.filteredValue = props.filteredValue;
-    columnProps.filterDropdown = ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => {
-      if (props.loadingFilters) {
-        return <FilterDropdownLoading />;
-      }
-      return (
-        <FilterDropdownContent
-          items={props.filters ?? []}
-          selectedKeys={selectedKeys}
-          setSelectedKeys={setSelectedKeys}
-          confirm={confirm}
-          clearFilters={clearFilters}
-          allowMultipleFilters={props.allowMultipleFilters ?? true}
-          t={t}
-        />
-      );
-    };
+    if (props.loadingFilters) {
+      columnProps.filterDropdown = <FilterDropdownLoading />;
+    }
     columnProps.filterDropdownProps = {
       onOpenChange: (open) => {
         if (open && props.onFilterDropdownOpen) {
@@ -401,69 +120,6 @@ function Column<Obj extends Entity>(
     };
     if (props.dataId) {
       columnProps.key = props.dataId;
-    }
-  } else if (props.searchable) {
-    const filterField = props.dataId ?? (Array.isArray(props.id) ? undefined : (props.id as keyof Obj));
-    if (filterField) {
-      const typedFilters = typeFilters<Obj>(props.tableState.filters);
-      const filteredValue = getFiltersForField(typedFilters, filterField);
-      const searchableValues = new Map<string, string>();
-      const searchValueDataIndex = props.dataId ?? props.id;
-
-      props.dataSource.forEach((record) => {
-        const rawValue = getRecordValue(record, searchValueDataIndex);
-        const displayValue = props.searchValueFormatter
-          ? props.searchValueFormatter(rawValue, record)
-          : normalizeSearchableValue(rawValue);
-        const normalizedDisplayValue = displayValue ?? "";
-        const filterValue = normalizedDisplayValue === "" ? "<empty>" : normalizedDisplayValue;
-        if (!searchableValues.has(filterValue)) {
-          searchableValues.set(filterValue, normalizedDisplayValue);
-        }
-      });
-
-      const searchableFilters: ColumnFilterItem[] = Array.from(searchableValues.entries())
-        .map(([value, label]) => ({ value, text: label }))
-        .sort((left, right) =>
-          filterSearchTerm(left).localeCompare(filterSearchTerm(right), undefined, {
-            numeric: true,
-            sensitivity: "base",
-          }),
-        );
-
-      columnProps.filteredValue = filteredValue;
-
-      if (searchableFilters.length > 0) {
-        columnProps.filters = searchableFilters;
-        columnProps.filterMultiple = true;
-        columnProps.filterDropdown = ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => (
-          <FilterDropdownContent
-            items={searchableFilters}
-            selectedKeys={selectedKeys}
-            setSelectedKeys={setSelectedKeys}
-            confirm={confirm}
-            clearFilters={clearFilters}
-            allowMultipleFilters={true}
-            t={t}
-          />
-        );
-      } else {
-        columnProps.filterMultiple = false;
-        columnProps.filterDropdown = ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => (
-          <SearchFilterDropdownContent
-            selectedKeys={selectedKeys}
-            setSelectedKeys={setSelectedKeys}
-            confirm={confirm}
-            clearFilters={clearFilters}
-            t={t}
-            placeholder={props.searchPlaceholder ?? t("buttons.filter")}
-          />
-        );
-      }
-
-      if (props.dataId) {
-        columnProps.key = props.dataId;
-      }
     }
   }
 
@@ -514,7 +170,6 @@ export function SortedColumn<Obj extends Entity>(props: BaseColumnProps<Obj>) {
   return Column({
     ...props,
     sorter: true,
-    searchable: props.searchable ?? true,
   });
 }
 
@@ -523,7 +178,6 @@ export function RichColumn<Obj extends Entity>(
 ) {
   return Column({
     ...props,
-    searchable: props.searchable ?? true,
     render: (rawValue: string | undefined) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       return enrichText(value);
@@ -534,8 +188,6 @@ export function RichColumn<Obj extends Entity>(
 interface FilteredQueryColumnProps<Obj extends Entity> extends BaseColumnProps<Obj> {
   filterValueQuery: UseQueryResult<string[] | ColumnFilterItem[], unknown>;
   allowMultipleFilters?: boolean;
-  includeEmptyFilter?: boolean;
-  emptyFilterLabel?: string;
 }
 
 export function FilteredQueryColumn<Obj extends Entity>(props: FilteredQueryColumnProps<Obj>) {
@@ -553,29 +205,19 @@ export function FilteredQueryColumn<Obj extends Entity>(props: FilteredQueryColu
       return item;
     });
   }
-  if (props.includeEmptyFilter !== false) {
-    filters.push({
-      text: props.emptyFilterLabel ?? "<empty>",
-      value: "<empty>",
-    });
-  }
+  filters.push({
+    text: "<empty>",
+    value: "<empty>",
+  });
 
   const typedFilters = typeFilters<Obj>(props.tableState.filters);
   const filteredValue = getFiltersForField(typedFilters, props.dataId ?? (props.id as keyof Obj));
 
   const onFilterDropdownOpen = () => {
-    if (query.data === undefined && !query.isFetching) {
-      query.refetch();
-    }
+    query.refetch();
   };
 
-  return Column({
-    ...props,
-    filters,
-    filteredValue,
-    onFilterDropdownOpen,
-    loadingFilters: query.isLoading && query.data === undefined,
-  });
+  return Column({ ...props, filters, filteredValue, onFilterDropdownOpen, loadingFilters: query.isLoading });
 }
 
 interface NumberColumnProps<Obj extends Entity> extends BaseColumnProps<Obj> {
@@ -589,7 +231,6 @@ export function NumberColumn<Obj extends Entity>(props: NumberColumnProps<Obj>) 
   return Column({
     ...props,
     align: "right",
-    searchable: props.searchable ?? true,
     render: (rawValue) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       if (value === null || value === undefined) {
@@ -612,14 +253,6 @@ export function NumberColumn<Obj extends Entity>(props: NumberColumnProps<Obj>) 
 export function DateColumn<Obj extends Entity>(props: BaseColumnProps<Obj>) {
   return Column({
     ...props,
-    searchable: props.searchable ?? true,
-    searchValueFormatter: (rawValue) => {
-      const value = props.transform ? props.transform(rawValue) : rawValue;
-      if (!value) {
-        return "";
-      }
-      return dayjs.utc(value as string).local().format("YYYY-MM-DD HH:mm");
-    },
     render: (rawValue) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       return (
@@ -640,10 +273,7 @@ export function ActionsColumn<Obj extends Entity>(
 ): ColumnType<Obj> | undefined {
   return {
     title,
-    key: "actions",
     responsive: ["lg"],
-    fixed: "right",
-    width: 190,
     render: (_, record) => {
       const buttons = actionsFn(record).map((action) => {
         if (action.link) {
@@ -736,7 +366,6 @@ export function SpoolIconColumn<Obj extends Entity>(props: SpoolIconColumnProps<
 export function NumberRangeColumn<Obj extends Entity>(props: NumberColumnProps<Obj>) {
   return Column({
     ...props,
-    searchable: props.searchable ?? true,
     render: (rawValue) => {
       const value = props.transform ? props.transform(rawValue) : rawValue;
       if (value === null || value === undefined) {

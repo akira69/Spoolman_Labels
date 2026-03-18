@@ -202,6 +202,17 @@ class FilamentUpdateParameters(FilamentParameters):
 async def find(
     *,
     db: Annotated[AsyncSession, Depends(get_db_session)],
+    search: Annotated[
+        str | None,
+        Query(
+            title="Search",
+            description=(
+                "Partial case-insensitive search term applied across filament ID, vendor name, name, material, and "
+                "article number. Separate multiple terms with a comma. Surround a term with quotes to search for "
+                "the exact term."
+            ),
+        ),
+    ] = None,
     vendor_name_old: Annotated[
         str | None,
         Query(alias="vendor_name", title="Vendor Name", description="See vendor.name.", deprecated=True),
@@ -292,63 +303,6 @@ async def find(
             examples=[20.0],
         ),
     ] = 20.0,
-    has_spools: Annotated[
-        bool | None,
-        Query(
-            title="Has Spools",
-            description="Filter by whether a filament has at least one associated spool.",
-            examples=[True],
-        ),
-    ] = None,
-    spool_count: Annotated[
-        str | None,
-        Query(
-            title="Spool Count",
-            description="Match filaments with an exact spool count. Separate multiple counts with a comma.",
-            pattern=r"^\d+(,\d+)*$",
-            examples=["0", "1,2,3"],
-        ),
-    ] = None,
-    filament_id: Annotated[
-        str | None,
-        Query(alias="id", title="Filament ID", description="Partial match against filament ID values."),
-    ] = None,
-    price: Annotated[
-        str | None,
-        Query(title="Price", description="Partial match against filament price values as text."),
-    ] = None,
-    density: Annotated[
-        str | None,
-        Query(title="Density", description="Partial match against density values as text."),
-    ] = None,
-    diameter: Annotated[
-        str | None,
-        Query(title="Diameter", description="Partial match against diameter values as text."),
-    ] = None,
-    weight: Annotated[
-        str | None,
-        Query(title="Weight", description="Partial match against filament weight values as text."),
-    ] = None,
-    spool_weight: Annotated[
-        str | None,
-        Query(title="Spool Weight", description="Partial match against spool-weight values as text."),
-    ] = None,
-    settings_extruder_temp: Annotated[
-        str | None,
-        Query(title="Extruder Temperature", description="Partial match against extruder-temperature values."),
-    ] = None,
-    settings_bed_temp: Annotated[
-        str | None,
-        Query(title="Bed Temperature", description="Partial match against bed-temperature values."),
-    ] = None,
-    registered: Annotated[
-        str | None,
-        Query(title="Registered", description="Partial match against registration timestamps."),
-    ] = None,
-    comment: Annotated[
-        str | None,
-        Query(title="Comment", description="Partial case-insensitive match against filament comments."),
-    ] = None,
     external_id: Annotated[
         str | None,
         Query(
@@ -398,32 +352,17 @@ async def find(
         filter_by_ids = [db_filament.id for db_filament in matched_filaments]
     else:
         filter_by_ids = None
-    if spool_count is not None:
-        spool_counts = [int(spool_count_item) for spool_count_item in spool_count.split(",")]
-    else:
-        spool_counts = None
 
     db_items, total_count = await filament.find(
         db=db,
         ids=filter_by_ids,
-        has_spools=has_spools,
-        spool_count=spool_counts,
+        search=search,
         vendor_name=vendor_name if vendor_name is not None else vendor_name_old,
         vendor_id=vendor_ids,
-        filament_id=filament_id,
         name=name,
         material=material,
         article_number=article_number,
-        price=price,
-        density=density,
-        diameter=diameter,
-        weight=weight,
-        spool_weight=spool_weight,
-        settings_extruder_temp=settings_extruder_temp,
-        settings_bed_temp=settings_bed_temp,
-        registered=registered,
         external_id=external_id,
-        comment=comment,
         sort_by=sort_by,
         limit=limit,
         offset=offset,
@@ -437,32 +376,6 @@ async def find(
         ),
         headers={"x-total-count": str(total_count)},
     )
-
-
-@router.get(
-    "/name",
-    name="Find filament names",
-    description="Get distinct filament names.",
-    response_model_exclude_none=True,
-)
-async def find_names(
-    *,
-    db: Annotated[AsyncSession, Depends(get_db_session)],
-) -> list[str]:
-    return await filament.find_names(db=db)
-
-
-@router.get(
-    "/spool-count",
-    name="Find filament spool counts",
-    description="Get distinct spool-count values across filaments.",
-    response_model_exclude_none=True,
-)
-async def find_spool_counts(
-    *,
-    db: Annotated[AsyncSession, Depends(get_db_session)],
-) -> list[int]:
-    return await filament.find_spool_counts(db=db)
 
 
 @router.websocket(
@@ -532,8 +445,9 @@ async def create(  # noqa: ANN201
     db: Annotated[AsyncSession, Depends(get_db_session)],
     body: FilamentParameters,
 ):
-    if body.extra:
-        all_fields = await get_extra_fields(db, EntityType.filament)
+    # Fetch extra field definitions once at endpoint entry
+    all_fields = await get_extra_fields(db, EntityType.filament) if body.extra else None
+    if body.extra and all_fields:
         try:
             validate_extra_field_dict(all_fields, body.extra)
         except ValueError as e:
@@ -584,8 +498,9 @@ async def update(  # noqa: ANN201
 ):
     patch_data = body.model_dump(exclude_unset=True)
 
-    if body.extra:
-        all_fields = await get_extra_fields(db, EntityType.filament)
+    # Fetch extra field definitions once at endpoint entry
+    all_fields = await get_extra_fields(db, EntityType.filament) if body.extra else None
+    if body.extra and all_fields:
         try:
             validate_extra_field_dict(all_fields, body.extra)
         except ValueError as e:

@@ -45,13 +45,7 @@ const QRCodeScannerModal = () => {
 
   return (
     <>
-      <FloatButton
-        type="primary"
-        onClick={() => setVisible(true)}
-        icon={<CameraOutlined />}
-        shape="circle"
-        style={{ right: "var(--camera-button-right)", bottom: "var(--camera-button-bottom)" }}
-      />
+      <FloatButton type="primary" onClick={() => setVisible(true)} icon={<CameraOutlined />} shape="circle" />
       <Modal open={visible} destroyOnHidden onCancel={() => setVisible(false)} footer={null} title={t("scanner.title")}>
         <Space direction="vertical" style={{ width: "100%" }}>
           <p>{t("scanner.description")}</p>
