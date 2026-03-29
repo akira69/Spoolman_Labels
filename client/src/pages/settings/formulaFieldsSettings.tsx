@@ -5,10 +5,14 @@ import CodeMirror from "@uiw/react-codemirror";
 import { tags as highlightTags } from "@lezer/highlight";
 import {
   CloseCircleOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+  EditOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
+  SearchOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
@@ -16,6 +20,7 @@ import {
   Button,
   Checkbox,
   Col,
+  Collapse,
   Divider,
   Empty,
   Flex,
@@ -35,7 +40,7 @@ import {
   theme,
 } from "antd";
 import { ColumnType } from "antd/es/table";
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
   FORMULA_HELPER_GROUPS,
@@ -57,6 +62,7 @@ import {
   usePreviewDerivedField,
   useSetDerivedField,
 } from "../../utils/queryFields";
+import { useSavedState } from "../../utils/saveload";
 
 const BUILTIN_REFERENCE_SUGGESTIONS: Record<EntityType, string[]> = {
   vendor: ["id", "registered", "created_at", "name", "comment", "empty_spool_weight", "external_id"],
@@ -149,18 +155,9 @@ const JSON_LOGIC_OPERATOR_GROUPS: Array<{ key: string; operators: string[] }> = 
   { key: "arithmetic", operators: ["+", "-", "*", "/", "%", "floor"] },
 ];
 // Layout constants for consistent spacing and sizing.
-// OPERATOR_PANEL_WIDTH (244) and INLINE_OPERATOR_PANEL_HEIGHT (264) are paired to maintain
-// visual balance: the operator panel height matches the JSON editor height when operators show inline.
-// If adjusting one, keep them visually balanced so editor and operator box feel like one cohesive unit.
+// PREVIEW_PANEL_WIDTH is reused beside Sample Values so the compact preview stays visually aligned.
 const OPERATOR_PANEL_WIDTH = 244;
-const INLINE_OPERATOR_PANEL_HEIGHT = 264;
-// Keep helper groups dense on desktop by pairing short groups under larger ones.
-const HELPER_DESKTOP_COLUMN_LAYOUT: Array<{ top: string; bottom?: string }> = [
-  { top: "math", bottom: "color" },
-  { top: "text" },
-  { top: "datetime" },
-  { top: "dynamic", bottom: "date_diff" },
-];
+const INLINE_OPERATOR_PANEL_HEIGHT = 188;
 const JSON_LOGIC_OPERATOR_SNIPPETS: Record<string, string> = {
   if: '{\n  "if": [\n    {"var": "condition"},\n    "then_value",\n    "else_value"\n  ]\n}',
   and: '{\n  "and": [\n    {"var": "left"},\n    {"var": "right"}\n  ]\n}',
@@ -207,7 +204,19 @@ const RESERVED_DERIVED_KEY_NAMES = new Set([
 ]);
 
 type ReferenceValueKind = "any" | "number" | "datetime" | "text" | "boolean" | "range" | "unknown";
-type PendingHelperOperand = { kind: "reference"; value: string } | { kind: "helper"; value: string };
+type PendingTokenInsertState = {
+  tokenName: string;
+  tokenKind: "helper" | "operator";
+  selectedOperands: unknown[];
+  pendingIfComparisonOperator?: string | null;
+  pendingIfComparisonOperands?: unknown[];
+};
+type PendingOperatorOperandConstraint = {
+  mode: "comparison-operator" | "expression";
+  allowedReferenceKinds: "scalar" | ReferenceValueKind[];
+  allowedTokenKinds: "any" | ReferenceValueKind[];
+  selectedKind?: ReferenceValueKind | null;
+};
 type PendingOperatorInsertState = {
   operator: string;
   selectedOperands: unknown[];
@@ -218,10 +227,6 @@ type PendingOperatorInsertState = {
   pendingIfComparisonOperands?: unknown[];
   replaceEditorOnComplete?: boolean;
 };
-type PendingHelperInsertState = {
-  helperName: string;
-  selectedOperands: PendingHelperOperand[];
-};
 type PendingHelperHintState = {
   helper: string;
   selected: number;
@@ -230,6 +235,190 @@ type PendingHelperHintState = {
   stepLabelKey?: string;
 };
 type FormulaResultTypeHint = "number" | "text" | "boolean" | "date" | "datetime" | "time" | "unknown";
+type ReferenceSemanticKind = "generic" | "color_hex";
+type ReferencePickerGroupDefinition = {
+  key: string;
+  labelType: "entity" | "extra";
+  entityType: EntityType;
+  source: "builtin" | "extra";
+  prefix: string;
+  excludedPrefixes?: string[];
+  defaultExpanded: boolean;
+  scope: "current" | "related";
+};
+type ReferencePickerOption = {
+  value: string;
+  label: string;
+  fullLabel: string;
+  searchText: string;
+};
+type ReferencePickerGroup = ReferencePickerGroupDefinition & {
+  label: string;
+  references: ReferencePickerOption[];
+};
+type TokenDefinition = {
+  kind: "operator" | "helper";
+  name: string;
+};
+type TokenCategory = {
+  key: string;
+  label: string;
+  tokens: TokenDefinition[];
+};
+
+type FormulaFieldEditRequest = {
+  key: string;
+  nonce: number;
+};
+
+type FormulaFieldsSettingsProps = {
+  editRequest?: FormulaFieldEditRequest | null;
+  onEditRequestHandled?: () => void;
+};
+
+const REFERENCE_PICKER_GROUPS: Record<EntityType, ReferencePickerGroupDefinition[]> = {
+  vendor: [
+    {
+      key: "vendor-builtins",
+      labelType: "entity",
+      entityType: EntityType.vendor,
+      source: "builtin",
+      prefix: "",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "vendor-extra",
+      labelType: "extra",
+      entityType: EntityType.vendor,
+      source: "extra",
+      prefix: "extra.",
+      defaultExpanded: true,
+      scope: "current",
+    },
+  ],
+  filament: [
+    {
+      key: "filament-builtins",
+      labelType: "entity",
+      entityType: EntityType.filament,
+      source: "builtin",
+      prefix: "",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "filament-extra",
+      labelType: "extra",
+      entityType: EntityType.filament,
+      source: "extra",
+      prefix: "extra.",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "vendor-builtins",
+      labelType: "entity",
+      entityType: EntityType.vendor,
+      source: "builtin",
+      prefix: "vendor.",
+      excludedPrefixes: ["vendor.extra."],
+      defaultExpanded: false,
+      scope: "related",
+    },
+    {
+      key: "vendor-extra",
+      labelType: "extra",
+      entityType: EntityType.vendor,
+      source: "extra",
+      prefix: "vendor.extra.",
+      defaultExpanded: false,
+      scope: "related",
+    },
+  ],
+  spool: [
+    {
+      key: "spool-builtins",
+      labelType: "entity",
+      entityType: EntityType.spool,
+      source: "builtin",
+      prefix: "",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "spool-extra",
+      labelType: "extra",
+      entityType: EntityType.spool,
+      source: "extra",
+      prefix: "extra.",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "filament-builtins",
+      labelType: "entity",
+      entityType: EntityType.filament,
+      source: "builtin",
+      prefix: "filament.",
+      excludedPrefixes: ["filament.extra.", "filament.vendor."],
+      defaultExpanded: false,
+      scope: "related",
+    },
+    {
+      key: "filament-extra",
+      labelType: "extra",
+      entityType: EntityType.filament,
+      source: "extra",
+      prefix: "filament.extra.",
+      defaultExpanded: false,
+      scope: "related",
+    },
+    {
+      key: "vendor-builtins",
+      labelType: "entity",
+      entityType: EntityType.vendor,
+      source: "builtin",
+      prefix: "filament.vendor.",
+      excludedPrefixes: ["filament.vendor.extra."],
+      defaultExpanded: false,
+      scope: "related",
+    },
+    {
+      key: "vendor-extra",
+      labelType: "extra",
+      entityType: EntityType.vendor,
+      source: "extra",
+      prefix: "filament.vendor.extra.",
+      defaultExpanded: false,
+      scope: "related",
+    },
+  ],
+};
+
+function getDefaultExpandedReferenceGroups(entityType: EntityType): string[] {
+  return REFERENCE_PICKER_GROUPS[entityType].filter((group) => group.defaultExpanded).map((group) => group.key);
+}
+
+function referenceMatchesGroup(reference: string, group: ReferencePickerGroupDefinition): boolean {
+  if (group.source === "extra") {
+    return reference.startsWith(group.prefix);
+  }
+  if (group.prefix === "") {
+    return !reference.includes(".");
+  }
+  if (!reference.startsWith(group.prefix)) {
+    return false;
+  }
+  return !(group.excludedPrefixes || []).some((prefix) => reference.startsWith(prefix));
+}
+
+function compactReferenceLabel(reference: string, prefix: string): string {
+  if (!prefix) {
+    return reference;
+  }
+  return reference.startsWith(prefix) ? reference.slice(prefix.length) : reference;
+}
 
 // Resolve the current IF guided-insert prompt step so the yellow helper hint can
 // explicitly tell users what token click is expected next.
@@ -281,6 +470,48 @@ const BUILTIN_REFERENCE_KIND_HINTS: Record<EntityType, Record<string, ReferenceV
     created_at: "datetime",
   },
 };
+
+const NUMERIC_REFERENCE_LEAFS = new Set([
+  "id",
+  "price",
+  "density",
+  "diameter",
+  "weight",
+  "initial_weight",
+  "spool_weight",
+  "remaining_weight",
+  "used_weight",
+  "remaining_length",
+  "used_length",
+  "settings_extruder_temp",
+  "settings_bed_temp",
+  "empty_spool_weight",
+]);
+const DATETIME_REFERENCE_LEAFS = new Set(["registered", "created_at", "first_used", "last_used"]);
+const BOOLEAN_REFERENCE_LEAFS = new Set(["archived"]);
+
+function inferBuiltinReferenceKind(reference: string): ReferenceValueKind {
+  const leaf = reference.split(".").filter(Boolean).at(-1) || reference;
+  if (NUMERIC_REFERENCE_LEAFS.has(leaf)) {
+    return "number";
+  }
+  if (DATETIME_REFERENCE_LEAFS.has(leaf)) {
+    return "datetime";
+  }
+  if (BOOLEAN_REFERENCE_LEAFS.has(leaf)) {
+    return "boolean";
+  }
+  return "text";
+}
+
+function inferReferenceSemantic(reference: string): ReferenceSemanticKind {
+  const leaf = reference.split(".").filter(Boolean).at(-1) || reference;
+  return leaf === "color_hex" ? "color_hex" : "generic";
+}
+
+function isScalarReferenceKind(kind: ReferenceValueKind): boolean {
+  return ["text", "number", "datetime", "boolean"].includes(kind);
+}
 
 function resolveColorLuminance(color: string): number | null {
   const normalized = color.trim().toLowerCase();
@@ -693,8 +924,94 @@ function toDerivedFieldType(typeHint: FormulaResultTypeHint): DerivedFieldType |
   return null;
 }
 
-export function FormulaFieldsSettings() {
+function resultTypeHintToReferenceKind(typeHint: FormulaResultTypeHint): ReferenceValueKind {
+  switch (typeHint) {
+    case "number":
+      return "number";
+    case "boolean":
+      return "boolean";
+    case "date":
+    case "datetime":
+    case "time":
+      return "datetime";
+    case "text":
+      return "text";
+    default:
+      return "unknown";
+  }
+}
+
+function inferOperandValueKind(
+  operand: unknown,
+  referenceKindByName: Record<string, ReferenceValueKind>,
+): ReferenceValueKind | null {
+  const referencedField = extractVarReference(operand);
+  if (referencedField) {
+    return referenceKindByName[referencedField] || "unknown";
+  }
+  return resultTypeHintToReferenceKind(inferExpressionJsonType(operand));
+}
+
+function extractVarReference(operand: unknown): string | null {
+  if (!operand || typeof operand !== "object" || Array.isArray(operand)) {
+    return null;
+  }
+  const entries = Object.entries(operand as Record<string, unknown>);
+  if (entries.length === 1 && entries[0][0] === "var" && typeof entries[0][1] === "string") {
+    return entries[0][1];
+  }
+  return null;
+}
+
+function tokenResultTypeHint(name: string): FormulaResultTypeHint {
+  if (name === "if" || ["==", "!=", "<", "<=", ">", ">=", "!", "and", "or"].includes(name)) {
+    return "boolean";
+  }
+  if (
+    [
+      "+",
+      "-",
+      "*",
+      "/",
+      "%",
+      "floor",
+      "abs",
+      "min",
+      "max",
+      "round",
+      "year",
+      "month",
+      "day",
+      "hour",
+      "minute",
+      "second",
+      "timestamp",
+      "days_between",
+      "hours_between",
+      "hue_from_hex",
+      "length",
+    ].includes(name)
+  ) {
+    return "number";
+  }
+  if (["cat", "trim", "upper", "lower", "left", "right"].includes(name)) {
+    return "text";
+  }
+  if (["date_only", "today"].includes(name)) {
+    return "date";
+  }
+  if (name === "time_only") {
+    return "time";
+  }
+  if (name === "coalesce") {
+    return "unknown";
+  }
+  return "unknown";
+}
+
+export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: FormulaFieldsSettingsProps) {
   const { entityType } = useParams<{ entityType: EntityType }>();
+  const selectedEntityType = entityType as EntityType;
   const t = useTranslate();
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
@@ -703,11 +1020,19 @@ export function FormulaFieldsSettings() {
   const [editingDerivedKey, setEditingDerivedKey] = useState<string | null>(null);
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewErrorText, setPreviewErrorText] = useState<string | null>(null);
-  const [pendingJsonHelperInsert, setPendingJsonHelperInsert] = useState<PendingHelperInsertState | null>(null);
+  const [pendingJsonHelperInsert, setPendingJsonHelperInsert] = useState<PendingTokenInsertState | null>(null);
   const [pendingOperatorInsert, setPendingOperatorInsert] = useState<PendingOperatorInsertState | null>(null);
-  const [operatorPanelCollapsed, setOperatorPanelCollapsed] = useState(false);
-  const [tokensPanelCollapsed, setTokensPanelCollapsed] = useState(false);
+  const [tokensPanelCollapsedByEntity, setTokensPanelCollapsedByEntity] = useSavedState<
+    Partial<Record<EntityType, boolean>>
+  >("formula-fields-builder-collapsed", {});
+  const [expandedReferenceGroupsByEntity, setExpandedReferenceGroupsByEntity] = useSavedState<
+    Partial<Record<EntityType, string[]>>
+  >("formula-fields-reference-groups", {});
+  const [helperCompatiblePanelOpenByEntity, setHelperCompatiblePanelOpenByEntity] = useSavedState<
+    Partial<Record<EntityType, boolean>>
+  >("formula-fields-helper-compatible-open", {});
   const [hoveredTokenId, setHoveredTokenId] = useState<string | null>(null);
+  const [referenceSearch, setReferenceSearch] = useState("");
   const [sampleValuesAutoUpdateEnabled, setSampleValuesAutoUpdateEnabled] = useState(true);
   const [derivedForm] = Form.useForm();
   const expressionJsonEditorRef = useRef<EditorView | null>(null);
@@ -717,15 +1042,20 @@ export function FormulaFieldsSettings() {
   // Track only auto-scaffolded sample references so we can safely prune stale transient
   // keys without deleting user-authored sample keys.
   const autoManagedSampleReferencesRef = useRef<Set<string>>(new Set());
+  const deferredReferenceSearch = useDeferredValue(referenceSearch.trim().toLowerCase());
 
-  const selectedEntityType = entityType as EntityType;
+  const tokensPanelCollapsed = tokensPanelCollapsedByEntity[selectedEntityType] ?? false;
+  const expandedReferenceGroupKeys =
+    expandedReferenceGroupsByEntity[selectedEntityType] ?? getDefaultExpandedReferenceGroups(selectedEntityType);
+  const helperCompatiblePanelOpen = helperCompatiblePanelOpenByEntity[selectedEntityType] ?? false;
   const niceName = t(`${selectedEntityType}.${selectedEntityType}`);
+  const guidedInsertionEnabled = false;
   const sectionBodyStyle = { marginTop: 0, fontSize: token.fontSize, lineHeight: 1.7 };
   const tokenPanelStyle = useMemo(
     () => ({
       border: `1px solid ${token.colorBorderSecondary}`,
       borderRadius: token.borderRadiusLG,
-      padding: 10,
+      padding: 8,
       background: token.colorBgContainer,
     }),
     [token.colorBgContainer, token.colorBorderSecondary, token.borderRadiusLG],
@@ -735,56 +1065,74 @@ export function FormulaFieldsSettings() {
       borderRadius: token.borderRadius,
       border: `1px solid ${token.colorBorderSecondary}`,
       background: token.colorFillQuaternary,
-      padding: "8px 10px",
-      minHeight: 68,
+      padding: "5px 8px",
+      minHeight: 0,
     }),
     [token.borderRadius, token.colorBorderSecondary, token.colorFillQuaternary],
   );
-  const tokenListStyle = useMemo<CSSProperties>(
+  const denseTokenCategoryStyle = useMemo<CSSProperties>(
+    () => ({
+      ...tokenCategoryStyle,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: 3,
+      padding: "5px 8px 6px",
+    }),
+    [tokenCategoryStyle],
+  );
+  const tokenCategoryLabelStyle = useMemo<CSSProperties>(
+    () => ({
+      display: "block",
+      lineHeight: 1.05,
+      margin: 0,
+    }),
+    [],
+  );
+  const tokenCategoryBodyStyle = useMemo<CSSProperties>(
+    () => ({
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 2,
+      alignItems: "flex-start",
+      justifyContent: "flex-start",
+    }),
+    [],
+  );
+  const referenceGroupTokenListStyle = useMemo<CSSProperties>(
     () => ({
       display: "flex",
       flexWrap: "wrap",
       gap: 6,
-      marginTop: 6,
-      justifyContent: "center",
+      alignItems: "flex-start",
     }),
     [],
   );
-  const compactHelperCategoryStyle = useMemo<CSSProperties>(
-    () => ({
-      padding: "6px",
-      minHeight: 52,
-    }),
-    [],
-  );
-  const compactHelperTokenListStyle = useMemo<CSSProperties>(
-    () => ({
-      ...tokenListStyle,
-      justifyContent: "center",
-      marginTop: 4,
-      gap: 4,
-    }),
-    [tokenListStyle],
-  );
-  const referenceGridStyle = useMemo(
+  const tokenCategoryColumnsStyle = useMemo<CSSProperties>(
     () => ({
       display: "grid",
-      // Keep references dense while predictable: 4 columns on desktop, 3/2 on medium widths, 1 on mobile.
       gridTemplateColumns:
         screens.lg || screens.xl || screens.xxl
-          ? "repeat(4, minmax(0, 1fr))"
+          ? "repeat(3, minmax(0, 1fr))"
           : screens.md
-            ? "repeat(3, minmax(0, 1fr))"
-            : screens.sm
-              ? "repeat(2, minmax(0, 1fr))"
-              : "repeat(1, minmax(0, 1fr))",
+            ? "repeat(2, minmax(0, 1fr))"
+            : "repeat(1, minmax(0, 1fr))",
       gap: 6,
+      alignItems: "start",
     }),
-    [screens.lg, screens.md, screens.sm, screens.xl, screens.xxl],
+    [screens.lg, screens.md, screens.xl, screens.xxl],
+  );
+  const tokenCategoryColumnStyle = useMemo<CSSProperties>(
+    () => ({
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      minWidth: 0,
+      alignSelf: "start",
+    }),
+    [],
   );
   const isDesktopLayout = Boolean(screens.lg || screens.xl || screens.xxl);
-  const isDesktopOperatorPanel = isDesktopLayout;
-  const showInlineOperatorPanel = Boolean(isDesktopOperatorPanel && !operatorPanelCollapsed);
   const expressionEditorHeight = INLINE_OPERATOR_PANEL_HEIGHT;
   // Keep JSON string tokens orange in both editors so references/values do not appear as errors.
   const codeMirrorHighlightStyle = useMemo(
@@ -939,8 +1287,23 @@ export function FormulaFieldsSettings() {
     [t],
   );
   const keyLooksLikeReservedToken = useMemo(() => RESERVED_DERIVED_KEY_NAMES.has(derivedKeyValue), [derivedKeyValue]);
-
   const sampleValuesPlaceholder = SAMPLE_VALUE_PLACEHOLDERS[selectedEntityType];
+
+  useEffect(() => {
+    if (!derivedModalOpen) {
+      setReferenceSearch("");
+    }
+  }, [derivedModalOpen]);
+
+  useEffect(() => {
+    if (!pendingJsonHelperInsert?.tokenName) {
+      return;
+    }
+    setHelperCompatiblePanelOpenByEntity((current) => ({
+      ...current,
+      [selectedEntityType]: true,
+    }));
+  }, [pendingJsonHelperInsert?.tokenName, selectedEntityType, setHelperCompatiblePanelOpenByEntity]);
 
   const labeledField = (labelKey: string, tooltipKey: string) => (
     <Space size={4}>
@@ -982,13 +1345,58 @@ export function FormulaFieldsSettings() {
       }) as Record<string, Field>,
     [configuredFields.data, filamentConfiguredFields.data, vendorConfiguredFields.data],
   );
-  const compactReferenceOptions = useMemo(
+  const referenceGroups = useMemo<ReferencePickerGroup[]>(() => {
+    const entityNames: Record<EntityType, string> = {
+      vendor: t("vendor.vendor"),
+      filament: t("filament.filament"),
+      spool: t("spool.spool"),
+    };
+
+    return REFERENCE_PICKER_GROUPS[selectedEntityType]
+      .map((group) => {
+        const groupLabel =
+          group.labelType === "entity"
+            ? entityNames[group.entityType]
+            : `${entityNames[group.entityType]} ${t("settings.extra_fields.tab")}`;
+
+        const references = referenceOptions
+          .filter((reference) => referenceMatchesGroup(reference, group))
+          .map((reference) => {
+            const shortLabel = compactReferenceLabel(reference, group.prefix);
+            return {
+              value: reference,
+              label: shortLabel,
+              fullLabel: `{${reference}}`,
+              searchText: `${shortLabel} ${reference}`.toLowerCase(),
+            };
+          });
+
+        return {
+          ...group,
+          label: groupLabel,
+          references,
+        };
+      })
+      .filter((group) => group.references.length > 0);
+  }, [referenceOptions, selectedEntityType, t]);
+  const filteredReferenceGroups = useMemo(() => {
+    if (!deferredReferenceSearch) {
+      return referenceGroups;
+    }
+
+    return referenceGroups
+      .map((group) => ({
+        ...group,
+        references: group.references.filter((reference) => reference.searchText.includes(deferredReferenceSearch)),
+      }))
+      .filter((group) => group.references.length > 0);
+  }, [deferredReferenceSearch, referenceGroups]);
+  const visibleReferenceGroupKeys = useMemo(
     () =>
-      referenceOptions.map((reference) => ({
-        value: reference,
-        label: `{${reference}}`,
-      })),
-    [referenceOptions],
+      deferredReferenceSearch
+        ? [...new Set([...expandedReferenceGroupKeys, ...filteredReferenceGroups.map((group) => group.key)])]
+        : expandedReferenceGroupKeys,
+    [deferredReferenceSearch, expandedReferenceGroupKeys, filteredReferenceGroups],
   );
   // Keep parsed expression state explicit so reference syncing only mutates sample JSON
   // when the editor content is valid JSON (invalid typing states should not generate keys).
@@ -1039,30 +1447,104 @@ export function FormulaFieldsSettings() {
     () => Object.fromEntries(FORMULA_HELPERS.map((helper) => [helper.name, helper] as const)),
     [],
   );
-  const operatorGroups = useMemo(
-    () =>
-      JSON_LOGIC_OPERATOR_GROUPS.map((group) => ({
-        ...group,
-        label: t(`settings.formula_fields.formula.token_categories.${group.key}`),
-      })),
+  const tokenCategories = useMemo<TokenCategory[]>(
+    () => [
+      {
+        key: "logical",
+        label: t("settings.formula_fields.formula.token_categories.logical"),
+        tokens: JSON_LOGIC_OPERATOR_GROUPS.find((group) => group.key === "logical")!.operators.map((name) => ({
+          kind: "operator",
+          name,
+        })),
+      },
+      {
+        key: "comparison",
+        label: t("settings.formula_fields.formula.token_categories.comparison"),
+        tokens: JSON_LOGIC_OPERATOR_GROUPS.find((group) => group.key === "comparison")!.operators.map((name) => ({
+          kind: "operator",
+          name,
+        })),
+      },
+      {
+        key: "math",
+        label: t("settings.formula_fields.formula.token_categories.math"),
+        tokens: ["+", "-", "*", "/", "%", "floor", "abs", "min", "max", "round", "coalesce"].map((name) => ({
+          kind: JSON_LOGIC_OPERATOR_SNIPPETS[name] ? ("operator" as const) : ("helper" as const),
+          name,
+        })),
+      },
+      {
+        key: "text",
+        label: t("settings.formula_fields.formula.token_categories.text"),
+        tokens: FORMULA_HELPER_GROUPS.find((group) => group.key === "text")!.helpers.map((helper) => ({
+          kind: "helper",
+          name: helper.name,
+        })),
+      },
+      {
+        key: "datetime",
+        label: t("settings.formula_fields.formula.token_categories.datetime"),
+        tokens: FORMULA_HELPER_GROUPS.find((group) => group.key === "datetime")!.helpers.map((helper) => ({
+          kind: "helper",
+          name: helper.name,
+        })),
+      },
+      {
+        key: "dynamic",
+        label: t("settings.formula_fields.formula.token_categories.dynamic"),
+        tokens: FORMULA_HELPER_GROUPS.find((group) => group.key === "dynamic")!.helpers.map((helper) => ({
+          kind: "helper",
+          name: helper.name,
+        })),
+      },
+      {
+        key: "date_diff",
+        label: t("settings.formula_fields.formula.token_categories.date_diff"),
+        tokens: FORMULA_HELPER_GROUPS.find((group) => group.key === "date_diff")!.helpers.map((helper) => ({
+          kind: "helper",
+          name: helper.name,
+        })),
+      },
+      {
+        key: "color",
+        label: t("settings.formula_fields.formula.token_categories.color"),
+        tokens: FORMULA_HELPER_GROUPS.find((group) => group.key === "color")!.helpers.map((helper) => ({
+          kind: "helper",
+          name: helper.name,
+        })),
+      },
+    ],
     [t],
   );
-  const helperGroups = useMemo(
-    () =>
-      FORMULA_HELPER_GROUPS.map((group) => ({
-        ...group,
-        label: t(`settings.formula_fields.formula.token_categories.${group.key}`),
-      })),
-    [t],
+  const tokenCategoriesByKey = useMemo(
+    () => Object.fromEntries(tokenCategories.map((category) => [category.key, category])),
+    [tokenCategories],
   );
-  const helperGroupByKey = useMemo(
-    () => Object.fromEntries(helperGroups.map((group) => [group.key, group])),
-    [helperGroups],
-  );
+  const orderedTokenCategoryColumns = useMemo<TokenCategory[][]>(() => {
+    const pick = (keys: string[]) =>
+      keys.map((key) => tokenCategoriesByKey[key]).filter((category): category is TokenCategory => Boolean(category));
+
+    if (screens.lg || screens.xl || screens.xxl) {
+      return [
+        pick(["logical", "text", "color"]),
+        pick(["comparison", "datetime"]),
+        pick(["math", "dynamic", "date_diff"]),
+      ];
+    }
+
+    if (screens.md) {
+      return [pick(["logical", "comparison", "math", "dynamic", "color", "date_diff"]), pick(["text", "datetime"])];
+    }
+
+    return [tokenCategories];
+  }, [screens.lg, screens.md, screens.xl, screens.xxl, tokenCategories, tokenCategoriesByKey]);
   const referenceKindByName = useMemo(() => {
-    const map: Record<string, ReferenceValueKind> = {
-      ...BUILTIN_REFERENCE_KIND_HINTS[selectedEntityType],
-    };
+    const map: Record<string, ReferenceValueKind> = Object.fromEntries(
+      BUILTIN_REFERENCE_SUGGESTIONS[selectedEntityType].map((reference) => [
+        reference,
+        BUILTIN_REFERENCE_KIND_HINTS[selectedEntityType][reference] || inferBuiltinReferenceKind(reference),
+      ]),
+    );
 
     (configuredFields.data || []).forEach((field) => {
       const fieldKind: ReferenceValueKind = (() => {
@@ -1086,9 +1568,58 @@ export function FormulaFieldsSettings() {
       })();
       map[`extra.${field.key}`] = fieldKind;
     });
+    (filamentConfiguredFields.data || []).forEach((field) => {
+      const fieldKind: ReferenceValueKind = (() => {
+        switch (field.field_type) {
+          case FieldType.integer:
+          case FieldType.float:
+            return "number";
+          case FieldType.datetime:
+            return "datetime";
+          case FieldType.boolean:
+            return "boolean";
+          case FieldType.integer_range:
+          case FieldType.float_range:
+            return "range";
+          case FieldType.text:
+          case FieldType.choice:
+            return "text";
+          default:
+            return "unknown";
+        }
+      })();
+      map[`filament.extra.${field.key}`] = fieldKind;
+    });
+    (vendorConfiguredFields.data || []).forEach((field) => {
+      const fieldKind: ReferenceValueKind = (() => {
+        switch (field.field_type) {
+          case FieldType.integer:
+          case FieldType.float:
+            return "number";
+          case FieldType.datetime:
+            return "datetime";
+          case FieldType.boolean:
+            return "boolean";
+          case FieldType.integer_range:
+          case FieldType.float_range:
+            return "range";
+          case FieldType.text:
+          case FieldType.choice:
+            return "text";
+          default:
+            return "unknown";
+        }
+      })();
+      map[`vendor.extra.${field.key}`] = fieldKind;
+      map[`filament.vendor.extra.${field.key}`] = fieldKind;
+    });
 
     return map;
-  }, [configuredFields.data, selectedEntityType]);
+  }, [configuredFields.data, filamentConfiguredFields.data, selectedEntityType, vendorConfiguredFields.data]);
+  const referenceSemanticByName = useMemo(
+    () => Object.fromEntries(referenceOptions.map((reference) => [reference, inferReferenceSemantic(reference)])),
+    [referenceOptions],
+  );
   const getHelperReferenceCount = (helper: FormulaHelperDefinition): number => {
     if (helper.insert_mode === "none") {
       return 0;
@@ -1100,36 +1631,207 @@ export function FormulaFieldsSettings() {
   const getOperatorOperandCount = (operator: string): number => {
     return JSON_LOGIC_OPERATOR_OPERAND_COUNTS[operator] ?? 2;
   };
+  const getPendingTokenOperandCount = (state: PendingTokenInsertState): number => {
+    if (state.tokenKind === "operator") {
+      return getOperatorOperandCount(state.tokenName);
+    }
+    const helper = helperByName[state.tokenName];
+    return helper ? getHelperReferenceCount(helper) : 0;
+  };
+  const buildPendingTokenSnippet = (state: PendingTokenInsertState, operands: unknown[]) => {
+    return {
+      [state.tokenName]: operands.slice(0, getPendingTokenOperandCount(state)),
+    };
+  };
+  const activeOperatorInsertState = useMemo<PendingOperatorInsertState | null>(() => {
+    if (pendingJsonHelperInsert?.tokenKind === "operator") {
+      return {
+        operator: pendingJsonHelperInsert.tokenName,
+        selectedOperands: pendingJsonHelperInsert.selectedOperands,
+        requiredOperandCount: getOperatorOperandCount(pendingJsonHelperInsert.tokenName),
+        pendingIfComparisonOperator: pendingJsonHelperInsert.pendingIfComparisonOperator,
+        pendingIfComparisonOperands: pendingJsonHelperInsert.pendingIfComparisonOperands,
+      };
+    }
+    return pendingOperatorInsert;
+  }, [getOperatorOperandCount, pendingJsonHelperInsert, pendingOperatorInsert]);
   // `if` guided mode starts by collecting a comparison operator for the condition node.
   const isAwaitingIfComparisonOperator = useMemo(
     () =>
-      pendingOperatorInsert?.operator === "if" &&
-      pendingOperatorInsert.selectedOperands.length === 0 &&
-      !pendingOperatorInsert.pendingIfComparisonOperator,
-    [pendingOperatorInsert],
+      activeOperatorInsertState?.operator === "if" &&
+      activeOperatorInsertState.selectedOperands.length === 0 &&
+      !activeOperatorInsertState.pendingIfComparisonOperator,
+    [activeOperatorInsertState],
   );
   // While `if` is waiting for a comparison operator, shade out non-comparison operator tokens
   // so click-flow remains deterministic and users are guided toward valid condition structure.
-  const isOperatorTokenTemporarilyDisabled = (operator: string): boolean => {
-    if (!isAwaitingIfComparisonOperator) {
-      return false;
+  const helperAllowsReference = (helper: FormulaHelperDefinition, reference: string): boolean => {
+    const referenceKind = referenceKindByName[reference] || "unknown";
+    const referenceSemantic = referenceSemanticByName[reference] || "generic";
+
+    if (helper.name === "hue_from_hex") {
+      return referenceSemantic === "color_hex" && !reference.startsWith("extra.") && !reference.includes(".extra.");
     }
-    return !IF_CONDITION_COMPARISON_OPERATORS.has(operator);
-  };
-  const helperAllowsReferenceKind = (helper: FormulaHelperDefinition, referenceKind: ReferenceValueKind): boolean => {
+
+    if (helper.name === "cat") {
+      return isScalarReferenceKind(referenceKind);
+    }
+
+    if (helper.name === "coalesce") {
+      if (!isScalarReferenceKind(referenceKind)) {
+        return false;
+      }
+      const selectedReference = pendingJsonHelperInsert?.selectedOperands
+        .map((operand) => extractVarReference(operand))
+        .find((operand): operand is string => Boolean(operand));
+      if (!selectedReference) {
+        return true;
+      }
+      const selectedKind = referenceKindByName[selectedReference] || "unknown";
+      return selectedKind === "unknown" ? true : referenceKind === selectedKind;
+    }
+
     const requiredKind = helper.reference_kind ?? "any";
     if (requiredKind === "any") {
-      return true;
+      return isScalarReferenceKind(referenceKind);
     }
     return referenceKind === requiredKind;
   };
   const pendingHelperDefinition = useMemo(() => {
-    if (!pendingJsonHelperInsert) {
+    if (!pendingJsonHelperInsert || pendingJsonHelperInsert.tokenKind !== "helper") {
       return null;
     }
-    return helperByName[pendingJsonHelperInsert.helperName] || null;
+    return helperByName[pendingJsonHelperInsert.tokenName] || null;
   }, [helperByName, pendingJsonHelperInsert]);
+  const pendingOperatorOperandConstraint = useMemo<PendingOperatorOperandConstraint | null>(() => {
+    if (!activeOperatorInsertState) {
+      return null;
+    }
+
+    const resolveMatchingConstraint = (
+      allowedReferenceKinds: ReferenceValueKind[] | "scalar",
+      selectedOperands: unknown[],
+    ): PendingOperatorOperandConstraint => {
+      const selectedKind =
+        selectedOperands.length > 0 ? inferOperandValueKind(selectedOperands[0], referenceKindByName) : null;
+      return {
+        mode: "expression",
+        allowedReferenceKinds,
+        allowedTokenKinds: Array.isArray(allowedReferenceKinds) ? allowedReferenceKinds : "any",
+        selectedKind,
+      };
+    };
+
+    if (
+      activeOperatorInsertState.operator === "if" &&
+      activeOperatorInsertState.selectedOperands.length === 0 &&
+      !activeOperatorInsertState.pendingIfComparisonOperator
+    ) {
+      return {
+        mode: "comparison-operator",
+        allowedReferenceKinds: "scalar",
+        allowedTokenKinds: "any",
+      };
+    }
+
+    if (activeOperatorInsertState.operator === "if" && activeOperatorInsertState.selectedOperands.length === 0) {
+      const comparisonOperator = activeOperatorInsertState.pendingIfComparisonOperator;
+      const selectedComparisonOperands = activeOperatorInsertState.pendingIfComparisonOperands || [];
+      if (comparisonOperator && ["<", "<=", ">", ">="].includes(comparisonOperator)) {
+        return resolveMatchingConstraint(["number", "datetime"], selectedComparisonOperands);
+      }
+      if (comparisonOperator && ["==", "!="].includes(comparisonOperator)) {
+        return resolveMatchingConstraint("scalar", selectedComparisonOperands);
+      }
+      return {
+        mode: "expression",
+        allowedReferenceKinds: "scalar",
+        allowedTokenKinds: "any",
+      };
+    }
+
+    if (activeOperatorInsertState.operator === "if") {
+      return {
+        mode: "expression",
+        allowedReferenceKinds: "scalar",
+        allowedTokenKinds: "any",
+      };
+    }
+
+    if (["+", "-", "*", "/", "%", "floor"].includes(activeOperatorInsertState.operator)) {
+      return {
+        mode: "expression",
+        allowedReferenceKinds: ["number"],
+        allowedTokenKinds: ["number"],
+      };
+    }
+
+    if (["and", "or", "!"].includes(activeOperatorInsertState.operator)) {
+      return {
+        mode: "expression",
+        allowedReferenceKinds: ["boolean"],
+        allowedTokenKinds: ["boolean"],
+      };
+    }
+
+    if (["<", "<=", ">", ">="].includes(activeOperatorInsertState.operator)) {
+      return resolveMatchingConstraint(["number", "datetime"], activeOperatorInsertState.selectedOperands);
+    }
+
+    if (["==", "!="].includes(activeOperatorInsertState.operator)) {
+      return resolveMatchingConstraint("scalar", activeOperatorInsertState.selectedOperands);
+    }
+
+    return {
+      mode: "expression",
+      allowedReferenceKinds: "scalar",
+      allowedTokenKinds: "any",
+    };
+  }, [activeOperatorInsertState, referenceKindByName]);
+  const matchesAllowedReferenceKinds = (
+    referenceKind: ReferenceValueKind,
+    allowedKinds: "scalar" | ReferenceValueKind[],
+    selectedKind?: ReferenceValueKind | null,
+  ) => {
+    if (allowedKinds === "scalar") {
+      if (!isScalarReferenceKind(referenceKind)) {
+        return false;
+      }
+    } else if (!allowedKinds.includes(referenceKind)) {
+      return false;
+    }
+    if (!selectedKind || selectedKind === "unknown") {
+      return true;
+    }
+    return referenceKind === selectedKind;
+  };
+  const isTokenCompatibleWithPendingOperator = (tokenName: string): boolean => {
+    if (!pendingOperatorOperandConstraint) {
+      return true;
+    }
+    if (pendingOperatorOperandConstraint.mode === "comparison-operator") {
+      return IF_CONDITION_COMPARISON_OPERATORS.has(tokenName);
+    }
+    if (pendingOperatorOperandConstraint.allowedTokenKinds === "any") {
+      return true;
+    }
+    const tokenKind = resultTypeHintToReferenceKind(tokenResultTypeHint(tokenName));
+    if (!pendingOperatorOperandConstraint.allowedTokenKinds.includes(tokenKind)) {
+      return false;
+    }
+    if (!pendingOperatorOperandConstraint.selectedKind || pendingOperatorOperandConstraint.selectedKind === "unknown") {
+      return true;
+    }
+    return tokenKind === pendingOperatorOperandConstraint.selectedKind;
+  };
   const getHelperDisabledReason = (helper: FormulaHelperDefinition): string | null => {
+    if (pendingJsonHelperInsert?.tokenKind === "operator") {
+      return t("settings.formula_fields.formula.json_builder.helper_incompatible_reason", { helper: helper.name });
+    }
+    if (pendingOperatorOperandConstraint && !isTokenCompatibleWithPendingOperator(helper.name)) {
+      return t("settings.formula_fields.formula.json_builder.helper_incompatible_reason", { helper: helper.name });
+    }
+
     // Keep date-diff pending mode intentionally narrow: only today() may act as the helper-side
     // operand while reference picking handles datetime fields like created_at/extra.dry_date.
     if (pendingHelperDefinition?.category === "date_diff" && helper.name !== "today") {
@@ -1141,9 +1843,7 @@ export function FormulaFieldsSettings() {
     }
 
     const requiredRefCount = getHelperReferenceCount(helper);
-    const compatibleReferences = referenceOptions.filter((reference) =>
-      helperAllowsReferenceKind(helper, referenceKindByName[reference] || "unknown"),
-    );
+    const compatibleReferences = referenceOptions.filter((reference) => helperAllowsReference(helper, reference));
     // Date-diff helpers can still be composed with non-reference operands (for example today()),
     // so keep them available even when matching reference count is below required placeholders.
     const supportsNonReferenceOperands = helper.category === "date_diff";
@@ -1155,31 +1855,83 @@ export function FormulaFieldsSettings() {
     // tokens that can't accept that selected reference kind. Clearing/completing pending insert
     // resets all helper tokens back to normal.
     if (pendingJsonHelperInsert?.selectedOperands.length) {
-      const selectedReference = pendingJsonHelperInsert.selectedOperands.find(
-        (operand) => operand.kind === "reference",
-      );
+      const selectedReference = pendingJsonHelperInsert.selectedOperands
+        .map((operand) => extractVarReference(operand))
+        .find((operand): operand is string => Boolean(operand));
       if (!selectedReference) {
         return null;
       }
-      const selectedKind = referenceKindByName[selectedReference.value] || "unknown";
-      if (!helperAllowsReferenceKind(helper, selectedKind)) {
+      if (!helperAllowsReference(helper, selectedReference)) {
         return t("settings.formula_fields.formula.json_builder.helper_incompatible_reason", { helper: helper.name });
       }
     }
 
     return null;
   };
+  const getOperatorDisabledReason = (operator: string): string | null => {
+    if (pendingJsonHelperInsert) {
+      return t("settings.formula_fields.formula.json_builder.helper_incompatible_reason", { helper: operator });
+    }
+    if (!pendingOperatorOperandConstraint) {
+      return null;
+    }
+    if (pendingOperatorOperandConstraint.mode === "comparison-operator") {
+      return IF_CONDITION_COMPARISON_OPERATORS.has(operator)
+        ? null
+        : t("settings.formula_fields.formula.json_builder.helper_incompatible_reason", { helper: operator });
+    }
+    return isTokenCompatibleWithPendingOperator(operator)
+      ? null
+      : t("settings.formula_fields.formula.json_builder.helper_incompatible_reason", { helper: operator });
+  };
   const isReferenceCompatibleWithPendingHelper = (reference: string): boolean => {
-    if (!pendingHelperDefinition) {
+    if (pendingHelperDefinition) {
+      return helperAllowsReference(pendingHelperDefinition, reference);
+    }
+    if (!pendingOperatorOperandConstraint || pendingOperatorOperandConstraint.mode !== "expression") {
       return true;
     }
     const referenceKind = referenceKindByName[reference] || "unknown";
-    return helperAllowsReferenceKind(pendingHelperDefinition, referenceKind);
+    return matchesAllowedReferenceKinds(
+      referenceKind,
+      pendingOperatorOperandConstraint.allowedReferenceKinds,
+      pendingOperatorOperandConstraint.selectedKind,
+    );
   };
+  const helperCompatibleReferenceGroups = useMemo<ReferencePickerGroup[]>(() => {
+    if (!pendingHelperDefinition && !pendingOperatorOperandConstraint) {
+      return [];
+    }
+    return referenceGroups
+      .map((group) => ({
+        ...group,
+        references: group.references.filter((reference) => isReferenceCompatibleWithPendingHelper(reference.value)),
+      }))
+      .filter((group) => group.references.length > 0);
+  }, [
+    isReferenceCompatibleWithPendingHelper,
+    pendingHelperDefinition,
+    pendingOperatorOperandConstraint,
+    referenceGroups,
+  ]);
+  const helperCompatibleReferenceCount = useMemo(
+    () => helperCompatibleReferenceGroups.reduce((sum, group) => sum + group.references.length, 0),
+    [helperCompatibleReferenceGroups],
+  );
+  const activePendingTokenName = pendingJsonHelperInsert?.tokenName ?? pendingOperatorInsert?.operator ?? null;
+  const showCompatibleReferenceGroups = Boolean(
+    pendingHelperDefinition || pendingOperatorOperandConstraint?.mode === "expression",
+  );
   const buildHelperPlaceholderArguments = (helper: FormulaHelperDefinition): Array<{ var: string }> => {
     const referenceCount = getHelperReferenceCount(helper);
     if (referenceCount <= 0) {
       return [];
+    }
+    if (helper.name === "cat") {
+      return Array.from({ length: referenceCount }, (_, index) => ({ var: `text_${index + 1}` }));
+    }
+    if (helper.name === "coalesce") {
+      return Array.from({ length: referenceCount }, (_, index) => ({ var: `value_${index + 1}` }));
     }
     if (referenceCount === 1) {
       return [{ var: "value" }];
@@ -1189,226 +1941,175 @@ export function FormulaFieldsSettings() {
     }
     return Array.from({ length: referenceCount }, (_, index) => ({ var: `arg_${index + 1}` }));
   };
-  const helperTokenGridStyle = useMemo<CSSProperties>(
-    () => ({
-      display: "grid",
-      // Desktop uses a custom stacked layout; this fallback keeps helper groups readable on smaller screens.
-      gridTemplateColumns: screens.md || screens.sm ? "repeat(2, minmax(0, 1fr))" : "repeat(1, minmax(0, 1fr))",
-      gap: 8,
-      alignItems: "start",
-    }),
-    [screens.md, screens.sm],
+  const copyTextToClipboard = useCallback(
+    async (text: string, successMessage: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        messageApi.success(successMessage);
+      } catch {
+        messageApi.error("Failed to copy to clipboard.");
+      }
+    },
+    [messageApi],
   );
-
-  // ─── Token Rendering & Insertion Logic ───
-  // This section manages the clickable token interface for building JSON expressions.
-  // Users can click operators, helpers, or field references to insert JSON snippets into the editor.
-  //
-  // Two insertion patterns:
-  // 1. Operators (logical, comparison, math): Single-stage insertion. Click operator → immediately insert
-  //    complete snippet with placeholder operands (e.g., "+ 1 1" for addition). Fast for common operations.
-  // 2. Helpers (days_between, if_then_else, etc): Two-stage insertion. Click helper → modal opens to collect
-  //    compatible references → insert complete helper with selected references. Prevents invalid combinations
-  //    and provides realtime compatibility checking (e.g., "if_then_else" requires boolean condition).
-  //
-  // Field references (custom fields, entity properties) can be inserted at any point as operand placeholders.
-  const renderTokenCategory = (
-    key: string,
-    label: string,
-    tokens: ReactNode,
-    style?: CSSProperties,
-    tokenContainerStyle?: CSSProperties,
-  ) => (
-    <div key={key} style={{ ...tokenCategoryStyle, ...style }}>
-      <Typography.Text type="secondary">
-        <strong>{label}</strong>
-      </Typography.Text>
-      <div style={tokenContainerStyle ?? tokenListStyle}>{tokens}</div>
-    </div>
+  const copyReferenceToClipboard = useCallback(
+    (reference: string) =>
+      void copyTextToClipboard(reference, t("settings.formula_fields.formula.reference_picker.reference_copied")),
+    [copyTextToClipboard, t],
   );
-
-  // Operators: Renders logical (and/or), comparison (==/>/<), and math (+/-/*/) tokens in compact grids.
-  // Clicking an operator immediately inserts the JSON Logic snippet for that operator with placeholder
-  // operands. Disabled operators are grayed out (e.g., can't nest same operator recursively in some cases).
-  // Layout: Logical operators (2 cols), comparison (3 cols), math (3 cols) to fit JSON editor width.
-  const renderOperatorTokenGroups = (interactive: boolean) => (
-    // Compact two-column operator cells keep JSON editor width while preserving quick-click operator insertion.
-    <div style={{ display: "grid", gap: 6 }}>
-      {operatorGroups.map((group) => {
-        const compactTitle =
-          group.key === "logical" ? (
-            <>
-              {t("settings.formula_fields.formula.json_builder.operator_compact.logical_top")}
-              <br />
-              {t("settings.formula_fields.formula.json_builder.operator_compact.logical_bottom")}
-            </>
-          ) : group.key === "comparison" ? (
-            t("settings.formula_fields.formula.json_builder.operator_compact.comparison")
-          ) : (
-            t("settings.formula_fields.formula.json_builder.operator_compact.math")
-          );
-        const operatorGridColumns = group.key === "logical" ? "repeat(2, max-content)" : "repeat(3, max-content)";
-        const labelColumnWidth = group.key === "logical" ? 90 : 78;
-        return (
-          <div
-            key={group.key}
-            style={{
-              ...tokenCategoryStyle,
-              minHeight: 54,
-              padding: "6px 8px",
-              display: "grid",
-              gridTemplateColumns: `1fr ${labelColumnWidth}px`,
-              alignItems: "center",
-              columnGap: 6,
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: operatorGridColumns,
-                gap: 3,
-                justifyItems: "center",
-                justifyContent: "start",
-              }}
-            >
-              {group.operators.map((operator) =>
-                (() => {
-                  const tokenId = `operator-${group.key}-${operator}`;
-                  const isHovered = hoveredTokenId === tokenId;
-                  const disabled = interactive ? isOperatorTokenTemporarilyDisabled(operator) : false;
-                  return (
-                    <Typography.Text
-                      key={tokenId}
-                      code
-                      style={{
-                        cursor: interactive ? (disabled ? "not-allowed" : "pointer") : "default",
-                        opacity: disabled ? 0.45 : 1,
-                        minWidth: 20,
-                        textAlign: "center",
-                        whiteSpace: "nowrap",
-                        wordBreak: "normal",
-                        overflowWrap: "normal",
-                        color: interactive && !disabled && isHovered ? token.colorWarningText : undefined,
-                        background: interactive && !disabled && isHovered ? token.colorWarningBg : undefined,
-                        borderColor: interactive && !disabled && isHovered ? token.colorWarningBorder : undefined,
-                        transition: "all 120ms ease-out",
-                      }}
-                      onMouseEnter={interactive && !disabled ? () => setHoveredTokenId(tokenId) : undefined}
-                      onMouseLeave={
-                        interactive && !disabled
-                          ? () => setHoveredTokenId((current) => (current === tokenId ? null : current))
-                          : undefined
-                      }
-                      onClick={interactive && !disabled ? () => insertExpressionJsonOperator(operator) : undefined}
-                    >
-                      {operator}
-                    </Typography.Text>
-                  );
-                })(),
-              )}
-            </div>
-            <Typography.Text type="secondary">
-              <strong
-                style={{
-                  lineHeight: 1.1,
-                  fontSize: "0.92em",
-                  whiteSpace: "nowrap",
-                  textAlign: "right",
-                  display: "block",
-                }}
-              >
-                {compactTitle}
-              </strong>
-            </Typography.Text>
-          </div>
-        );
-      })}
-    </div>
+  const copyOperatorSnippetToClipboard = useCallback(
+    (operator: string) =>
+      void copyTextToClipboard(
+        JSON_LOGIC_OPERATOR_SNIPPETS[operator] ?? JSON.stringify({ [operator]: [] }, null, 2),
+        t("settings.formula_fields.formula.json_builder.operator_copied"),
+      ),
+    [copyTextToClipboard, t],
   );
-
-  // Helpers: Renders reusable helper functions grouped by category (date math, conditional, etc).
-  // Clicking a helper triggers the two-stage insertion flow: a modal collects which field references
-  // to include (e.g., "which spool attribute to check for days_between?"), then inserts a complete
-  // helper snippet with those references. Respects helper constraints: insert_mode (none/single/multiple),
-  // reference_count (how many fields the helper needs), value_kind (type checks for compatibility).
-  // Disabled helpers show tooltips explaining why (e.g., "no numeric fields available for math helper").
-  const renderHelperTokenCategory = (groupKey: string, interactive: boolean, compact = false) => {
-    const group = helperGroupByKey[groupKey];
-    if (!group || group.helpers.length === 0) {
-      return null;
+  const copyHelperSnippetToClipboard = useCallback(
+    (helper: FormulaHelperDefinition) =>
+      void copyTextToClipboard(
+        JSON.stringify({ [helper.name]: buildHelperPlaceholderArguments(helper) }, null, 2),
+        t("settings.formula_fields.formula.json_builder.helper_copied"),
+      ),
+    [copyTextToClipboard, t],
+  );
+  const getTokenCategoryBodyStyle = (categoryKey: string): CSSProperties => {
+    if (categoryKey === "math") {
+      return {
+        ...tokenCategoryBodyStyle,
+        gap: 1,
+      };
     }
-    return renderTokenCategory(
-      group.key,
-      group.label,
-      group.helpers.map((helper) => {
-        const disabledReason = interactive ? getHelperDisabledReason(helper) : null;
-        const tokenId = `helper-${helper.name}`;
-        const isHovered = hoveredTokenId === tokenId;
-        const helperToken = (
-          <Typography.Text
-            code
-            style={{
-              cursor: interactive ? (disabledReason ? "not-allowed" : "pointer") : "default",
-              opacity: disabledReason ? 0.45 : 1,
-              whiteSpace: "nowrap",
-              wordBreak: "normal",
-              overflowWrap: "normal",
-              flexShrink: 0,
-              color: interactive && !disabledReason && isHovered ? token.colorWarningText : undefined,
-              background: interactive && !disabledReason && isHovered ? token.colorWarningBg : undefined,
-              borderColor: interactive && !disabledReason && isHovered ? token.colorWarningBorder : undefined,
-              transition: "all 120ms ease-out",
-            }}
-            onMouseEnter={interactive && !disabledReason ? () => setHoveredTokenId(tokenId) : undefined}
-            onMouseLeave={
-              interactive && !disabledReason
-                ? () => setHoveredTokenId((current) => (current === tokenId ? null : current))
-                : undefined
-            }
-            onClick={interactive && !disabledReason ? () => insertExpressionJsonHelper(helper) : undefined}
-          >
-            {helper.name}
-          </Typography.Text>
-        );
-        return (
-          <Tooltip key={`helper-${helper.name}`} title={interactive ? disabledReason || undefined : undefined}>
-            <span style={{ display: "inline-flex" }}>{helperToken}</span>
-          </Tooltip>
-        );
-      }),
-      compact ? compactHelperCategoryStyle : undefined,
-      compact ? compactHelperTokenListStyle : undefined,
+    if (["comparison", "date_diff", "logical"].includes(categoryKey)) {
+      return {
+        ...tokenCategoryBodyStyle,
+        gap: 2,
+      };
+    }
+    return tokenCategoryBodyStyle;
+  };
+
+  const renderUnifiedTokenChip = (tokenDefinition: TokenDefinition, categoryKey: string) => {
+    const isOperator = tokenDefinition.kind === "operator";
+    const helper = isOperator ? null : helperByName[tokenDefinition.name];
+    const disabledReason = guidedInsertionEnabled
+      ? isOperator
+        ? getOperatorDisabledReason(tokenDefinition.name)
+        : helper
+          ? getHelperDisabledReason(helper)
+          : null
+      : null;
+    const tokenId = `${tokenDefinition.kind}-${tokenDefinition.name}`;
+    const isHovered = hoveredTokenId === tokenId;
+    const isDenseCategory = ["comparison", "math", "date_diff", "logical"].includes(categoryKey);
+    const isSymbolLike = /^[!<>=+\-*/%]+$/.test(tokenDefinition.name);
+    const isMathCategory = categoryKey === "math";
+    const denseFontSize = isMathCategory
+      ? Math.max(token.fontSizeSM - 1, 11)
+      : isDenseCategory
+        ? token.fontSizeSM
+        : token.fontSize;
+    const densePaddingInline = isSymbolLike ? 4 : isMathCategory ? 4 : isDenseCategory ? 5 : 6;
+    const tooltipContent =
+      disabledReason ||
+      (isOperator ? (
+        <pre
+          style={{
+            margin: 0,
+            fontFamily: token.fontFamilyCode,
+            fontSize: token.fontSizeSM,
+            lineHeight: 1.4,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {JSON_LOGIC_OPERATOR_SNIPPETS[tokenDefinition.name] ??
+            JSON.stringify({ [tokenDefinition.name]: [] }, null, 2)}
+        </pre>
+      ) : helper ? (
+        <pre
+          style={{
+            margin: 0,
+            fontFamily: token.fontFamilyCode,
+            fontSize: token.fontSizeSM,
+            lineHeight: 1.4,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {JSON.stringify({ [helper.name]: buildHelperPlaceholderArguments(helper) }, null, 2)}
+        </pre>
+      ) : undefined);
+
+    return (
+      <Tooltip key={tokenId} title={tooltipContent}>
+        <Typography.Text
+          code
+          style={{
+            cursor: disabledReason ? "not-allowed" : "pointer",
+            opacity: disabledReason ? 0.45 : 1,
+            whiteSpace: "nowrap",
+            wordBreak: "normal",
+            overflowWrap: "normal",
+            flexShrink: 0,
+            fontSize: denseFontSize,
+            lineHeight: 1.15,
+            letterSpacing: isMathCategory ? "-0.03em" : isDenseCategory ? "-0.02em" : "-0.01em",
+            paddingInline: densePaddingInline,
+            paddingBlock: 1,
+            color: !disabledReason && isHovered ? token.colorWarningText : undefined,
+            background: !disabledReason && isHovered ? token.colorWarningBg : undefined,
+            borderColor: !disabledReason && isHovered ? token.colorWarningBorder : undefined,
+            transition: "all 120ms ease-out",
+          }}
+          onMouseEnter={!disabledReason ? () => setHoveredTokenId(tokenId) : undefined}
+          onMouseLeave={
+            !disabledReason ? () => setHoveredTokenId((current) => (current === tokenId ? null : current)) : undefined
+          }
+          onClick={
+            !disabledReason
+              ? () => {
+                  if (guidedInsertionEnabled && isOperator) {
+                    insertExpressionJsonOperator(tokenDefinition.name);
+                    return;
+                  }
+                  if (guidedInsertionEnabled && helper) {
+                    insertExpressionJsonHelper(helper);
+                    return;
+                  }
+                  if (isOperator) {
+                    copyOperatorSnippetToClipboard(tokenDefinition.name);
+                    return;
+                  }
+                  if (helper) {
+                    copyHelperSnippetToClipboard(helper);
+                  }
+                }
+              : undefined
+          }
+        >
+          {tokenDefinition.name}
+        </Typography.Text>
+      </Tooltip>
     );
   };
 
-  // Helper layout: Desktop uses 4-column grid with preferred helper groups in top positions, others stacked below.
-  // Mobile collapses to single column. This layout accommodates ~15 helper groups across screen sizes.
-  const renderHelperTokenGroups = (interactive: boolean) => {
-    if (isDesktopLayout) {
-      return (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 8,
-            alignItems: "start",
-          }}
-        >
-          {HELPER_DESKTOP_COLUMN_LAYOUT.map((column) => (
-            <div key={`helper-column-${column.top}`} style={{ display: "grid", gap: 8, alignContent: "start" }}>
-              {renderHelperTokenCategory(column.top, interactive)}
-              {column.bottom ? renderHelperTokenCategory(column.bottom, interactive, true) : null}
+  const renderTokenCategories = () => (
+    <div style={tokenCategoryColumnsStyle}>
+      {orderedTokenCategoryColumns.map((column, columnIndex) => (
+        <div key={`token-column-${columnIndex}`} style={tokenCategoryColumnStyle}>
+          {column.map((category) => (
+            <div key={category.key} style={denseTokenCategoryStyle}>
+              <Typography.Text type="secondary" style={tokenCategoryLabelStyle}>
+                <strong>{category.label}</strong>
+              </Typography.Text>
+              <div style={getTokenCategoryBodyStyle(category.key)}>
+                {category.tokens.map((tokenDefinition) => renderUnifiedTokenChip(tokenDefinition, category.key))}
+              </div>
             </div>
           ))}
         </div>
-      );
-    }
-    return (
-      <div style={helperTokenGridStyle}>
-        {helperGroups.map((group) => renderHelperTokenCategory(group.key, interactive))}
-      </div>
-    );
-  };
+      ))}
+    </div>
+  );
 
   const missingCustomReferencesByDerivedField = useMemo(() => {
     const availableCustomFieldKeys = new Set((configuredFields.data || []).map((field) => field.key));
@@ -1453,24 +2154,44 @@ export function FormulaFieldsSettings() {
     setDerivedModalOpen(true);
   };
 
-  const openEditDerived = (record: DerivedField) => {
-    setEditingDerivedKey(record.key);
-    setPreviewText(null);
-    setPreviewErrorText(null);
-    setSampleValuesAutoUpdateEnabled(true);
-    setPendingOperatorInsert(null);
-    autoManagedSampleReferencesRef.current.clear();
-    derivedForm.setFieldsValue({
-      key: record.key,
-      name: record.name,
-      description: record.description || "",
-      surfaces: record.surfaces,
-      include_in_api: record.include_in_api ?? false,
-      expression_json: record.expression_json ? JSON.stringify(record.expression_json, null, 2) : "",
-      sample_values: "{}",
-    });
-    setDerivedModalOpen(true);
-  };
+  const openEditDerived = useCallback(
+    (record: DerivedField) => {
+      setEditingDerivedKey(record.key);
+      setPreviewText(null);
+      setPreviewErrorText(null);
+      setSampleValuesAutoUpdateEnabled(true);
+      setPendingOperatorInsert(null);
+      autoManagedSampleReferencesRef.current.clear();
+      derivedForm.setFieldsValue({
+        key: record.key,
+        name: record.name,
+        description: record.description || "",
+        surfaces: record.surfaces,
+        include_in_api: record.include_in_api ?? false,
+        expression_json: record.expression_json ? JSON.stringify(record.expression_json, null, 2) : "",
+        sample_values: "{}",
+      });
+      setDerivedModalOpen(true);
+    },
+    [derivedForm],
+  );
+
+  useEffect(() => {
+    if (!editRequest) {
+      return;
+    }
+
+    const requestedField = (derivedFields.data || []).find((field) => field.key === editRequest.key);
+    if (requestedField) {
+      openEditDerived(requestedField);
+      onEditRequestHandled?.();
+      return;
+    }
+
+    if (!derivedFields.isLoading) {
+      onEditRequestHandled?.();
+    }
+  }, [derivedFields.data, derivedFields.isLoading, editRequest, onEditRequestHandled, openEditDerived]);
 
   const closeDerivedModal = () => {
     setDerivedModalOpen(false);
@@ -1620,7 +2341,8 @@ export function FormulaFieldsSettings() {
   };
 
   const insertExpressionJsonReference = (reference: string) => {
-    if (!pendingHelperDefinition) {
+    const pendingState = pendingJsonHelperInsert;
+    if (!pendingState) {
       insertExpressionJsonSnippet(JSON.stringify({ var: reference }, null, 2));
       return;
     }
@@ -1628,35 +2350,23 @@ export function FormulaFieldsSettings() {
     if (!isReferenceCompatibleWithPendingHelper(reference)) {
       messageApi.warning(
         t("settings.formula_fields.formula.json_builder.reference_incompatible_reason", {
-          helper: pendingHelperDefinition.name,
+          helper: pendingHelperDefinition?.name ?? pendingState.tokenName,
         }),
       );
       return;
     }
 
-    const pendingState = pendingJsonHelperInsert;
-    if (!pendingState) {
-      return;
-    }
-
-    const requiredReferenceCount = getHelperReferenceCount(pendingHelperDefinition);
-    const selectedOperands = [...pendingState.selectedOperands, { kind: "reference", value: reference } as const];
-    if (selectedOperands.length < requiredReferenceCount) {
+    const requiredOperandCount = getPendingTokenOperandCount(pendingState);
+    const selectedOperands = [...pendingState.selectedOperands, { var: reference }];
+    if (selectedOperands.length < requiredOperandCount) {
       setPendingJsonHelperInsert({
-        helperName: pendingHelperDefinition.name,
+        ...pendingState,
         selectedOperands,
       });
       return;
     }
 
-    const snippet = {
-      [pendingHelperDefinition.name]: selectedOperands
-        .slice(0, requiredReferenceCount)
-        .map((operand) => (operand.kind === "reference" ? { var: operand.value } : { [operand.value]: [] })),
-    };
-    // Insert ready-to-parse JSON Logic objects so users can build expressions without memorizing
-    // raw AST syntax. Pending helper operands may be refs or helper calls like today().
-    insertExpressionJsonSnippet(JSON.stringify(snippet, null, 2));
+    insertExpressionJsonSnippet(JSON.stringify(buildPendingTokenSnippet(pendingState, selectedOperands), null, 2));
     setPendingJsonHelperInsert(null);
   };
 
@@ -1673,22 +2383,17 @@ export function FormulaFieldsSettings() {
       if (!pendingState) {
         return;
       }
-      const requiredReferenceCount = getHelperReferenceCount(pendingHelperDefinition);
-      const selectedOperands = [...pendingState.selectedOperands, { kind: "helper", value: helper.name } as const];
+      const requiredReferenceCount = getPendingTokenOperandCount(pendingState);
+      const selectedOperands = [...pendingState.selectedOperands, { [helper.name]: [] }];
       if (selectedOperands.length < requiredReferenceCount) {
         setPendingJsonHelperInsert({
-          helperName: pendingHelperDefinition.name,
+          ...pendingState,
           selectedOperands,
         });
         return;
       }
-      const snippet = {
-        [pendingHelperDefinition.name]: selectedOperands
-          .slice(0, requiredReferenceCount)
-          .map((operand) => (operand.kind === "reference" ? { var: operand.value } : { [operand.value]: [] })),
-      };
       // Allow date-diff helpers to consume dynamic today() as an operand instead of inserting it standalone.
-      insertExpressionJsonSnippet(JSON.stringify(snippet, null, 2));
+      insertExpressionJsonSnippet(JSON.stringify(buildPendingTokenSnippet(pendingState, selectedOperands), null, 2));
       setPendingJsonHelperInsert(null);
       return;
     }
@@ -1705,7 +2410,7 @@ export function FormulaFieldsSettings() {
     }
     // Keep helper insertion staged until required reference tokens are selected, so helpers with
     // multiple reference operands (for example days_between/hours_between) can be assembled safely.
-    setPendingJsonHelperInsert({ helperName: helper.name, selectedOperands: [] });
+    setPendingJsonHelperInsert({ tokenName: helper.name, tokenKind: "helper", selectedOperands: [] });
     messageApi.info(
       t("settings.formula_fields.formula.json_builder.pending_helper", {
         helper: helper.name,
@@ -1741,19 +2446,46 @@ export function FormulaFieldsSettings() {
         messageApi.info(t("settings.formula_fields.formula.json_builder.if_step_condition_operator"));
         return;
       }
-      if (!pendingOperatorInsert) {
+      if (pendingJsonHelperInsert?.tokenKind === "operator" && pendingJsonHelperInsert.tokenName === "if") {
+        setPendingJsonHelperInsert({
+          ...pendingJsonHelperInsert,
+          pendingIfComparisonOperator: operator,
+          pendingIfComparisonOperands: [],
+        });
+      } else if (pendingOperatorInsert) {
+        setPendingOperatorInsert({
+          ...pendingOperatorInsert,
+          pendingIfComparisonOperator: operator,
+          pendingIfComparisonOperands: [],
+        });
+      } else {
         return;
       }
-      setPendingOperatorInsert({
-        ...pendingOperatorInsert,
-        pendingIfComparisonOperator: operator,
-        pendingIfComparisonOperands: [],
-      });
       messageApi.info(
         t("settings.formula_fields.formula.json_builder.pending_helper", {
           helper: "if",
           selected: 1,
           total: 5,
+        }),
+      );
+      return;
+    }
+
+    if (pendingOperatorInsert) {
+      if (operator === "if") {
+        messageApi.info(t("settings.formula_fields.formula.json_builder.nested_if_raw_json"));
+        return;
+      }
+      setPendingJsonHelperInsert({
+        tokenName: operator,
+        tokenKind: "operator",
+        selectedOperands: [],
+      });
+      messageApi.info(
+        t("settings.formula_fields.formula.json_builder.pending_helper", {
+          helper: operator,
+          selected: 0,
+          total: getOperatorOperandCount(operator),
         }),
       );
       return;
@@ -2051,28 +2783,36 @@ export function FormulaFieldsSettings() {
 
   const derivedColumns: ColumnType<DerivedField>[] = [
     {
-      title: t("settings.formula_fields.formula.columns.key"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.formula_fields.formula.columns.key")}</span>,
       dataIndex: "key",
       key: "key",
-      width: "10%",
+      width: 150,
+      fixed: "left",
+      render: (value: string) => (
+        <Typography.Text code style={{ whiteSpace: "nowrap" }}>
+          {value}
+        </Typography.Text>
+      ),
     },
     {
-      title: t("settings.formula_fields.formula.columns.path"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.formula_fields.formula.columns.path")}</span>,
       key: "path",
-      width: "14%",
-      render: (_: unknown, record) => <Typography.Text code>{`derived.${record.key}`}</Typography.Text>,
+      width: 190,
+      render: (_: unknown, record) => (
+        <Typography.Text code style={{ whiteSpace: "nowrap" }}>{`derived.${record.key}`}</Typography.Text>
+      ),
     },
     {
-      title: t("settings.formula_fields.formula.columns.name"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.formula_fields.formula.columns.name")}</span>,
       dataIndex: "name",
       key: "name",
-      width: "14%",
+      width: 180,
     },
     {
-      title: t("settings.formula_fields.formula.columns.expression"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.formula_fields.formula.columns.expression")}</span>,
       dataIndex: "expression_json",
       key: "expression",
-      width: "34%",
+      width: 460,
       render: (_value: Record<string, unknown> | undefined, record) => {
         const expressionValue = record.expression_json ? JSON.stringify(record.expression_json) : "";
         const missingReferences = missingCustomReferencesByDerivedField[record.key] || [];
@@ -2093,10 +2833,10 @@ export function FormulaFieldsSettings() {
       },
     },
     {
-      title: t("settings.formula_fields.formula.columns.surfaces"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.formula_fields.formula.columns.surfaces")}</span>,
       dataIndex: "surfaces",
       key: "surfaces",
-      width: "20%",
+      width: 240,
       // Keep one at-a-glance destination column by showing API as a tag alongside display surfaces.
       render: (surfaces: string[], record) => (
         <Space size={[4, 4]} wrap>
@@ -2110,21 +2850,22 @@ export function FormulaFieldsSettings() {
     {
       title: "",
       key: "operation",
-      width: "12%",
+      width: 140,
+      fixed: "right",
       render: (_: unknown, record) => (
-        <Space>
-          <Button onClick={() => openEditDerived(record)} size="small">
-            {t("buttons.edit")}
-          </Button>
+        <Space wrap={false}>
+          <Tooltip title={t("buttons.edit")}>
+            <Button icon={<EditOutlined />} onClick={() => openEditDerived(record)} size="small" type="text" />
+          </Tooltip>
           <Popconfirm
             title={t("settings.formula_fields.formula.delete_confirm", { name: record.name })}
             onConfirm={() => removeDerived(record)}
             okText={t("buttons.delete")}
             cancelText={t("buttons.cancel")}
           >
-            <Button danger size="small">
-              {t("buttons.delete")}
-            </Button>
+            <Tooltip title={t("buttons.delete")}>
+              <Button danger icon={<DeleteOutlined />} size="small" type="text" />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
@@ -2162,14 +2903,42 @@ export function FormulaFieldsSettings() {
     );
   }, [derivedKeyPath, previewErrorText, previewText, t, token.fontSizeLG]);
   const pendingHelperHint = useMemo<PendingHelperHintState | null>(() => {
-    if (pendingHelperDefinition && pendingJsonHelperInsert) {
-      const selected = pendingJsonHelperInsert.selectedOperands.length;
-      const total = getHelperReferenceCount(pendingHelperDefinition);
+    if (pendingJsonHelperInsert) {
+      const selected =
+        pendingJsonHelperInsert.tokenKind === "operator" && pendingJsonHelperInsert.tokenName === "if"
+          ? (() => {
+              if (pendingJsonHelperInsert.selectedOperands.length === 0) {
+                if (!pendingJsonHelperInsert.pendingIfComparisonOperator) {
+                  return 0;
+                }
+                return 1 + (pendingJsonHelperInsert.pendingIfComparisonOperands?.length || 0);
+              }
+              return 3 + (pendingJsonHelperInsert.selectedOperands.length - 1);
+            })()
+          : pendingJsonHelperInsert.selectedOperands.length;
+      const total =
+        pendingJsonHelperInsert.tokenKind === "operator"
+          ? pendingJsonHelperInsert.tokenName === "if"
+            ? 5
+            : getOperatorOperandCount(pendingJsonHelperInsert.tokenName)
+          : pendingHelperDefinition
+            ? getHelperReferenceCount(pendingHelperDefinition)
+            : 0;
       return {
-        helper: pendingHelperDefinition.name,
+        helper: pendingJsonHelperInsert.tokenName,
         selected,
         total,
-        allowHelperOnly: true,
+        allowHelperOnly: pendingJsonHelperInsert.tokenKind === "helper",
+        stepLabelKey:
+          pendingJsonHelperInsert.tokenKind === "operator" && pendingJsonHelperInsert.tokenName === "if"
+            ? getIfPendingStepLabelKey({
+                operator: "if",
+                selectedOperands: pendingJsonHelperInsert.selectedOperands,
+                requiredOperandCount: 3,
+                pendingIfComparisonOperator: pendingJsonHelperInsert.pendingIfComparisonOperator,
+                pendingIfComparisonOperands: pendingJsonHelperInsert.pendingIfComparisonOperands,
+              })
+            : undefined,
       };
     }
     if (pendingOperatorInsert) {
@@ -2241,6 +3010,8 @@ export function FormulaFieldsSettings() {
         dataSource={derivedFields.data || []}
         loading={derivedFields.isLoading}
         pagination={false}
+        scroll={{ x: 1360 }}
+        sticky
         locale={{
           emptyText: (
             <Empty description={t("settings.formula_fields.formula.empty")} image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -2428,137 +3199,75 @@ export function FormulaFieldsSettings() {
             <div style={{ position: "relative" }}>
               {/* Keep expression editor and operator rail in one row so hiding operators can
                   immediately reclaim horizontal space without changing editor height. */}
-              <Flex align="stretch" gap={8} wrap={false}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
+              <div>
+                <div
+                  style={{
+                    height: expressionEditorHeight,
+                    minHeight: expressionEditorHeight,
+                    resize: "vertical",
+                    overflow: "auto",
+                  }}
+                >
+                  <CodeMirror
+                    value={expressionJsonValue || ""}
+                    height="100%"
                     style={{
-                      // Keep editor + operators visually balanced by default, while still allowing
-                      // manual vertical resize for longer JSON authoring sessions.
-                      height: expressionEditorHeight,
-                      minHeight: expressionEditorHeight,
-                      resize: "vertical",
-                      overflow: "auto",
+                      height: "100%",
+                      backgroundColor: token.colorBgContainer,
+                      color: token.colorText,
                     }}
-                  >
-                    <CodeMirror
-                      value={expressionJsonValue || ""}
-                      // Keep CodeMirror bound to the container height so dragging the resize handle
-                      // expands the visible editor instead of adding blank space below it.
-                      height="100%"
-                      style={{
-                        height: "100%",
-                        backgroundColor: token.colorBgContainer,
-                        color: token.colorText,
-                      }}
-                      extensions={[json(), drawSelection(), codeMirrorSyntaxHighlight, codeMirrorTheme]}
-                      basicSetup={{
-                        lineNumbers: true,
-                        drawSelection: false,
-                        // Keep standard editor affordances on and theme them via codeMirrorTheme.
-                        bracketMatching: true,
-                        highlightSelectionMatches: true,
-                        highlightActiveLine: false,
-                        foldGutter: true,
-                      }}
-                      onCreateEditor={(editor) => {
-                        expressionJsonEditorRef.current = editor;
-                        const mainSelection = editor.state.selection.main;
-                        expressionJsonSelectionRef.current = { from: mainSelection.from, to: mainSelection.to };
-                      }}
-                      onUpdate={(viewUpdate) => {
-                        const mainSelection = viewUpdate.state.selection.main;
-                        expressionJsonSelectionRef.current = { from: mainSelection.from, to: mainSelection.to };
-                      }}
-                      onChange={(value) => {
-                        // Ignore one editor change event when it mirrors a programmatic setFieldValue
-                        // so guided helper/operator state is only reset on actual user typing.
-                        if (expressionJsonProgrammaticValueRef.current !== null) {
-                          if (value === expressionJsonProgrammaticValueRef.current) {
-                            expressionJsonProgrammaticValueRef.current = null;
-                            return;
-                          }
+                    extensions={[json(), drawSelection(), codeMirrorSyntaxHighlight, codeMirrorTheme]}
+                    basicSetup={{
+                      lineNumbers: true,
+                      drawSelection: false,
+                      bracketMatching: true,
+                      highlightSelectionMatches: true,
+                      highlightActiveLine: false,
+                      foldGutter: true,
+                    }}
+                    onCreateEditor={(editor) => {
+                      expressionJsonEditorRef.current = editor;
+                      const mainSelection = editor.state.selection.main;
+                      expressionJsonSelectionRef.current = { from: mainSelection.from, to: mainSelection.to };
+                    }}
+                    onUpdate={(viewUpdate) => {
+                      const mainSelection = viewUpdate.state.selection.main;
+                      expressionJsonSelectionRef.current = { from: mainSelection.from, to: mainSelection.to };
+                    }}
+                    onChange={(value) => {
+                      if (expressionJsonProgrammaticValueRef.current !== null) {
+                        if (value === expressionJsonProgrammaticValueRef.current) {
                           expressionJsonProgrammaticValueRef.current = null;
-                        }
-                        // Ignore no-op sync events where CodeMirror re-emits the same text that is
-                        // already in the form model. This prevents guided IF/operator state from
-                        // being canceled before the user clicks the next required token.
-                        const currentExpressionValue =
-                          (derivedForm.getFieldValue("expression_json") as string | undefined) || "";
-                        if (value === currentExpressionValue) {
                           return;
                         }
-                        // Manual edits should immediately exit guided pending insert modes.
-                        if (pendingJsonHelperInsert) {
-                          setPendingJsonHelperInsert(null);
-                        }
-                        if (pendingOperatorInsert) {
-                          setPendingOperatorInsert(null);
-                        }
-                        derivedForm.setFieldValue("expression_json", value);
-                      }}
-                    />
-                  </div>
-                  {/* Keep editor action controls anchored under the expression editor. */}
-                  <Flex justify="flex-end" align="center" gap={8} style={{ marginTop: 4 }}>
-                    <Tooltip title={t("settings.formula_fields.formula.json_builder.format_tooltip")}>
-                      <Button size="small" onClick={() => formatExpressionJson()}>
-                        {t("settings.formula_fields.formula.json_builder.format")}
-                      </Button>
-                    </Tooltip>
-                    {isDesktopOperatorPanel ? (
-                      <Tooltip
-                        title={
-                          showInlineOperatorPanel
-                            ? t("settings.formula_fields.formula.json_builder.hide_operators")
-                            : t("settings.formula_fields.formula.json_builder.show_operators")
-                        }
-                      >
-                        <Button
-                          type="default"
-                          size="small"
-                          icon={showInlineOperatorPanel ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
-                          onClick={() => setOperatorPanelCollapsed((current) => !current)}
-                          aria-label={
-                            showInlineOperatorPanel
-                              ? t("settings.formula_fields.formula.json_builder.hide_operators")
-                              : t("settings.formula_fields.formula.json_builder.show_operators")
-                          }
-                        />
-                      </Tooltip>
-                    ) : null}
-                  </Flex>
-                </div>
-                {/* Render operator rail only when enabled so expression editor can expand right when hidden. */}
-                {showInlineOperatorPanel && (
-                  <div
-                    style={{
-                      width: OPERATOR_PANEL_WIDTH,
-                      flex: `0 0 ${OPERATOR_PANEL_WIDTH}px`,
-                      display: "flex",
-                      flexDirection: "column",
+                        expressionJsonProgrammaticValueRef.current = null;
+                      }
+                      const currentExpressionValue =
+                        (derivedForm.getFieldValue("expression_json") as string | undefined) || "";
+                      if (value === currentExpressionValue) {
+                        return;
+                      }
+                      if (pendingJsonHelperInsert) {
+                        setPendingJsonHelperInsert(null);
+                      }
+                      if (pendingOperatorInsert) {
+                        setPendingOperatorInsert(null);
+                      }
+                      derivedForm.setFieldValue("expression_json", value);
                     }}
-                  >
-                    {/* Operator panel stays beside the editor so token insertion does not push helper/reference sections down. */}
-                    <div
-                      style={{
-                        ...tokenPanelStyle,
-                        padding: 8,
-                        height: INLINE_OPERATOR_PANEL_HEIGHT,
-                        minHeight: INLINE_OPERATOR_PANEL_HEIGHT,
-                        overflowY: "auto",
-                      }}
-                    >
-                      <Typography.Text type="secondary" style={{ display: "block", textAlign: "right" }}>
-                        <strong>{t("settings.formula_fields.formula.token_sections.operators")}</strong>
-                      </Typography.Text>
-                      <div style={{ marginTop: 8 }}>{renderOperatorTokenGroups(true)}</div>
-                    </div>
-                  </div>
-                )}
-              </Flex>
+                  />
+                </div>
+                <Flex justify="flex-end" align="center" gap={8} style={{ marginTop: 4 }}>
+                  <Tooltip title={t("settings.formula_fields.formula.json_builder.format_tooltip")}>
+                    <Button size="small" onClick={() => formatExpressionJson()}>
+                      {t("settings.formula_fields.formula.json_builder.format")}
+                    </Button>
+                  </Tooltip>
+                </Flex>
+              </div>
             </div>
           </Form.Item>
-          {/* Show helper/operators before references so helper-first insertion flow is visually guided. */}
+          {/* Keep the reference-aid panel above field groups so JSON writing help stays in one place. */}
           <Space
             direction="vertical"
             size={2}
@@ -2589,7 +3298,12 @@ export function FormulaFieldsSettings() {
                     size="small"
                     type="default"
                     icon={tokensPanelCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                    onClick={() => setTokensPanelCollapsed((current) => !current)}
+                    onClick={() =>
+                      setTokensPanelCollapsedByEntity((current) => ({
+                        ...current,
+                        [selectedEntityType]: !(current[selectedEntityType] ?? false),
+                      }))
+                    }
                     aria-label={
                       tokensPanelCollapsed
                         ? t("settings.formula_fields.formula.json_builder.show_tokens")
@@ -2603,13 +3317,18 @@ export function FormulaFieldsSettings() {
               <>
                 <div style={tokenPanelStyle}>
                   <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                    {!guidedInsertionEnabled ? (
+                      <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                        <CopyOutlined style={{ marginRight: 4 }} />
+                        {t("settings.formula_fields.formula.json_builder.copy_hint")}
+                      </Typography.Text>
+                    ) : null}
                     <div>
                       <Flex justify="space-between" align="center" gap={8} wrap={false} style={{ height: 34 }}>
                         <Typography.Text type="secondary">
-                          <strong>{t("settings.formula_fields.formula.token_sections.helper_functions")}</strong>
+                          <strong>{t("settings.formula_fields.formula.token_sections.operators")}</strong>
                         </Typography.Text>
-                        {/* Pending helper status + actions are placed in the header to keep insertion flow visible. */}
-                        {pendingHelperHint ? (
+                        {guidedInsertionEnabled && pendingHelperHint ? (
                           <Space size={6} style={{ minWidth: 0, flexShrink: 0 }}>
                             <Typography.Text type="warning" style={{ whiteSpace: "nowrap" }}>
                               {t("settings.formula_fields.formula.json_builder.pending_helper_prefix")}
@@ -2659,100 +3378,250 @@ export function FormulaFieldsSettings() {
                           </Space>
                         ) : null}
                       </Flex>
-                      <div style={{ marginTop: 6 }}>{renderHelperTokenGroups(true)}</div>
+                      <div style={{ marginTop: 6 }}>{renderTokenCategories()}</div>
                     </div>
+                    {guidedInsertionEnabled ? (
+                      <div style={{ paddingTop: 4 }}>
+                        <Collapse
+                          ghost
+                          size="small"
+                          activeKey={helperCompatiblePanelOpen ? ["helper-compatible"] : []}
+                          onChange={(keys) => {
+                            const nextKeys = Array.isArray(keys) ? keys : [keys];
+                            setHelperCompatiblePanelOpenByEntity((current) => ({
+                              ...current,
+                              [selectedEntityType]: nextKeys.includes("helper-compatible"),
+                            }));
+                          }}
+                        >
+                          <Collapse.Panel
+                            key="helper-compatible"
+                            header={
+                              <Flex justify="space-between" align="center" gap={8} wrap>
+                                <Typography.Text type={activePendingTokenName ? undefined : "secondary"}>
+                                  <strong>
+                                    {t("settings.formula_fields.formula.reference_picker.helper_compatible")}
+                                  </strong>
+                                </Typography.Text>
+                                {activePendingTokenName ? (
+                                  <Space size={8} wrap>
+                                    <Typography.Text code>{activePendingTokenName}</Typography.Text>
+                                    <Tag bordered={false}>{helperCompatibleReferenceCount}</Tag>
+                                  </Space>
+                                ) : (
+                                  <Typography.Text type="secondary">
+                                    {t("settings.formula_fields.formula.reference_picker.no_helper_selected")}
+                                  </Typography.Text>
+                                )}
+                              </Flex>
+                            }
+                          >
+                            {showCompatibleReferenceGroups ? (
+                              helperCompatibleReferenceGroups.length > 0 ? (
+                                <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                                  {helperCompatibleReferenceGroups.map((group) => (
+                                    <div
+                                      key={`helper-compatible-${group.key}`}
+                                      style={{ ...tokenCategoryStyle, padding: 8 }}
+                                    >
+                                      <Flex justify="space-between" align="center" gap={8} wrap>
+                                        <Typography.Text type="secondary">
+                                          <strong>{group.label}</strong>
+                                        </Typography.Text>
+                                        <Tag bordered={false}>{group.references.length}</Tag>
+                                      </Flex>
+                                      <div style={{ ...referenceGroupTokenListStyle, marginTop: 6 }}>
+                                        {group.references.map((reference) => (
+                                          <Tooltip
+                                            key={`helper-compatible-reference-${reference.value}`}
+                                            title={reference.fullLabel}
+                                          >
+                                            <Typography.Text
+                                              code
+                                              style={{
+                                                cursor: "pointer",
+                                                whiteSpace: "nowrap",
+                                                fontWeight: 500,
+                                              }}
+                                              onClick={() => insertExpressionJsonReference(reference.value)}
+                                            >
+                                              {reference.label}
+                                            </Typography.Text>
+                                          </Tooltip>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </Space>
+                              ) : (
+                                <Typography.Text type="secondary">
+                                  {t("settings.formula_fields.formula.reference_picker.no_compatible_fields")}
+                                </Typography.Text>
+                              )
+                            ) : activePendingTokenName ? (
+                              <Typography.Text type="secondary">
+                                {t("settings.formula_fields.formula.json_builder.if_step_condition_operator")}
+                              </Typography.Text>
+                            ) : (
+                              <Typography.Text type="secondary">
+                                {t("settings.formula_fields.formula.reference_picker.no_helper_selected_help")}
+                              </Typography.Text>
+                            )}
+                          </Collapse.Panel>
+                        </Collapse>
+                      </div>
+                    ) : null}
                     <div style={{ paddingTop: 4 }}>
-                      <Flex align="center" gap={8}>
-                        <Typography.Text type="secondary">
-                          <strong>{t("settings.formula_fields.formula.reference_picker.label")}</strong>
-                        </Typography.Text>
-                        <Tooltip title={t("settings.formula_fields.formula.json_builder.click_to_insert_help")}>
-                          <QuestionCircleOutlined style={{ fontSize: "0.9em" }} />
-                        </Tooltip>
+                      <Flex justify="space-between" align="center" gap={8} wrap>
+                        <Space size={8} align="center">
+                          <Typography.Text type="secondary">
+                            <strong>{t("settings.formula_fields.formula.reference_picker.label")}</strong>
+                          </Typography.Text>
+                          <Tooltip title={t("settings.formula_fields.formula.reference_picker.help")}>
+                            <QuestionCircleOutlined style={{ fontSize: "0.9em" }} />
+                          </Tooltip>
+                        </Space>
+                        <Input
+                          allowClear
+                          size="small"
+                          value={referenceSearch}
+                          onChange={(event) => setReferenceSearch(event.target.value)}
+                          placeholder={t("settings.formula_fields.formula.reference_picker.search_placeholder")}
+                          prefix={<SearchOutlined />}
+                          style={{ width: isDesktopLayout ? 260 : "100%" }}
+                        />
                       </Flex>
                       <div style={{ ...tokenCategoryStyle, marginTop: 6 }}>
-                        <div style={referenceGridStyle}>
-                          {compactReferenceOptions.map((reference) => {
-                            const referenceCompatible = isReferenceCompatibleWithPendingHelper(reference.value);
-                            const isSelectedForPendingHelper = Boolean(
-                              pendingJsonHelperInsert?.selectedOperands.some(
-                                (operand) => operand.kind === "reference" && operand.value === reference.value,
-                              ),
-                            );
-                            const disabledReason =
-                              !referenceCompatible && pendingHelperDefinition
-                                ? t("settings.formula_fields.formula.json_builder.reference_incompatible_reason", {
-                                    helper: pendingHelperDefinition.name,
-                                  })
-                                : null;
-                            const referenceToken = (
-                              <Typography.Text
-                                code
-                                style={{
-                                  cursor: disabledReason ? "not-allowed" : "pointer",
-                                  opacity: disabledReason ? 0.45 : 1,
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  textAlign: "center",
-                                  fontWeight: 500,
-                                  color: isSelectedForPendingHelper
-                                    ? token.colorPrimaryText
-                                    : !disabledReason && hoveredTokenId === `reference-${reference.value}`
-                                      ? token.colorWarningText
-                                      : undefined,
-                                  background:
-                                    !disabledReason && hoveredTokenId === `reference-${reference.value}`
-                                      ? token.colorWarningBg
-                                      : undefined,
-                                  borderColor:
-                                    !disabledReason && hoveredTokenId === `reference-${reference.value}`
-                                      ? token.colorWarningBorder
-                                      : undefined,
-                                  transition: "all 120ms ease-out",
-                                }}
-                                onMouseEnter={
-                                  !disabledReason ? () => setHoveredTokenId(`reference-${reference.value}`) : undefined
-                                }
-                                onMouseLeave={
-                                  !disabledReason
-                                    ? () =>
-                                        setHoveredTokenId((current) =>
-                                          current === `reference-${reference.value}` ? null : current,
-                                        )
-                                    : undefined
-                                }
-                                onClick={
-                                  !disabledReason ? () => insertExpressionJsonReference(reference.value) : undefined
+                        {filteredReferenceGroups.length > 0 ? (
+                          <Collapse
+                            ghost
+                            size="small"
+                            activeKey={visibleReferenceGroupKeys}
+                            onChange={(keys) => {
+                              const nextKeys = Array.isArray(keys) ? keys : [keys];
+                              setExpandedReferenceGroupsByEntity((current) => ({
+                                ...current,
+                                [selectedEntityType]: nextKeys,
+                              }));
+                            }}
+                          >
+                            {filteredReferenceGroups.map((group) => (
+                              <Collapse.Panel
+                                key={group.key}
+                                header={
+                                  <Flex justify="space-between" align="center" gap={8} wrap>
+                                    <Space size={8} wrap>
+                                      <Typography.Text strong>{group.label}</Typography.Text>
+                                      <Tag bordered={false}>{group.references.length}</Tag>
+                                    </Space>
+                                    <Space size={6} wrap>
+                                      <Tag bordered={false}>
+                                        {t(
+                                          group.scope === "current"
+                                            ? "settings.formula_fields.formula.reference_picker.current_scope"
+                                            : "settings.formula_fields.formula.reference_picker.related_scope",
+                                        )}
+                                      </Tag>
+                                      {group.source === "extra" ? (
+                                        <Tag color="gold" bordered={false}>
+                                          {t("settings.extra_fields.tab")}
+                                        </Tag>
+                                      ) : null}
+                                    </Space>
+                                  </Flex>
                                 }
                               >
-                                {reference.label}
-                              </Typography.Text>
-                            );
-                            // Keep a stable wrapper shape for all reference tokens so disabled/tooltip states
-                            // do not cause reflow when helper compatibility changes.
-                            const content = (
-                              <Tooltip title={disabledReason || undefined}>
-                                <span style={{ display: "inline-flex", justifyContent: "center" }}>
-                                  {referenceToken}
-                                </span>
-                              </Tooltip>
-                            );
-                            return (
-                              <div
-                                key={`reference-cell-${reference.value}`}
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                  minHeight: 24,
-                                }}
-                              >
-                                {content}
-                              </div>
-                            );
-                          })}
-                        </div>
+                                <div style={referenceGroupTokenListStyle}>
+                                  {group.references.map((reference) => {
+                                    const referenceCompatible = guidedInsertionEnabled
+                                      ? isReferenceCompatibleWithPendingHelper(reference.value)
+                                      : true;
+                                    const isSelectedForPendingHelper = Boolean(
+                                      guidedInsertionEnabled &&
+                                      pendingJsonHelperInsert?.selectedOperands.some(
+                                        (operand) => extractVarReference(operand) === reference.value,
+                                      ),
+                                    );
+                                    const disabledReason =
+                                      guidedInsertionEnabled && !referenceCompatible && pendingHelperDefinition
+                                        ? t(
+                                            "settings.formula_fields.formula.json_builder.reference_incompatible_reason",
+                                            {
+                                              helper: pendingHelperDefinition.name,
+                                            },
+                                          )
+                                        : null;
+                                    const tooltipTitle = disabledReason || reference.fullLabel;
+                                    return (
+                                      <Tooltip
+                                        key={`reference-cell-${reference.value}`}
+                                        title={
+                                          disabledReason ? (
+                                            tooltipTitle
+                                          ) : (
+                                            <Typography.Text code>{reference.fullLabel}</Typography.Text>
+                                          )
+                                        }
+                                      >
+                                        <Typography.Text
+                                          code
+                                          style={{
+                                            cursor: disabledReason ? "not-allowed" : "pointer",
+                                            opacity: disabledReason ? 0.45 : 1,
+                                            whiteSpace: "nowrap",
+                                            fontWeight: 500,
+                                            color: isSelectedForPendingHelper
+                                              ? token.colorPrimaryText
+                                              : !disabledReason && hoveredTokenId === `reference-${reference.value}`
+                                                ? token.colorWarningText
+                                                : undefined,
+                                            background:
+                                              !disabledReason && hoveredTokenId === `reference-${reference.value}`
+                                                ? token.colorWarningBg
+                                                : undefined,
+                                            borderColor:
+                                              !disabledReason && hoveredTokenId === `reference-${reference.value}`
+                                                ? token.colorWarningBorder
+                                                : undefined,
+                                            transition: "all 120ms ease-out",
+                                          }}
+                                          onMouseEnter={
+                                            !disabledReason
+                                              ? () => setHoveredTokenId(`reference-${reference.value}`)
+                                              : undefined
+                                          }
+                                          onMouseLeave={
+                                            !disabledReason
+                                              ? () =>
+                                                  setHoveredTokenId((current) =>
+                                                    current === `reference-${reference.value}` ? null : current,
+                                                  )
+                                              : undefined
+                                          }
+                                          onClick={
+                                            !disabledReason
+                                              ? () =>
+                                                  guidedInsertionEnabled
+                                                    ? insertExpressionJsonReference(reference.value)
+                                                    : copyReferenceToClipboard(reference.value)
+                                              : undefined
+                                          }
+                                        >
+                                          {reference.label}
+                                        </Typography.Text>
+                                      </Tooltip>
+                                    );
+                                  })}
+                                </div>
+                              </Collapse.Panel>
+                            ))}
+                          </Collapse>
+                        ) : (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={t("settings.formula_fields.formula.reference_picker.no_results")}
+                          />
+                        )}
                       </div>
                     </div>
                   </Space>

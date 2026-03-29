@@ -1,4 +1,4 @@
-import { PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
 import {
   Button,
@@ -61,6 +61,11 @@ interface FieldHolder {
   is_new: boolean;
 }
 
+type FormulaFieldEditRequest = {
+  key: string;
+  nonce: number;
+};
+
 const canEditField = (dataIndex: string, isNew: boolean) => {
   if (isNew) {
     return true;
@@ -70,15 +75,14 @@ const canEditField = (dataIndex: string, isNew: boolean) => {
 
 const EditableCell = ({ record, editing, dataIndex, children, form, ...restProps }: EditableCellProps) => {
   const t = useTranslate();
+  const mergedCellStyle = {
+    ...(restProps.style || {}),
+    wordBreak: "break-word" as const,
+  };
 
   if (!editing || !canEditField(dataIndex, record.is_new)) {
     return (
-      <td
-        {...restProps}
-        style={{
-          wordBreak: "break-word",
-        }}
-      >
+      <td {...restProps} style={mergedCellStyle}>
         {children}
       </td>
     );
@@ -293,7 +297,11 @@ const EditableCell = ({ record, editing, dataIndex, children, form, ...restProps
     </Form.Item>
   ) : null;
 
-  return <td {...restProps}>{formItem}</td>;
+  return (
+    <td {...restProps} style={mergedCellStyle}>
+      {formItem}
+    </td>
+  );
 };
 
 export function ExtraFieldsSettings() {
@@ -307,6 +315,7 @@ export function ExtraFieldsSettings() {
   const deleteField = useDeleteField(entityType as EntityType);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newField, setNewField] = useState<FieldHolder | null>(null);
+  const [formulaEditRequest, setFormulaEditRequest] = useState<FormulaFieldEditRequest | null>(null);
 
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -475,49 +484,67 @@ export function ExtraFieldsSettings() {
     });
     return dependencies;
   }, [derivedFields.data]);
+  const renderCodeValue = (value: string | number | boolean | null | undefined) => {
+    if (value == null || value === "") {
+      return <Typography.Text type="secondary">-</Typography.Text>;
+    }
+    return (
+      <Typography.Text code style={{ whiteSpace: "nowrap" }}>
+        {String(value)}
+      </Typography.Text>
+    );
+  };
   const columns: ColumnType<FieldHolder>[] = [
     {
-      title: t("settings.extra_fields.params.key"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.key")}</span>,
       dataIndex: ["field", "key"],
       key: "key",
-      width: "10%",
+      width: 132,
+      fixed: "left",
+      render: (value: string) => (
+        <Typography.Text code style={{ whiteSpace: "nowrap" }}>
+          {value}
+        </Typography.Text>
+      ),
     },
     {
-      title: t("settings.extra_fields.params.order"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.order")}</span>,
       dataIndex: ["field", "order"],
       key: "order",
-      width: "3%",
+      width: 72,
     },
     {
-      title: t("settings.extra_fields.params.name"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.name")}</span>,
       dataIndex: ["field", "name"],
+      width: 160,
     },
     {
-      title: t("settings.extra_fields.params.field_type"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.field_type")}</span>,
       dataIndex: ["field", "field_type"],
       render(value) {
-        return t(`settings.extra_fields.field_type.${value}`);
+        return renderCodeValue(value as string);
       },
-      width: "15%",
+      width: 108,
     },
     {
-      title: t("settings.extra_fields.params.unit"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.unit")}</span>,
       dataIndex: ["field", "unit"],
-      width: "6%",
+      width: 72,
+      render: (value) => renderCodeValue(value as string | undefined),
     },
     {
-      title: t("settings.extra_fields.params.default_value"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.default_value")}</span>,
       dataIndex: ["field", "default_value"],
       render(value, record) {
         const val = JSON.parse(value || "null");
         if (typeof val === "boolean") {
-          return val ? t("settings.extra_fields.boolean_true") : t("settings.extra_fields.boolean_false");
+          return renderCodeValue(val);
         } else if (typeof val === "string" && record.field.field_type === FieldType.datetime) {
-          return dayjs(val).format(dateTimeFormat);
+          return renderCodeValue(dayjs(val).format(dateTimeFormat));
         } else if (typeof val === "number" || typeof val === "string") {
-          return val;
+          return renderCodeValue(val);
         } else if (Array.isArray(val) && record.field.field_type === FieldType.choice) {
-          return val.join(", ");
+          return renderCodeValue(val.join(", "));
         } else if (
           Array.isArray(val) &&
           (record.field.field_type === FieldType.integer_range || record.field.field_type === FieldType.float_range)
@@ -527,63 +554,69 @@ export function ExtraFieldsSettings() {
           if (lower === "" && upper === "") {
             return null;
           }
-          return `${lower} \u2013 ${upper}`;
+          return renderCodeValue(`${lower} - ${upper}`);
         } else {
           return null;
         }
       },
-      width: "15%",
+      width: 132,
     },
     {
-      title: t("settings.extra_fields.params.choices"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.choices")}</span>,
       dataIndex: ["field", "choices"],
       render(value, record) {
         if (record.field.field_type === FieldType.choice && Array.isArray(value)) {
-          return value.join(", ");
+          return renderCodeValue(value.join(", "));
         } else {
           return null;
         }
       },
-      width: "15%",
+      width: 148,
     },
     {
-      title: t("settings.extra_fields.params.multi_choice"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.multi_choice")}</span>,
       dataIndex: ["field", "multi_choice"],
       render(value, record) {
         if (record.field.field_type === FieldType.choice) {
-          return value ? t("settings.extra_fields.boolean_true") : t("settings.extra_fields.boolean_false");
+          return renderCodeValue(Boolean(value));
         } else {
           return null;
         }
       },
-      width: "10%",
+      width: 108,
     },
     {
-      title: t("settings.extra_fields.params.referenced_in"),
+      title: <span style={{ whiteSpace: "nowrap" }}>{t("settings.extra_fields.params.referenced_in")}</span>,
       key: "referenced_in",
       render: (_: unknown, record: FieldHolder) => {
         const formulaDependencies = formulaDependenciesByCustomFieldKey[record.field.key] || [];
         if (formulaDependencies.length === 0) {
           return <Typography.Text type="secondary">{t("settings.extra_fields.referenced_in_none")}</Typography.Text>;
         }
-        const formulaDependencyList = formulaDependencies.map((item) => `${item.name} (${item.key})`).join(", ");
         return (
-          <Tooltip title={formulaDependencyList}>
-            <Typography.Text code>
-              {t("settings.extra_fields.referenced_in_count", { count: formulaDependencies.length })}
-            </Typography.Text>
-          </Tooltip>
+          <Flex vertical gap={4} align="flex-start">
+            {formulaDependencies.map((item) => (
+              <Tooltip key={item.key} title={item.name}>
+                <Typography.Link onClick={() => setFormulaEditRequest({ key: item.key, nonce: Date.now() })}>
+                  <Typography.Text code style={{ whiteSpace: "nowrap" }}>
+                    {item.key}
+                  </Typography.Text>
+                </Typography.Link>
+              </Tooltip>
+            ))}
+          </Flex>
         );
       },
-      width: "12%",
+      width: 132,
     },
     {
       title: "",
       dataIndex: "operation",
+      key: "operation",
       render: (_: unknown, record: FieldHolder) => {
         const editing = isEditing(record);
         return editing ? (
-          <Space>
+          <Space wrap={false}>
             <Button onClick={() => save(record)} size="small" type="primary">
               {t("buttons.save")}
             </Button>
@@ -593,10 +626,16 @@ export function ExtraFieldsSettings() {
           </Space>
         ) : (
           <>
-            <Space>
-              <Button disabled={editingKey !== ""} onClick={() => edit(record.field)} size="small">
-                {t("buttons.edit")}
-              </Button>
+            <Space wrap={false}>
+              <Tooltip title={t("buttons.edit")}>
+                <Button
+                  disabled={editingKey !== ""}
+                  icon={<EditOutlined />}
+                  onClick={() => edit(record.field)}
+                  size="small"
+                  type="text"
+                />
+              </Tooltip>
               {(() => {
                 const formulaDependencies = formulaDependenciesByCustomFieldKey[record.field.key] || [];
                 const hasFormulaDependencies = formulaDependencies.length > 0;
@@ -627,7 +666,9 @@ export function ExtraFieldsSettings() {
                 );
 
                 return (
-                  <Tooltip title={hasFormulaDependencies ? formulaDependencyList : undefined}>
+                  <Tooltip
+                    title={hasFormulaDependencies ? t("settings.extra_fields.delete_dependency_tooltip") : undefined}
+                  >
                     <span>
                       <Popconfirm
                         title={t("settings.extra_fields.delete_confirm", { name: record.field.name })}
@@ -637,9 +678,13 @@ export function ExtraFieldsSettings() {
                         okText={t("buttons.delete")}
                         cancelText={t("buttons.cancel")}
                       >
-                        <Button disabled={editingKey !== "" || hasFormulaDependencies} danger size="small">
-                          {t("buttons.delete")}
-                        </Button>
+                        <Button
+                          danger
+                          disabled={editingKey !== "" || hasFormulaDependencies}
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          type="text"
+                        />
                       </Popconfirm>
                     </span>
                   </Tooltip>
@@ -649,7 +694,8 @@ export function ExtraFieldsSettings() {
           </>
         );
       },
-      width: "10%",
+      width: 96,
+      fixed: "right",
     },
   ];
 
@@ -712,6 +758,8 @@ export function ExtraFieldsSettings() {
           loading={fields.isLoading}
           rowClassName="editable-row"
           pagination={false}
+          scroll={{ x: 1160 }}
+          sticky
         />
       </Form>
       {newField == null && (
@@ -728,7 +776,10 @@ export function ExtraFieldsSettings() {
           />
         </Flex>
       )}
-      <FormulaFieldsSettings />
+      <FormulaFieldsSettings
+        editRequest={formulaEditRequest}
+        onEditRequestHandled={() => setFormulaEditRequest(null)}
+      />
       {contextHolder}
     </>
   );

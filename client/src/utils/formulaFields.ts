@@ -24,12 +24,14 @@ export const FORMULA_HELPERS: FormulaHelperDefinition[] = [
     name: "min",
     description: "Returns the smallest value from the provided arguments.",
     category: "math",
+    reference_count: 2,
     reference_kind: "number",
   },
   {
     name: "max",
     description: "Returns the largest value from the provided arguments.",
     category: "math",
+    reference_count: 2,
     reference_kind: "number",
   },
   {
@@ -42,9 +44,16 @@ export const FORMULA_HELPERS: FormulaHelperDefinition[] = [
     name: "coalesce",
     description: "Returns the first argument that is not null/undefined.",
     category: "math",
+    reference_count: 2,
     reference_kind: "any",
   },
-  { name: "cat", description: "Concatenates values as text.", category: "text", reference_kind: "any" },
+  {
+    name: "cat",
+    description: "Concatenates values as text.",
+    category: "text",
+    reference_count: 2,
+    reference_kind: "any",
+  },
   { name: "upper", description: "Converts text to uppercase.", category: "text", reference_kind: "text" },
   { name: "lower", description: "Converts text to lowercase.", category: "text", reference_kind: "text" },
   {

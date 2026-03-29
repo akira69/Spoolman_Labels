@@ -28,12 +28,24 @@ const BUILT_IN_FIELD_DEFINITIONS: Record<BuiltInEntity, BuiltInFieldDefinition[]
   spool: [
     { key: "id", type: "integer", intent: "Stable system identifier for this spool record." },
     { key: "registered", type: "datetime", intent: "UTC timestamp for when the spool was first created in Spoolman." },
-    { key: "first_used", type: "datetime", intent: "UTC timestamp of the first tracked filament usage event on this spool." },
-    { key: "last_used", type: "datetime", intent: "UTC timestamp of the most recent tracked usage event on this spool." },
+    {
+      key: "first_used",
+      type: "datetime",
+      intent: "UTC timestamp of the first tracked filament usage event on this spool.",
+    },
+    {
+      key: "last_used",
+      type: "datetime",
+      intent: "UTC timestamp of the most recent tracked usage event on this spool.",
+    },
     { key: "filament", type: "choice", intent: "Linked filament profile this physical spool belongs to." },
     { key: "price", type: "float", intent: "Effective price for this spool, used for cost tracking and reporting." },
     { key: "initial_weight", type: "float", intent: "Starting net filament weight for this specific spool instance." },
-    { key: "spool_weight", type: "float", intent: "Empty spool weight override used for measured-weight calculations." },
+    {
+      key: "spool_weight",
+      type: "float",
+      intent: "Empty spool weight override used for measured-weight calculations.",
+    },
     { key: "remaining_weight", type: "float", intent: "Current estimated net filament remaining on the spool." },
     { key: "used_weight", type: "float", intent: "Current estimated net filament consumed from the spool." },
     { key: "remaining_length", type: "float", intent: "Current estimated filament length remaining on the spool." },
@@ -41,7 +53,11 @@ const BUILT_IN_FIELD_DEFINITIONS: Record<BuiltInEntity, BuiltInFieldDefinition[]
     { key: "location", type: "text", intent: "Storage or printer location label for organizing spool inventory." },
     { key: "lot_nr", type: "text", intent: "Manufacturer lot identifier used for traceability and color consistency." },
     { key: "comment", type: "text", intent: "Free-form operator notes for this spool." },
-    { key: "archived", type: "boolean", intent: "Archive status flag used to hide inactive spools from normal workflows." },
+    {
+      key: "archived",
+      type: "boolean",
+      intent: "Archive status flag used to hide inactive spools from normal workflows.",
+    },
   ],
   filament: [
     { key: "id", type: "integer", intent: "Stable system identifier for this filament profile." },
@@ -59,7 +75,11 @@ const BUILT_IN_FIELD_DEFINITIONS: Record<BuiltInEntity, BuiltInFieldDefinition[]
     { key: "settings_bed_temp", type: "integer", intent: "Reference bed temperature for print profile setup." },
     { key: "color_hex", type: "text", intent: "Primary hex color used for UI display and swatches." },
     { key: "multi_color_hexes", type: "text", intent: "Hex color list for multi-color filament definitions." },
-    { key: "multi_color_direction", type: "choice", intent: "Multi-color layout mode, such as coextruded or longitudinal." },
+    {
+      key: "multi_color_direction",
+      type: "choice",
+      intent: "Multi-color layout mode, such as coextruded or longitudinal.",
+    },
     { key: "external_id", type: "text", intent: "Provider-specific identifier for external filament databases." },
     { key: "comment", type: "text", intent: "Free-form notes about this filament profile." },
   ],
@@ -261,12 +281,10 @@ export const Help = () => {
       <section id="extra-fields">
         {renderLevel3Heading("Extra Fields", 24)}
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel4Style }}>
-          Extra fields let you store additional data directly and define user-maintained derived values across
-          entities.
+          Extra fields let you store additional data directly and define user-maintained derived values across entities.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel4Style }}>
-          Configure definitions in{" "}
-          <Link to="/settings/extra/spool">Settings → Extra Fields → Spools</Link>,{" "}
+          Configure definitions in <Link to="/settings/extra/spool">Settings → Extra Fields → Spools</Link>,{" "}
           <Link to="/settings/extra/filament">Filaments</Link>, and{" "}
           <Link to="/settings/extra/vendor">Manufacturers</Link>.
         </Paragraph>
@@ -280,12 +298,12 @@ export const Help = () => {
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel5Style }}>
           Supported types include <Text code>text</Text>, <Text code>integer</Text>, <Text code>integer_range</Text>,{" "}
-          <Text code>float</Text>, <Text code>float_range</Text>, <Text code>datetime</Text>,{" "}
-          <Text code>boolean</Text>, and <Text code>choice</Text>.
+          <Text code>float</Text>, <Text code>float_range</Text>, <Text code>datetime</Text>, <Text code>boolean</Text>,
+          and <Text code>choice</Text>.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel5Style }}>
-          In custom extra fields, key and type are immutable after creation. For choice fields, existing choices and
-          the multi-choice mode are also immutable. Deleting a field removes its data from all records.
+          In custom extra fields, key and type are immutable after creation. For choice fields, existing choices and the
+          multi-choice mode are also immutable. Deleting a field removes its data from all records.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel5Style }}>
           Keys should stay stable because APIs and integrations use them as identifiers. Default values apply only to
@@ -306,9 +324,9 @@ export const Help = () => {
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel5Style }}>
           Configure them in <Link to="/settings/extra/spool">Settings → Extra Fields</Link> for Spools, Filaments, or
-          Manufacturers. In <Text strong>Formula Extra Fields</Text>, click <Text code>+</Text>, build your JSON
-          expression, then validate with <Text code>Sample Values (JSON)</Text> and <Text code>Refresh</Text> before
-          saving.
+          Manufacturers. In <Text strong>Formula Extra Fields</Text>, click <Text code>+</Text>, write your JSON
+          expression in the editor, then validate with <Text code>Sample Values (JSON)</Text> and{" "}
+          <Text code>Refresh</Text> before saving.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel5Style }}>
           In each formula field editor, <Text strong>Display In</Text> uses visible checkboxes for{" "}
@@ -320,9 +338,8 @@ export const Help = () => {
           Template/API integrations use the key path <Text code>{`derived.<key>`}</Text>.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel5Style }}>
-          Entity responses include only field-level API opt-ins under a <Text code>derived</Text> object when
-          derived output is requested by the endpoint. Each field key is exposed as{" "}
-          <Text code>{`derived.<key>`}</Text>.
+          Entity responses include only field-level API opt-ins under a <Text code>derived</Text> object when derived
+          output is requested by the endpoint. Each field key is exposed as <Text code>{`derived.<key>`}</Text>.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel5Style }}>
           Formula values are computed when records are loaded and are not stored as dedicated database columns. Dynamic
@@ -334,22 +351,21 @@ export const Help = () => {
           JSON Logic
         </Title>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          Token groups are clickable inserts that speed up authoring and reduce JSON syntax mistakes.
+          The editor is JSON-first. The reference area below the editor groups available field references, operators,
+          and helpers so you can search, inspect examples, and copy exact values while composing your expression.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          <Text strong>Field References</Text> insert JSON Logic variable objects. For example,{" "}
-          <Text code>{`{weight}`}</Text> inserts <Text code>{`{"var":"weight"}`}</Text> and{" "}
-          <Text code>{`{extra.purchase_date}`}</Text> inserts <Text code>{`{"var":"extra.purchase_date"}`}</Text>.
+          <Text strong>Field References</Text> expose the exact variable paths available to the selected entity. For
+          example, <Text code>{`weight`}</Text> maps to <Text code>{`{"var":"weight"}`}</Text> and{" "}
+          <Text code>{`extra.purchase_date`}</Text> maps to <Text code>{`{"var":"extra.purchase_date"}`}</Text>.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          <Text strong>Operators</Text> insert operator templates, and <Text strong>Helper Functions</Text> insert
-          helper templates that can be completed with compatible field references.
+          <Text strong>Operators</Text> and <Text strong>Helper Functions</Text> show valid JSON examples you can copy
+          into the editor, then adjust as needed for your formula.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          Helper insertion is staged: click a helper first, then click the required compatible references. While a
-          helper is pending, incompatible helper/reference tokens are visible but dimmed. Use <Text code>X</Text> to
-          cancel pending helper selection, or <Text code>Helper only</Text> to insert that helper with placeholder
-          inputs.
+          Use the search box to filter references by short name or full path. Clicking an item copies its reference path
+          or JSON example so you can paste it into the raw editor without retyping.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
           Formula-to-formula references are not supported. Build nested JSON Logic in a single formula instead of
@@ -357,13 +373,12 @@ export const Help = () => {
           <Text code>{`derived.<key>`}</Text>.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          On wider layouts, operators are shown in a right-side panel next to the JSON editor and can be collapsed or
-          expanded. On narrow layouts, operators are hidden from the panel and can still be entered directly in JSON.
+          The grouped reference area can be collapsed if you want to focus only on the editor and preview panels.
         </Paragraph>
         <Row gutter={[16, 16]} align="top" style={nestedLevel6Style}>
           <Col xs={24} xl={12}>
             <Title id="formula-token-groups" level={5} style={{ marginTop: 0, marginBottom: 8 }}>
-              Token Groups
+              Available JSON References, Operators, and Helpers
             </Title>
             <div
               style={{
@@ -436,9 +451,9 @@ export const Help = () => {
               Concrete Examples
             </Title>
             <Paragraph type="secondary" style={{ ...sectionBodyStyle, marginBottom: 12 }}>
-              Variables come from available field references for the selected entity, including built-in fields
-              (for example <Text code>{`{created_at}`}</Text>) and custom fields
-              (for example <Text code>{`{extra.purchase_date}`}</Text>).
+              Variables come from available field references for the selected entity, including built-in fields (for
+              example <Text code>{`created_at`}</Text>) and custom fields (for example{" "}
+              <Text code>{`extra.purchase_date`}</Text>).
             </Paragraph>
             <Space direction="vertical" size={10} style={{ width: "100%" }}>
               <div
@@ -515,7 +530,10 @@ export const Help = () => {
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
           <Text code>Sample Values (JSON)</Text> must be a valid JSON object used only for preview/testing. Use plain
           keys without braces, and match keys to your <Text code>{`{"var":"..."}`}</Text> references. Example:{" "}
-          <Text code>{`{"weight": 1000, "remaining_weight": 225, "created_at": "2026-02-28T10:15:00Z", "color_hex": "#FF00FF"}`}</Text>.
+          <Text
+            code
+          >{`{"weight": 1000, "remaining_weight": 225, "created_at": "2026-02-28T10:15:00Z", "color_hex": "#FF00FF"}`}</Text>
+          .
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
           The editor also shows detected references from your expression and auto-scaffolds missing sample-value keys
@@ -536,11 +554,17 @@ export const Help = () => {
           </a>
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          Choose where each formula appears: <Text code>Show Pages</Text> (record details),{" "}
-          <Text code>Tables</Text> (table/list pages), and <Text code>Template Selections</Text>{" "}
-          (label/title/filename templates).
+          Choose where each formula appears: <Text code>Show Pages</Text> (record details), <Text code>Tables</Text>{" "}
+          (table/list pages), and <Text code>Template Selections</Text> (label/title/filename templates).
         </Paragraph>
-        <ul style={{ margin: "0 0 16px 56px", color: token.colorTextSecondary, lineHeight: 1.7, fontSize: token.fontSize }}>
+        <ul
+          style={{
+            margin: "0 0 16px 56px",
+            color: token.colorTextSecondary,
+            lineHeight: 1.7,
+            fontSize: token.fontSize,
+          }}
+        >
           <li>
             <Text code>Tables</Text> controls whether the formula appears in list/table pages at all.
           </li>
