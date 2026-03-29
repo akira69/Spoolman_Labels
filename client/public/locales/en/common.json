@@ -460,7 +460,11 @@
                 "reference_picker": {
                     "label": "Field References",
                     "placeholder": "Pick a field to insert as a reference",
-                    "help": "Click field references to insert them directly. Helper functions require you to select compatible references first. Both built-in fields and custom extra fields are available."
+                    "search_placeholder": "Search fields or paths",
+                    "help": "Search by short field name or full path, then insert from compact grouped sections. The full reference path is preserved in the generated JSON.",
+                    "current_scope": "Current",
+                    "related_scope": "Related",
+                    "no_results": "No field references match this search."
                 },
                 "json_builder": {
                     "operators_title": "Insert Tokens",

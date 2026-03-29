@@ -9,6 +9,7 @@ import {
   MenuUnfoldOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
+  SearchOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
@@ -16,6 +17,7 @@ import {
   Button,
   Checkbox,
   Col,
+  Collapse,
   Divider,
   Empty,
   Flex,
@@ -35,7 +37,16 @@ import {
   theme,
 } from "antd";
 import { ColumnType } from "antd/es/table";
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link, useParams } from "react-router";
 import {
   FORMULA_HELPER_GROUPS,
@@ -57,6 +68,7 @@ import {
   usePreviewDerivedField,
   useSetDerivedField,
 } from "../../utils/queryFields";
+import { useSavedState } from "../../utils/saveload";
 
 const BUILTIN_REFERENCE_SUGGESTIONS: Record<EntityType, string[]> = {
   vendor: ["id", "registered", "created_at", "name", "comment", "empty_spool_weight", "external_id"],
@@ -230,6 +242,170 @@ type PendingHelperHintState = {
   stepLabelKey?: string;
 };
 type FormulaResultTypeHint = "number" | "text" | "boolean" | "date" | "datetime" | "time" | "unknown";
+type ReferencePickerGroupDefinition = {
+  key: string;
+  labelType: "entity" | "extra";
+  entityType: EntityType;
+  source: "builtin" | "extra";
+  prefix: string;
+  excludedPrefixes?: string[];
+  defaultExpanded: boolean;
+  scope: "current" | "related";
+};
+type ReferencePickerOption = {
+  value: string;
+  label: string;
+  fullLabel: string;
+  searchText: string;
+};
+type ReferencePickerGroup = ReferencePickerGroupDefinition & {
+  label: string;
+  references: ReferencePickerOption[];
+};
+
+const REFERENCE_PICKER_GROUPS: Record<EntityType, ReferencePickerGroupDefinition[]> = {
+  vendor: [
+    {
+      key: "vendor-builtins",
+      labelType: "entity",
+      entityType: EntityType.vendor,
+      source: "builtin",
+      prefix: "",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "vendor-extra",
+      labelType: "extra",
+      entityType: EntityType.vendor,
+      source: "extra",
+      prefix: "extra.",
+      defaultExpanded: true,
+      scope: "current",
+    },
+  ],
+  filament: [
+    {
+      key: "filament-builtins",
+      labelType: "entity",
+      entityType: EntityType.filament,
+      source: "builtin",
+      prefix: "",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "filament-extra",
+      labelType: "extra",
+      entityType: EntityType.filament,
+      source: "extra",
+      prefix: "extra.",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "vendor-builtins",
+      labelType: "entity",
+      entityType: EntityType.vendor,
+      source: "builtin",
+      prefix: "vendor.",
+      excludedPrefixes: ["vendor.extra."],
+      defaultExpanded: false,
+      scope: "related",
+    },
+    {
+      key: "vendor-extra",
+      labelType: "extra",
+      entityType: EntityType.vendor,
+      source: "extra",
+      prefix: "vendor.extra.",
+      defaultExpanded: false,
+      scope: "related",
+    },
+  ],
+  spool: [
+    {
+      key: "spool-builtins",
+      labelType: "entity",
+      entityType: EntityType.spool,
+      source: "builtin",
+      prefix: "",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "spool-extra",
+      labelType: "extra",
+      entityType: EntityType.spool,
+      source: "extra",
+      prefix: "extra.",
+      defaultExpanded: true,
+      scope: "current",
+    },
+    {
+      key: "filament-builtins",
+      labelType: "entity",
+      entityType: EntityType.filament,
+      source: "builtin",
+      prefix: "filament.",
+      excludedPrefixes: ["filament.extra.", "filament.vendor."],
+      defaultExpanded: false,
+      scope: "related",
+    },
+    {
+      key: "filament-extra",
+      labelType: "extra",
+      entityType: EntityType.filament,
+      source: "extra",
+      prefix: "filament.extra.",
+      defaultExpanded: false,
+      scope: "related",
+    },
+    {
+      key: "vendor-builtins",
+      labelType: "entity",
+      entityType: EntityType.vendor,
+      source: "builtin",
+      prefix: "filament.vendor.",
+      excludedPrefixes: ["filament.vendor.extra."],
+      defaultExpanded: false,
+      scope: "related",
+    },
+    {
+      key: "vendor-extra",
+      labelType: "extra",
+      entityType: EntityType.vendor,
+      source: "extra",
+      prefix: "filament.vendor.extra.",
+      defaultExpanded: false,
+      scope: "related",
+    },
+  ],
+};
+
+function getDefaultExpandedReferenceGroups(entityType: EntityType): string[] {
+  return REFERENCE_PICKER_GROUPS[entityType].filter((group) => group.defaultExpanded).map((group) => group.key);
+}
+
+function referenceMatchesGroup(reference: string, group: ReferencePickerGroupDefinition): boolean {
+  if (group.source === "extra") {
+    return reference.startsWith(group.prefix);
+  }
+  if (group.prefix === "") {
+    return !reference.includes(".");
+  }
+  if (!reference.startsWith(group.prefix)) {
+    return false;
+  }
+  return !(group.excludedPrefixes || []).some((prefix) => reference.startsWith(prefix));
+}
+
+function compactReferenceLabel(reference: string, prefix: string): string {
+  if (!prefix) {
+    return reference;
+  }
+  return reference.startsWith(prefix) ? reference.slice(prefix.length) : reference;
+}
 
 // Resolve the current IF guided-insert prompt step so the yellow helper hint can
 // explicitly tell users what token click is expected next.
@@ -695,6 +871,7 @@ function toDerivedFieldType(typeHint: FormulaResultTypeHint): DerivedFieldType |
 
 export function FormulaFieldsSettings() {
   const { entityType } = useParams<{ entityType: EntityType }>();
+  const selectedEntityType = entityType as EntityType;
   const t = useTranslate();
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
@@ -705,9 +882,17 @@ export function FormulaFieldsSettings() {
   const [previewErrorText, setPreviewErrorText] = useState<string | null>(null);
   const [pendingJsonHelperInsert, setPendingJsonHelperInsert] = useState<PendingHelperInsertState | null>(null);
   const [pendingOperatorInsert, setPendingOperatorInsert] = useState<PendingOperatorInsertState | null>(null);
-  const [operatorPanelCollapsed, setOperatorPanelCollapsed] = useState(false);
-  const [tokensPanelCollapsed, setTokensPanelCollapsed] = useState(false);
+  const [operatorPanelCollapsedByEntity, setOperatorPanelCollapsedByEntity] = useSavedState<
+    Partial<Record<EntityType, boolean>>
+  >("formula-fields-operator-panel-collapsed", {});
+  const [tokensPanelCollapsedByEntity, setTokensPanelCollapsedByEntity] = useSavedState<
+    Partial<Record<EntityType, boolean>>
+  >("formula-fields-builder-collapsed", {});
+  const [expandedReferenceGroupsByEntity, setExpandedReferenceGroupsByEntity] = useSavedState<
+    Partial<Record<EntityType, string[]>>
+  >("formula-fields-reference-groups", {});
   const [hoveredTokenId, setHoveredTokenId] = useState<string | null>(null);
+  const [referenceSearch, setReferenceSearch] = useState("");
   const [sampleValuesAutoUpdateEnabled, setSampleValuesAutoUpdateEnabled] = useState(true);
   const [derivedForm] = Form.useForm();
   const expressionJsonEditorRef = useRef<EditorView | null>(null);
@@ -717,8 +902,12 @@ export function FormulaFieldsSettings() {
   // Track only auto-scaffolded sample references so we can safely prune stale transient
   // keys without deleting user-authored sample keys.
   const autoManagedSampleReferencesRef = useRef<Set<string>>(new Set());
+  const deferredReferenceSearch = useDeferredValue(referenceSearch.trim().toLowerCase());
 
-  const selectedEntityType = entityType as EntityType;
+  const operatorPanelCollapsed = operatorPanelCollapsedByEntity[selectedEntityType] ?? false;
+  const tokensPanelCollapsed = tokensPanelCollapsedByEntity[selectedEntityType] ?? false;
+  const expandedReferenceGroupKeys =
+    expandedReferenceGroupsByEntity[selectedEntityType] ?? getDefaultExpandedReferenceGroups(selectedEntityType);
   const niceName = t(`${selectedEntityType}.${selectedEntityType}`);
   const sectionBodyStyle = { marginTop: 0, fontSize: token.fontSize, lineHeight: 1.7 };
   const tokenPanelStyle = useMemo(
@@ -766,21 +955,14 @@ export function FormulaFieldsSettings() {
     }),
     [tokenListStyle],
   );
-  const referenceGridStyle = useMemo(
+  const referenceGroupTokenListStyle = useMemo<CSSProperties>(
     () => ({
-      display: "grid",
-      // Keep references dense while predictable: 4 columns on desktop, 3/2 on medium widths, 1 on mobile.
-      gridTemplateColumns:
-        screens.lg || screens.xl || screens.xxl
-          ? "repeat(4, minmax(0, 1fr))"
-          : screens.md
-            ? "repeat(3, minmax(0, 1fr))"
-            : screens.sm
-              ? "repeat(2, minmax(0, 1fr))"
-              : "repeat(1, minmax(0, 1fr))",
+      display: "flex",
+      flexWrap: "wrap",
       gap: 6,
+      alignItems: "flex-start",
     }),
-    [screens.lg, screens.md, screens.sm, screens.xl, screens.xxl],
+    [],
   );
   const isDesktopLayout = Boolean(screens.lg || screens.xl || screens.xxl);
   const isDesktopOperatorPanel = isDesktopLayout;
@@ -939,8 +1121,13 @@ export function FormulaFieldsSettings() {
     [t],
   );
   const keyLooksLikeReservedToken = useMemo(() => RESERVED_DERIVED_KEY_NAMES.has(derivedKeyValue), [derivedKeyValue]);
-
   const sampleValuesPlaceholder = SAMPLE_VALUE_PLACEHOLDERS[selectedEntityType];
+
+  useEffect(() => {
+    if (!derivedModalOpen) {
+      setReferenceSearch("");
+    }
+  }, [derivedModalOpen]);
 
   const labeledField = (labelKey: string, tooltipKey: string) => (
     <Space size={4}>
@@ -982,13 +1169,58 @@ export function FormulaFieldsSettings() {
       }) as Record<string, Field>,
     [configuredFields.data, filamentConfiguredFields.data, vendorConfiguredFields.data],
   );
-  const compactReferenceOptions = useMemo(
+  const referenceGroups = useMemo<ReferencePickerGroup[]>(() => {
+    const entityNames: Record<EntityType, string> = {
+      vendor: t("vendor.vendor"),
+      filament: t("filament.filament"),
+      spool: t("spool.spool"),
+    };
+
+    return REFERENCE_PICKER_GROUPS[selectedEntityType]
+      .map((group) => {
+        const groupLabel =
+          group.labelType === "entity"
+            ? entityNames[group.entityType]
+            : `${entityNames[group.entityType]} ${t("settings.extra_fields.tab")}`;
+
+        const references = referenceOptions
+          .filter((reference) => referenceMatchesGroup(reference, group))
+          .map((reference) => {
+            const shortLabel = compactReferenceLabel(reference, group.prefix);
+            return {
+              value: reference,
+              label: shortLabel,
+              fullLabel: `{${reference}}`,
+              searchText: `${shortLabel} ${reference}`.toLowerCase(),
+            };
+          });
+
+        return {
+          ...group,
+          label: groupLabel,
+          references,
+        };
+      })
+      .filter((group) => group.references.length > 0);
+  }, [referenceOptions, selectedEntityType, t]);
+  const filteredReferenceGroups = useMemo(() => {
+    if (!deferredReferenceSearch) {
+      return referenceGroups;
+    }
+
+    return referenceGroups
+      .map((group) => ({
+        ...group,
+        references: group.references.filter((reference) => reference.searchText.includes(deferredReferenceSearch)),
+      }))
+      .filter((group) => group.references.length > 0);
+  }, [deferredReferenceSearch, referenceGroups]);
+  const visibleReferenceGroupKeys = useMemo(
     () =>
-      referenceOptions.map((reference) => ({
-        value: reference,
-        label: `{${reference}}`,
-      })),
-    [referenceOptions],
+      deferredReferenceSearch
+        ? [...new Set([...expandedReferenceGroupKeys, ...filteredReferenceGroups.map((group) => group.key)])]
+        : expandedReferenceGroupKeys,
+    [deferredReferenceSearch, expandedReferenceGroupKeys, filteredReferenceGroups],
   );
   // Keep parsed expression state explicit so reference syncing only mutates sample JSON
   // when the editor content is valid JSON (invalid typing states should not generate keys).
@@ -2517,7 +2749,12 @@ export function FormulaFieldsSettings() {
                           type="default"
                           size="small"
                           icon={showInlineOperatorPanel ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
-                          onClick={() => setOperatorPanelCollapsed((current) => !current)}
+                          onClick={() =>
+                            setOperatorPanelCollapsedByEntity((current) => ({
+                              ...current,
+                              [selectedEntityType]: !(current[selectedEntityType] ?? false),
+                            }))
+                          }
                           aria-label={
                             showInlineOperatorPanel
                               ? t("settings.formula_fields.formula.json_builder.hide_operators")
@@ -2589,7 +2826,12 @@ export function FormulaFieldsSettings() {
                     size="small"
                     type="default"
                     icon={tokensPanelCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                    onClick={() => setTokensPanelCollapsed((current) => !current)}
+                    onClick={() =>
+                      setTokensPanelCollapsedByEntity((current) => ({
+                        ...current,
+                        [selectedEntityType]: !(current[selectedEntityType] ?? false),
+                      }))
+                    }
                     aria-label={
                       tokensPanelCollapsed
                         ? t("settings.formula_fields.formula.json_builder.show_tokens")
@@ -2662,97 +2904,141 @@ export function FormulaFieldsSettings() {
                       <div style={{ marginTop: 6 }}>{renderHelperTokenGroups(true)}</div>
                     </div>
                     <div style={{ paddingTop: 4 }}>
-                      <Flex align="center" gap={8}>
-                        <Typography.Text type="secondary">
-                          <strong>{t("settings.formula_fields.formula.reference_picker.label")}</strong>
-                        </Typography.Text>
-                        <Tooltip title={t("settings.formula_fields.formula.json_builder.click_to_insert_help")}>
-                          <QuestionCircleOutlined style={{ fontSize: "0.9em" }} />
-                        </Tooltip>
+                      <Flex justify="space-between" align="center" gap={8} wrap>
+                        <Space size={8} align="center">
+                          <Typography.Text type="secondary">
+                            <strong>{t("settings.formula_fields.formula.reference_picker.label")}</strong>
+                          </Typography.Text>
+                          <Tooltip title={t("settings.formula_fields.formula.reference_picker.help")}>
+                            <QuestionCircleOutlined style={{ fontSize: "0.9em" }} />
+                          </Tooltip>
+                        </Space>
+                        <Input
+                          allowClear
+                          size="small"
+                          value={referenceSearch}
+                          onChange={(event) => setReferenceSearch(event.target.value)}
+                          placeholder={t("settings.formula_fields.formula.reference_picker.search_placeholder")}
+                          prefix={<SearchOutlined />}
+                          style={{ width: isDesktopLayout ? 260 : "100%" }}
+                        />
                       </Flex>
                       <div style={{ ...tokenCategoryStyle, marginTop: 6 }}>
-                        <div style={referenceGridStyle}>
-                          {compactReferenceOptions.map((reference) => {
-                            const referenceCompatible = isReferenceCompatibleWithPendingHelper(reference.value);
-                            const isSelectedForPendingHelper = Boolean(
-                              pendingJsonHelperInsert?.selectedOperands.some(
-                                (operand) => operand.kind === "reference" && operand.value === reference.value,
-                              ),
-                            );
-                            const disabledReason =
-                              !referenceCompatible && pendingHelperDefinition
-                                ? t("settings.formula_fields.formula.json_builder.reference_incompatible_reason", {
-                                    helper: pendingHelperDefinition.name,
-                                  })
-                                : null;
-                            const referenceToken = (
-                              <Typography.Text
-                                code
-                                style={{
-                                  cursor: disabledReason ? "not-allowed" : "pointer",
-                                  opacity: disabledReason ? 0.45 : 1,
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  textAlign: "center",
-                                  fontWeight: 500,
-                                  color: isSelectedForPendingHelper
-                                    ? token.colorPrimaryText
-                                    : !disabledReason && hoveredTokenId === `reference-${reference.value}`
-                                      ? token.colorWarningText
-                                      : undefined,
-                                  background:
-                                    !disabledReason && hoveredTokenId === `reference-${reference.value}`
-                                      ? token.colorWarningBg
-                                      : undefined,
-                                  borderColor:
-                                    !disabledReason && hoveredTokenId === `reference-${reference.value}`
-                                      ? token.colorWarningBorder
-                                      : undefined,
-                                  transition: "all 120ms ease-out",
-                                }}
-                                onMouseEnter={
-                                  !disabledReason ? () => setHoveredTokenId(`reference-${reference.value}`) : undefined
-                                }
-                                onMouseLeave={
-                                  !disabledReason
-                                    ? () =>
-                                        setHoveredTokenId((current) =>
-                                          current === `reference-${reference.value}` ? null : current,
-                                        )
-                                    : undefined
-                                }
-                                onClick={
-                                  !disabledReason ? () => insertExpressionJsonReference(reference.value) : undefined
+                        {filteredReferenceGroups.length > 0 ? (
+                          <Collapse
+                            ghost
+                            size="small"
+                            activeKey={visibleReferenceGroupKeys}
+                            onChange={(keys) => {
+                              const nextKeys = Array.isArray(keys) ? keys : [keys];
+                              setExpandedReferenceGroupsByEntity((current) => ({
+                                ...current,
+                                [selectedEntityType]: nextKeys,
+                              }));
+                            }}
+                          >
+                            {filteredReferenceGroups.map((group) => (
+                              <Collapse.Panel
+                                key={group.key}
+                                header={
+                                  <Flex justify="space-between" align="center" gap={8} wrap>
+                                    <Space size={8} wrap>
+                                      <Typography.Text strong>{group.label}</Typography.Text>
+                                      <Tag bordered={false}>{group.references.length}</Tag>
+                                    </Space>
+                                    <Space size={6} wrap>
+                                      <Tag bordered={false}>
+                                        {t(
+                                          group.scope === "current"
+                                            ? "settings.formula_fields.formula.reference_picker.current_scope"
+                                            : "settings.formula_fields.formula.reference_picker.related_scope",
+                                        )}
+                                      </Tag>
+                                      {group.source === "extra" ? (
+                                        <Tag color="gold" bordered={false}>
+                                          {t("settings.extra_fields.tab")}
+                                        </Tag>
+                                      ) : null}
+                                    </Space>
+                                  </Flex>
                                 }
                               >
-                                {reference.label}
-                              </Typography.Text>
-                            );
-                            // Keep a stable wrapper shape for all reference tokens so disabled/tooltip states
-                            // do not cause reflow when helper compatibility changes.
-                            const content = (
-                              <Tooltip title={disabledReason || undefined}>
-                                <span style={{ display: "inline-flex", justifyContent: "center" }}>
-                                  {referenceToken}
-                                </span>
-                              </Tooltip>
-                            );
-                            return (
-                              <div
-                                key={`reference-cell-${reference.value}`}
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                  minHeight: 24,
-                                }}
-                              >
-                                {content}
-                              </div>
-                            );
-                          })}
-                        </div>
+                                <div style={referenceGroupTokenListStyle}>
+                                  {group.references.map((reference) => {
+                                    const referenceCompatible = isReferenceCompatibleWithPendingHelper(reference.value);
+                                    const isSelectedForPendingHelper = Boolean(
+                                      pendingJsonHelperInsert?.selectedOperands.some(
+                                        (operand) => operand.kind === "reference" && operand.value === reference.value,
+                                      ),
+                                    );
+                                    const disabledReason =
+                                      !referenceCompatible && pendingHelperDefinition
+                                        ? t(
+                                            "settings.formula_fields.formula.json_builder.reference_incompatible_reason",
+                                            {
+                                              helper: pendingHelperDefinition.name,
+                                            },
+                                          )
+                                        : null;
+                                    const tooltipTitle = disabledReason || reference.fullLabel;
+                                    return (
+                                      <Tooltip key={`reference-cell-${reference.value}`} title={tooltipTitle}>
+                                        <Typography.Text
+                                          code
+                                          style={{
+                                            cursor: disabledReason ? "not-allowed" : "pointer",
+                                            opacity: disabledReason ? 0.45 : 1,
+                                            whiteSpace: "nowrap",
+                                            fontWeight: 500,
+                                            color: isSelectedForPendingHelper
+                                              ? token.colorPrimaryText
+                                              : !disabledReason && hoveredTokenId === `reference-${reference.value}`
+                                                ? token.colorWarningText
+                                                : undefined,
+                                            background:
+                                              !disabledReason && hoveredTokenId === `reference-${reference.value}`
+                                                ? token.colorWarningBg
+                                                : undefined,
+                                            borderColor:
+                                              !disabledReason && hoveredTokenId === `reference-${reference.value}`
+                                                ? token.colorWarningBorder
+                                                : undefined,
+                                            transition: "all 120ms ease-out",
+                                          }}
+                                          onMouseEnter={
+                                            !disabledReason
+                                              ? () => setHoveredTokenId(`reference-${reference.value}`)
+                                              : undefined
+                                          }
+                                          onMouseLeave={
+                                            !disabledReason
+                                              ? () =>
+                                                  setHoveredTokenId((current) =>
+                                                    current === `reference-${reference.value}` ? null : current,
+                                                  )
+                                              : undefined
+                                          }
+                                          onClick={
+                                            !disabledReason
+                                              ? () => insertExpressionJsonReference(reference.value)
+                                              : undefined
+                                          }
+                                        >
+                                          {reference.label}
+                                        </Typography.Text>
+                                      </Tooltip>
+                                    );
+                                  })}
+                                </div>
+                              </Collapse.Panel>
+                            ))}
+                          </Collapse>
+                        ) : (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={t("settings.formula_fields.formula.reference_picker.no_results")}
+                          />
+                        )}
                       </div>
                     </div>
                   </Space>
