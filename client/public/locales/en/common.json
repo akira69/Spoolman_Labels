@@ -462,7 +462,7 @@
                     "label": "Field References",
                     "placeholder": "Pick a field reference",
                     "search_placeholder": "Search fields or paths",
-                    "help": "Search by short field name or full path, then copy the exact reference path from grouped sections while writing JSON manually.",
+                    "help": "Search by short field name or full path, then copy the exact reference path from grouped sections while writing JSON manually. Current-entity extra fields are supported alongside built-in related-entity references.",
                     "helper_compatible": "Compatible Inputs",
                     "no_helper_selected": "No token selected",
                     "no_helper_selected_help": "Choose a token above to see compatible field inputs across all reference groups.",
