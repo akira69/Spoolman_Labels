@@ -342,7 +342,8 @@
                 "order": "Order",
                 "default_value": "Default Value",
                 "choices": "Choices",
-                "multi_choice": "Multi Choice"
+                "multi_choice": "Multi Choice",
+                "referenced_in": "Referenced In"
             },
             "field_type": {
                 "text": "Text",
@@ -361,6 +362,9 @@
             "key_not_changed": "Please change the key to something else.",
             "delete_confirm": "Delete field {{name}}?",
             "delete_confirm_description": "This will delete the field and all associated data for all entities.",
+            "referenced_in_none": "None",
+            "referenced_in_count": "{{count}} formula field",
+            "referenced_in_count_other": "{{count}} formula fields",
             "delete_dependency_warning_intro": "Deleting this custom field will make dependent fields inoperable:",
             "delete_dependency_warning_formula": "Formula extra fields: {{dependencies}}",
             "delete_dependency_warning_footer": "These entries remain saved, but behavior depending on this field will fail until references are updated."

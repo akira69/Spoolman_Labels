@@ -61,16 +61,18 @@ async def get_derived(
     responses={400: {"model": Message}},
 )
 async def preview_derived(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
     entity_type: Annotated[EntityType, Path(description="Entity type this derived field is for")],
     body: DerivedFieldPreviewRequest,
 ) -> DerivedFieldPreviewResponse | JSONResponse:
-    # The route stays entity-scoped for UI symmetry, but preview validation is intentionally pure:
-    # it only checks expression syntax/helpers against sample values and does not read entity data.
-    del entity_type
     try:
+        extra_field_keys = {field.key for field in await get_extra_fields(db, entity_type)}
         return preview_derived_payload(
+            entity_type=entity_type,
             expression_json=body.expression_json,
             sample_values=body.sample_values,
+            extra_field_keys=extra_field_keys,
+            result_type=body.result_type,
         )
     except ValueError as exc:
         return JSONResponse(status_code=400, content=Message(message=str(exc)).dict())
@@ -110,7 +112,8 @@ async def update_derived(
     "/derived/{entity_type}/{key}",
     name="Delete derived field",
     description=(
-        "Delete a derived field for a specific entity type. Returns the full list of derived fields for the entity type."
+        "Delete a derived field for a specific entity type. "
+        "Returns the full list of derived fields for the entity type."
     ),
     response_model_exclude_none=True,
     response_model=list[DerivedFieldDefinition],
@@ -194,6 +197,8 @@ async def delete(
 ) -> list[ExtraField] | JSONResponse:
     try:
         await delete_extra_field(db, entity_type, key)
+    except ValueError as exc:
+        return JSONResponse(status_code=400, content=Message(message=str(exc)).dict())
     except ItemNotFoundError:
         return JSONResponse(
             status_code=404,

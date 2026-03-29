@@ -1,5 +1,7 @@
 """User-defined derived fields with safe expression evaluation."""
 
+# ruff: noqa: ANN401, BLE001, C901, PERF203, PLR0911, PLR0912, PLR0915, PLR2004, TRY004
+
 import colorsys
 import json
 import logging
@@ -13,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from spoolman.database import setting as db_setting
 from spoolman.exceptions import ItemNotFoundError
-from spoolman.extra_fields import EntityType
+from spoolman.extra_fields import EntityType, get_extra_fields
 from spoolman.settings import parse_setting
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,10 @@ class DerivedFieldType(Enum):
 
     number = "number"
     text = "text"
+    boolean = "boolean"
+    date = "date"
+    datetime = "datetime"
+    time = "time"
 
 
 class DerivedFieldDefinition(BaseModel):
@@ -69,6 +75,7 @@ class DerivedFieldPreviewRequest(BaseModel):
 
     expression_json: dict[str, Any] = Field(description="Derived expression in JSON Logic format")
     sample_values: dict[str, Any] = Field(default_factory=dict, description="Sample values keyed by field reference")
+    result_type: DerivedFieldType | None = Field(default=None, description="Expected result type for the preview")
 
 
 class DerivedFieldPreviewResponse(BaseModel):
@@ -206,6 +213,98 @@ JSON_LOGIC_ALLOWED_OPERATORS = {
     "hue_from_hex",
 }
 
+BUILTIN_REFERENCES: dict[EntityType, set[str]] = {
+    EntityType.vendor: {
+        "id",
+        "registered",
+        "created_at",
+        "name",
+        "comment",
+        "empty_spool_weight",
+        "external_id",
+        "extra",
+    },
+    EntityType.filament: {
+        "id",
+        "registered",
+        "created_at",
+        "name",
+        "material",
+        "price",
+        "density",
+        "diameter",
+        "weight",
+        "spool_weight",
+        "article_number",
+        "comment",
+        "settings_extruder_temp",
+        "settings_bed_temp",
+        "color_hex",
+        "multi_color_hexes",
+        "multi_color_direction",
+        "external_id",
+        "extra",
+        "vendor",
+        "vendor.id",
+        "vendor.registered",
+        "vendor.created_at",
+        "vendor.name",
+        "vendor.comment",
+        "vendor.empty_spool_weight",
+        "vendor.external_id",
+        "vendor.extra",
+    },
+    EntityType.spool: {
+        "id",
+        "weight",
+        "registered",
+        "created_at",
+        "first_used",
+        "last_used",
+        "price",
+        "initial_weight",
+        "spool_weight",
+        "remaining_weight",
+        "used_weight",
+        "remaining_length",
+        "used_length",
+        "location",
+        "lot_nr",
+        "comment",
+        "archived",
+        "extra",
+        "filament",
+        "filament.id",
+        "filament.registered",
+        "filament.created_at",
+        "filament.name",
+        "filament.material",
+        "filament.price",
+        "filament.density",
+        "filament.diameter",
+        "filament.weight",
+        "filament.spool_weight",
+        "filament.article_number",
+        "filament.comment",
+        "filament.settings_extruder_temp",
+        "filament.settings_bed_temp",
+        "filament.color_hex",
+        "filament.multi_color_hexes",
+        "filament.multi_color_direction",
+        "filament.external_id",
+        "filament.extra",
+        "filament.vendor",
+        "filament.vendor.id",
+        "filament.vendor.registered",
+        "filament.vendor.created_at",
+        "filament.vendor.name",
+        "filament.vendor.comment",
+        "filament.vendor.empty_spool_weight",
+        "filament.vendor.external_id",
+        "filament.vendor.extra",
+    },
+}
+
 
 def _normalize_json_logic_args(raw_value: Any) -> list[Any]:
     if isinstance(raw_value, list):
@@ -278,9 +377,137 @@ def _validate_json_logic_node(node: Any, references: set[str]) -> None:
 
 
 def validate_derived_expression_json(expression_json: dict[str, Any]) -> list[str]:
+    """Validate the JSON Logic structure and return referenced field paths."""
     references: set[str] = set()
     _validate_json_logic_node(expression_json, references)
     return sorted(references)
+
+
+def _validate_derived_references(
+    *,
+    entity_type: EntityType,
+    references: list[str],
+    extra_field_keys: set[str],
+) -> None:
+    allowed_references = BUILTIN_REFERENCES[entity_type]
+    invalid_references: list[str] = []
+    for reference in references:
+        if reference.startswith("extra."):
+            extra_field_key = reference[len("extra.") :]
+            if extra_field_key not in extra_field_keys:
+                invalid_references.append(reference)
+            continue
+        if reference not in allowed_references:
+            invalid_references.append(reference)
+    if invalid_references:
+        joined = ", ".join(sorted(set(invalid_references)))
+        raise ValueError(f"Unknown field reference(s): {joined}.")
+
+
+def _merge_inferred_types(types: list[DerivedFieldType | None]) -> DerivedFieldType | None:
+    known_types = [type_hint for type_hint in types if type_hint is not None]
+    if not known_types:
+        return None
+    first_type = known_types[0]
+    if all(type_hint == first_type for type_hint in known_types[1:]):
+        return first_type
+    return None
+
+
+def infer_derived_result_type(node: Any) -> DerivedFieldType | None:
+    """Infer a stable result type when the JSON Logic operator makes it explicit."""
+    if isinstance(node, bool):
+        return DerivedFieldType.boolean
+    if isinstance(node, (int, float)) and not isinstance(node, bool):
+        return DerivedFieldType.number
+    if isinstance(node, str):
+        return DerivedFieldType.text
+    if node is None or isinstance(node, list) or not isinstance(node, dict):
+        return None
+
+    items = list(node.items())
+    if len(items) != 1:
+        return None
+    operator, raw_args = items[0]
+    args = _normalize_json_logic_args(raw_args)
+
+    if operator == "var":
+        return None
+    if operator == "if":
+        branch_types = [infer_derived_result_type(args[index]) for index in range(1, len(args), 2)]
+        if len(args) % 2 == 1:
+            branch_types.append(infer_derived_result_type(args[-1]))
+        return _merge_inferred_types(branch_types)
+    if operator == "coalesce":
+        return _merge_inferred_types([infer_derived_result_type(arg) for arg in args])
+    if operator in {"==", "!=", "<", "<=", ">", ">=", "!", "and", "or"}:
+        return DerivedFieldType.boolean
+    if operator in {
+        "+",
+        "-",
+        "*",
+        "/",
+        "%",
+        "abs",
+        "min",
+        "max",
+        "round",
+        "floor",
+        "ceil",
+        "year",
+        "month",
+        "day",
+        "hour",
+        "minute",
+        "second",
+        "timestamp",
+        "days_between",
+        "hours_between",
+        "hue_from_hex",
+        "length",
+    }:
+        return DerivedFieldType.number
+    if operator in {"today", "date_only"}:
+        return DerivedFieldType.date
+    if operator == "time_only":
+        return DerivedFieldType.time
+    if operator in {"cat", "replace", "trim", "upper", "lower", "left", "right"}:
+        return DerivedFieldType.text
+    return None
+
+
+def _matches_derived_result_type(value: Any, result_type: DerivedFieldType) -> bool:
+    if result_type == DerivedFieldType.number:
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if result_type == DerivedFieldType.text:
+        return isinstance(value, str)
+    if result_type == DerivedFieldType.boolean:
+        return isinstance(value, bool)
+    if result_type == DerivedFieldType.date:
+        if not isinstance(value, str) or "T" in value:
+            return False
+        try:
+            date.fromisoformat(value)
+        except ValueError:
+            return False
+        return True
+    if result_type == DerivedFieldType.datetime:
+        if not isinstance(value, str) or "T" not in value:
+            return False
+        try:
+            _as_datetime(value)
+        except ValueError:
+            return False
+        return True
+    if result_type == DerivedFieldType.time:
+        if not isinstance(value, str):
+            return False
+        try:
+            time.fromisoformat(value)
+        except ValueError:
+            return False
+        return True
+    return False
 
 
 def _evaluate_json_logic(node: Any, scope: dict[str, Any]) -> Any:
@@ -420,25 +647,57 @@ def _evaluate_json_logic(node: Any, scope: dict[str, Any]) -> Any:
 def preview_derived_expression_json(
     expression_json: dict[str, Any],
     sample_values: dict[str, Any],
+    *,
+    result_type: DerivedFieldType | None = None,
 ) -> DerivedFieldPreviewResponse:
+    """Evaluate a preview payload and optionally enforce its configured result type."""
     references = validate_derived_expression_json(expression_json)
     try:
         result = _evaluate_json_logic(expression_json, sample_values)
     except Exception as exc:
         raise ValueError(str(exc)) from exc
+    if result_type is not None and not _matches_derived_result_type(result, result_type):
+        raise ValueError(f"Preview result does not match the configured result type '{result_type.value}'.")
     return DerivedFieldPreviewResponse(result=_normalize_preview_result(result), references=references)
 
 
 def preview_derived_payload(
     *,
+    entity_type: EntityType,
     expression_json: dict[str, Any],
     sample_values: dict[str, Any],
+    extra_field_keys: set[str],
+    result_type: DerivedFieldType | None = None,
 ) -> DerivedFieldPreviewResponse:
-    return preview_derived_expression_json(expression_json, sample_values)
+    """Validate references for the target entity and evaluate the preview."""
+    references = validate_derived_expression_json(expression_json)
+    _validate_derived_references(
+        entity_type=entity_type,
+        references=references,
+        extra_field_keys=extra_field_keys,
+    )
+    return preview_derived_expression_json(expression_json, sample_values, result_type=result_type)
 
 
-def _validate_expression_payload(expression_json: dict[str, Any]) -> None:
-    validate_derived_expression_json(expression_json)
+async def _validate_expression_payload(
+    db: AsyncSession,
+    entity_type: EntityType,
+    expression_json: dict[str, Any],
+    result_type: DerivedFieldType,
+) -> None:
+    references = validate_derived_expression_json(expression_json)
+    extra_field_keys = {field.key for field in await get_extra_fields(db, entity_type)}
+    _validate_derived_references(
+        entity_type=entity_type,
+        references=references,
+        extra_field_keys=extra_field_keys,
+    )
+    inferred_type = infer_derived_result_type(expression_json)
+    if inferred_type is not None and inferred_type != result_type:
+        raise ValueError(
+            "Expression result type "
+            f"'{inferred_type.value}' does not match configured result type '{result_type.value}'."
+        )
 
 
 def _parse_extra_field_value(value: Any) -> Any:
@@ -471,6 +730,12 @@ def _normalize_formula_scope(value: Any) -> Any:
             normalized["created_at"] = normalized["registered"]
         if "created_at" in normalized and "registered" not in normalized:
             normalized["registered"] = normalized["created_at"]
+        filament_payload = normalized.get("filament")
+        if isinstance(filament_payload, dict):
+            if "weight" not in normalized and "weight" in filament_payload:
+                normalized["weight"] = filament_payload["weight"]
+            if normalized.get("price") is None and "price" in filament_payload:
+                normalized["price"] = filament_payload["price"]
         return normalized
     if isinstance(value, list):
         return [_normalize_formula_scope(item) for item in value]
@@ -568,7 +833,7 @@ async def get_derived_fields_for_surface(
     return filtered_fields
 
 
-async def resolve_include_derived_in_api(db: AsyncSession, include_derived: bool | None) -> bool:
+async def resolve_include_derived_in_api(db: AsyncSession, *, include_derived: bool | None) -> bool:
     """Resolve per-request include_derived with a settings-level default."""
     if include_derived is not None:
         return include_derived
@@ -597,7 +862,12 @@ async def add_or_update_derived_field(
     db: AsyncSession, entity_type: EntityType, derived_field: DerivedFieldDefinition
 ) -> None:
     """Create or update a derived field."""
-    _validate_expression_payload(derived_field.expression_json)
+    await _validate_expression_payload(
+        db,
+        entity_type,
+        derived_field.expression_json,
+        derived_field.result_type,
+    )
 
     existing = await get_derived_fields(db, entity_type)
     next_fields = [field for field in existing if field.key != derived_field.key]

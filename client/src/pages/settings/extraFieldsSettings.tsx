@@ -13,6 +13,7 @@ import {
   Select,
   Space,
   Table,
+  Tooltip,
   Typography,
   message,
   theme,
@@ -558,6 +559,25 @@ export function ExtraFieldsSettings() {
       width: "10%",
     },
     {
+      title: t("settings.extra_fields.params.referenced_in"),
+      key: "referenced_in",
+      render: (_: unknown, record: FieldHolder) => {
+        const formulaDependencies = formulaDependenciesByCustomFieldKey[record.field.key] || [];
+        if (formulaDependencies.length === 0) {
+          return <Typography.Text type="secondary">{t("settings.extra_fields.referenced_in_none")}</Typography.Text>;
+        }
+        const formulaDependencyList = formulaDependencies.map((item) => `${item.name} (${item.key})`).join(", ");
+        return (
+          <Tooltip title={formulaDependencyList}>
+            <Typography.Text code>
+              {t("settings.extra_fields.referenced_in_count", { count: formulaDependencies.length })}
+            </Typography.Text>
+          </Tooltip>
+        );
+      },
+      width: "12%",
+    },
+    {
       title: "",
       dataIndex: "operation",
       render: (_: unknown, record: FieldHolder) => {
@@ -580,13 +600,17 @@ export function ExtraFieldsSettings() {
               {(() => {
                 const formulaDependencies = formulaDependenciesByCustomFieldKey[record.field.key] || [];
                 const hasFormulaDependencies = formulaDependencies.length > 0;
-                const formulaDependencyList = formulaDependencies.map((item) => `${item.name} (${item.key})`).join(", ");
+                const formulaDependencyList = formulaDependencies
+                  .map((item) => `${item.name} (${item.key})`)
+                  .join(", ");
                 const confirmDescription = hasFormulaDependencies ? (
                   <Space direction="vertical" size={4}>
                     <Typography.Text>
                       {t("settings.extra_fields.delete_confirm_description", { name: record.field.name })}
                     </Typography.Text>
-                    <Typography.Text type="danger">{t("settings.extra_fields.delete_dependency_warning_intro")}</Typography.Text>
+                    <Typography.Text type="danger">
+                      {t("settings.extra_fields.delete_dependency_warning_intro")}
+                    </Typography.Text>
                     {hasFormulaDependencies && (
                       <Typography.Text code>
                         {t("settings.extra_fields.delete_dependency_warning_formula", {
@@ -594,25 +618,31 @@ export function ExtraFieldsSettings() {
                         })}
                       </Typography.Text>
                     )}
-                    <Typography.Text type="danger">{t("settings.extra_fields.delete_dependency_warning_footer")}</Typography.Text>
+                    <Typography.Text type="danger">
+                      {t("settings.extra_fields.delete_dependency_warning_footer")}
+                    </Typography.Text>
                   </Space>
                 ) : (
                   t("settings.extra_fields.delete_confirm_description", { name: record.field.name })
                 );
 
                 return (
-                  <Popconfirm
-                    title={t("settings.extra_fields.delete_confirm", { name: record.field.name })}
-                    description={confirmDescription}
-                    onConfirm={() => del(record.field)}
-                    disabled={editingKey !== ""}
-                    okText={t("buttons.delete")}
-                    cancelText={t("buttons.cancel")}
-                  >
-                    <Button disabled={editingKey !== ""} danger size="small">
-                      {t("buttons.delete")}
-                    </Button>
-                  </Popconfirm>
+                  <Tooltip title={hasFormulaDependencies ? formulaDependencyList : undefined}>
+                    <span>
+                      <Popconfirm
+                        title={t("settings.extra_fields.delete_confirm", { name: record.field.name })}
+                        description={confirmDescription}
+                        onConfirm={() => del(record.field)}
+                        disabled={editingKey !== "" || hasFormulaDependencies}
+                        okText={t("buttons.delete")}
+                        cancelText={t("buttons.cancel")}
+                      >
+                        <Button disabled={editingKey !== "" || hasFormulaDependencies} danger size="small">
+                          {t("buttons.delete")}
+                        </Button>
+                      </Popconfirm>
+                    </span>
+                  </Tooltip>
                 );
               })()}
             </Space>
@@ -664,12 +694,11 @@ export function ExtraFieldsSettings() {
         {t("settings.extra_fields.custom.header")}: {niceName}
       </Divider>
       <Typography.Paragraph type="secondary" style={sectionBodyStyle}>
-        {t("settings.extra_fields.custom.description_intro")} (
-        <Typography.Text code>text</Typography.Text>, <Typography.Text code>integer</Typography.Text>,{" "}
-        <Typography.Text code>integer_range</Typography.Text>, <Typography.Text code>float</Typography.Text>,{" "}
-        <Typography.Text code>float_range</Typography.Text>, <Typography.Text code>datetime</Typography.Text>,{" "}
-        <Typography.Text code>boolean</Typography.Text>, <Typography.Text code>choice</Typography.Text>).{" "}
-        {t("settings.extra_fields.custom.description_immutability")}
+        {t("settings.extra_fields.custom.description_intro")} (<Typography.Text code>text</Typography.Text>,{" "}
+        <Typography.Text code>integer</Typography.Text>, <Typography.Text code>integer_range</Typography.Text>,{" "}
+        <Typography.Text code>float</Typography.Text>, <Typography.Text code>float_range</Typography.Text>,{" "}
+        <Typography.Text code>datetime</Typography.Text>, <Typography.Text code>boolean</Typography.Text>,{" "}
+        <Typography.Text code>choice</Typography.Text>). {t("settings.extra_fields.custom.description_immutability")}
       </Typography.Paragraph>
       <Form form={form} component={false} disabled={isSubmitting}>
         <Table

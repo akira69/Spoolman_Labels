@@ -59,14 +59,89 @@ import {
 } from "../../utils/queryFields";
 
 const BUILTIN_REFERENCE_SUGGESTIONS: Record<EntityType, string[]> = {
-  vendor: ["id", "name", "registered", "comment"],
-  filament: ["id", "name", "material", "price", "density", "weight", "color_hex", "comment", "registered"],
-  spool: ["id", "weight", "remaining_weight", "used_weight", "price", "lot_nr", "comment", "registered"],
+  vendor: ["id", "registered", "created_at", "name", "comment", "empty_spool_weight", "external_id"],
+  filament: [
+    "id",
+    "registered",
+    "created_at",
+    "name",
+    "material",
+    "price",
+    "density",
+    "diameter",
+    "weight",
+    "spool_weight",
+    "article_number",
+    "comment",
+    "settings_extruder_temp",
+    "settings_bed_temp",
+    "color_hex",
+    "multi_color_hexes",
+    "multi_color_direction",
+    "external_id",
+    "vendor.id",
+    "vendor.registered",
+    "vendor.created_at",
+    "vendor.name",
+    "vendor.comment",
+    "vendor.empty_spool_weight",
+    "vendor.external_id",
+  ],
+  spool: [
+    "id",
+    "weight",
+    "registered",
+    "created_at",
+    "first_used",
+    "last_used",
+    "price",
+    "initial_weight",
+    "spool_weight",
+    "remaining_weight",
+    "used_weight",
+    "remaining_length",
+    "used_length",
+    "location",
+    "lot_nr",
+    "comment",
+    "archived",
+    "filament.id",
+    "filament.registered",
+    "filament.created_at",
+    "filament.name",
+    "filament.material",
+    "filament.price",
+    "filament.density",
+    "filament.diameter",
+    "filament.weight",
+    "filament.spool_weight",
+    "filament.article_number",
+    "filament.comment",
+    "filament.settings_extruder_temp",
+    "filament.settings_bed_temp",
+    "filament.color_hex",
+    "filament.multi_color_hexes",
+    "filament.multi_color_direction",
+    "filament.external_id",
+    "filament.vendor.id",
+    "filament.vendor.registered",
+    "filament.vendor.created_at",
+    "filament.vendor.name",
+    "filament.vendor.comment",
+    "filament.vendor.empty_spool_weight",
+    "filament.vendor.external_id",
+  ],
 };
 const SAMPLE_VALUE_PLACEHOLDERS: Record<EntityType, string> = {
   vendor: '{"name": "Example Vendor", "registered": "2026-02-28T10:15:00Z"}',
   filament: '{"weight": 482.36, "material": "PLA", "registered": "2026-02-28T10:15:00Z", "color_hex": "#FF00FF"}',
-  spool: '{"weight": 482.36, "remaining_weight": 225.12, "registered": "2026-02-28T10:15:00Z"}',
+  spool:
+    '{"weight": 482.36, "remaining_weight": 225.12, "registered": "2026-02-28T10:15:00Z", "filament": {"weight": 1000, "price": 24.99, "color_hex": "#FF00FF", "vendor": {"name": "Example Vendor"}}}',
+};
+const EXTRA_REFERENCE_PREFIXES: Record<EntityType, string[]> = {
+  vendor: ["extra."],
+  filament: ["extra.", "vendor.extra."],
+  spool: ["extra.", "filament.extra.", "filament.vendor.extra."],
 };
 const JSON_LOGIC_OPERATOR_GROUPS: Array<{ key: string; operators: string[] }> = [
   { key: "logical", operators: ["if", "and", "or", "!"] },
@@ -154,7 +229,7 @@ type PendingHelperHintState = {
   allowHelperOnly: boolean;
   stepLabelKey?: string;
 };
-type FormulaResultTypeHint = "number" | "text" | "boolean" | "unknown";
+type FormulaResultTypeHint = "number" | "text" | "boolean" | "date" | "datetime" | "time" | "unknown";
 
 // Resolve the current IF guided-insert prompt step so the yellow helper hint can
 // explicitly tell users what token click is expected next.
@@ -583,12 +658,14 @@ function inferExpressionJsonType(node: unknown): FormulaResultTypeHint {
     return "number";
   }
 
-  if (
-    ["date_only", "time_only", "today", "cat", "concat", "replace", "trim", "upper", "lower", "left", "right"].includes(
-      operator,
-    )
-  ) {
+  if (["cat", "concat", "replace", "trim", "upper", "lower", "left", "right"].includes(operator)) {
     return "text";
+  }
+  if (["date_only", "today"].includes(operator)) {
+    return "date";
+  }
+  if (operator === "time_only") {
+    return "time";
   }
 
   return "unknown";
@@ -600,6 +677,18 @@ function toDerivedFieldType(typeHint: FormulaResultTypeHint): DerivedFieldType |
   }
   if (typeHint === "text") {
     return DerivedFieldType.text;
+  }
+  if (typeHint === "boolean") {
+    return DerivedFieldType.boolean;
+  }
+  if (typeHint === "date") {
+    return DerivedFieldType.date;
+  }
+  if (typeHint === "datetime") {
+    return DerivedFieldType.datetime;
+  }
+  if (typeHint === "time") {
+    return DerivedFieldType.time;
   }
   return null;
 }
@@ -824,6 +913,8 @@ export function FormulaFieldsSettings() {
   ]);
   const derivedFields = useGetDerivedFields(selectedEntityType);
   const configuredFields = useGetFields(selectedEntityType);
+  const filamentConfiguredFields = useGetFields(EntityType.filament);
+  const vendorConfiguredFields = useGetFields(EntityType.vendor);
   const setDerivedField = useSetDerivedField(selectedEntityType);
   const deleteDerivedField = useDeleteDerivedField(selectedEntityType);
   const previewDerivedField = usePreviewDerivedField(selectedEntityType);
@@ -861,17 +952,35 @@ export function FormulaFieldsSettings() {
   );
 
   const referenceOptions = useMemo(() => {
-    const extraReferences = (configuredFields.data || []).map((field) => `extra.${field.key}`);
+    const extraReferenceGroups: string[] = [];
+    EXTRA_REFERENCE_PREFIXES[selectedEntityType].forEach((prefix) => {
+      if (prefix === "extra.") {
+        (configuredFields.data || []).forEach((field) => extraReferenceGroups.push(`${prefix}${field.key}`));
+      } else if (prefix === "filament.extra.") {
+        (filamentConfiguredFields.data || []).forEach((field) => extraReferenceGroups.push(`${prefix}${field.key}`));
+      } else if (prefix === "filament.vendor.extra." || prefix === "vendor.extra.") {
+        (vendorConfiguredFields.data || []).forEach((field) => extraReferenceGroups.push(`${prefix}${field.key}`));
+      }
+    });
     // Suggest both built-in fields and configured extra fields so users can compose formulas
     // without memorizing the exact reference syntax for each entity.
-    return [...new Set([...BUILTIN_REFERENCE_SUGGESTIONS[selectedEntityType], ...extraReferences])];
-  }, [configuredFields.data, selectedEntityType]);
+    return [...new Set([...BUILTIN_REFERENCE_SUGGESTIONS[selectedEntityType], ...extraReferenceGroups])];
+  }, [configuredFields.data, filamentConfiguredFields.data, selectedEntityType, vendorConfiguredFields.data]);
   const configuredFieldByReference = useMemo(
     () =>
-      Object.fromEntries(
-        (configuredFields.data || []).map((field) => [`extra.${field.key}`, field] as const),
-      ) as Record<string, Field>,
-    [configuredFields.data],
+      ({
+        ...Object.fromEntries((configuredFields.data || []).map((field) => [`extra.${field.key}`, field] as const)),
+        ...Object.fromEntries(
+          (filamentConfiguredFields.data || []).map((field) => [`filament.extra.${field.key}`, field] as const),
+        ),
+        ...Object.fromEntries(
+          (vendorConfiguredFields.data || []).map((field) => [`vendor.extra.${field.key}`, field] as const),
+        ),
+        ...Object.fromEntries(
+          (vendorConfiguredFields.data || []).map((field) => [`filament.vendor.extra.${field.key}`, field] as const),
+        ),
+      }) as Record<string, Field>,
+    [configuredFields.data, filamentConfiguredFields.data, vendorConfiguredFields.data],
   );
   const compactReferenceOptions = useMemo(
     () =>
@@ -905,6 +1014,20 @@ export function FormulaFieldsSettings() {
       return null;
     }
   }, [sampleValuesValue]);
+  const currentDerivedResultType = useMemo(() => {
+    const inferredType = parsedExpressionJson
+      ? toDerivedFieldType(inferExpressionJsonType(parsedExpressionJson))
+      : null;
+    if (inferredType) {
+      return inferredType;
+    }
+    if (editingDerivedKey) {
+      return (
+        derivedFields.data?.find((field) => field.key === editingDerivedKey)?.result_type ?? DerivedFieldType.number
+      );
+    }
+    return DerivedFieldType.number;
+  }, [derivedFields.data, editingDerivedKey, parsedExpressionJson]);
   const missingSampleValueReferences = useMemo(() => {
     if (!parsedSampleValues) {
       return [] as string[];
@@ -1714,18 +1837,12 @@ export function FormulaFieldsSettings() {
       }
       // Keep backend contract intact without exposing Result Type controls in the editor:
       // infer from JSON when possible, otherwise preserve existing type (edit) or default new fields.
-      const inferredType = toDerivedFieldType(inferExpressionJsonType(expressionJson));
-      const existingType = editingDerivedKey
-        ? derivedFields.data?.find((field) => field.key === editingDerivedKey)?.result_type
-        : undefined;
-      const persistedResultType = inferredType ?? existingType ?? DerivedFieldType.number;
-
       await setDerivedField.mutateAsync({
         key,
         params: {
           name: values.name,
           description: values.description || undefined,
-          result_type: persistedResultType,
+          result_type: currentDerivedResultType,
           expression_json: expressionJson,
           surfaces: values.surfaces,
           // List-surface formula fields are always hideable through Hide Columns. Persist this
@@ -1810,6 +1927,7 @@ export function FormulaFieldsSettings() {
         const preview = await previewDerivedField.mutateAsync({
           expression_json: expressionJson,
           sample_values: sampleValues,
+          result_type: currentDerivedResultType,
         });
 
         if (requestId !== previewRequestRef.current) {
@@ -1832,7 +1950,7 @@ export function FormulaFieldsSettings() {
         }
       }
     },
-    [derivedForm, messageApi, previewDerivedField, t],
+    [currentDerivedResultType, derivedForm, messageApi, previewDerivedField, t],
   );
 
   // Apply one synchronization pass between expression refs and sample JSON.

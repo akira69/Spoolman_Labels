@@ -8,7 +8,7 @@ import pytest
 from ..conftest import URL, assert_httpx_success
 
 
-def _set_api_include_derived(enabled: bool | None) -> None:
+def _set_api_include_derived(*, enabled: bool | None) -> None:
     if enabled is None:
         result = httpx.post(f"{URL}/api/v1/setting/api_include_derived_fields", json="")
     else:
@@ -19,7 +19,7 @@ def _set_api_include_derived(enabled: bool | None) -> None:
     assert_httpx_success(result)
 
 
-def _create_spool_formula_field(key: str, *, include_in_api: bool) -> None:
+def _create_spool_formula_field(key: str, *, include_in_api: bool, surfaces: list[str] | None = None) -> None:
     create_result = httpx.post(
         f"{URL}/api/v1/field/derived/spool/{key}",
         json={
@@ -27,7 +27,7 @@ def _create_spool_formula_field(key: str, *, include_in_api: bool) -> None:
             "description": "Created by integration test",
             "result_type": "number",
             "expression_json": {"+": [{"var": "used_weight"}, {"var": "remaining_weight"}]},
-            "surfaces": ["show", "list"],
+            "surfaces": surfaces or ["show", "list"],
             "allow_list_column_toggle": False,
             "include_in_api": include_in_api,
         },
@@ -58,7 +58,7 @@ def test_spool_api_include_derived_toggle(random_filament: dict[str, Any]):
     spool = spool_create.json()
 
     try:
-        _set_api_include_derived(None)
+        _set_api_include_derived(enabled=None)
 
         default_response = httpx.get(f"{URL}/api/v1/spool/{spool['id']}")
         assert_httpx_success(default_response)
@@ -70,7 +70,7 @@ def test_spool_api_include_derived_toggle(random_filament: dict[str, Any]):
         assert explicit_enabled_payload["derived"][key] == pytest.approx(1000)
         assert hidden_key not in explicit_enabled_payload["derived"]
 
-        _set_api_include_derived(True)
+        _set_api_include_derived(enabled=True)
 
         default_enabled_response = httpx.get(f"{URL}/api/v1/spool/{spool['id']}")
         assert_httpx_success(default_enabled_response)
@@ -95,4 +95,38 @@ def test_spool_api_include_derived_toggle(random_filament: dict[str, Any]):
         httpx.delete(f"{URL}/api/v1/spool/{spool['id']}").raise_for_status()
         _delete_spool_formula_field(hidden_key)
         _delete_spool_formula_field(key)
-        _set_api_include_derived(None)
+        _set_api_include_derived(enabled=None)
+
+
+def test_spool_api_include_derived_is_independent_of_ui_surfaces(random_filament: dict[str, Any]):
+    """API exposure should use include_in_api even when the formula is template-only."""
+    key = "api_template_only"
+    _create_spool_formula_field(key, include_in_api=True, surfaces=["template"])
+
+    spool_create = httpx.post(
+        f"{URL}/api/v1/spool",
+        json={
+            "filament_id": random_filament["id"],
+            "remaining_weight": 800,
+        },
+    )
+    assert_httpx_success(spool_create)
+    spool = spool_create.json()
+
+    try:
+        explicit_enabled_response = httpx.get(f"{URL}/api/v1/spool/{spool['id']}", params={"include_derived": "true"})
+        assert_httpx_success(explicit_enabled_response)
+        explicit_enabled_payload = explicit_enabled_response.json()
+        assert explicit_enabled_payload["derived"][key] == pytest.approx(1000)
+
+        list_enabled_response = httpx.get(
+            f"{URL}/api/v1/spool",
+            params={"filament.id": str(random_filament["id"]), "include_derived": "true"},
+        )
+        assert_httpx_success(list_enabled_response)
+        list_payload = list_enabled_response.json()
+        matching_spool = next(item for item in list_payload if item["id"] == spool["id"])
+        assert matching_spool["derived"][key] == pytest.approx(1000)
+    finally:
+        httpx.delete(f"{URL}/api/v1/spool/{spool['id']}").raise_for_status()
+        _delete_spool_formula_field(key)

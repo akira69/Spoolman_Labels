@@ -315,11 +315,11 @@ async def find(
         limit=limit,
         offset=offset,
     )
-    include_derived_resolved = await resolve_include_derived_in_api(db, include_derived)
+    include_derived_resolved = await resolve_include_derived_in_api(db, include_derived=include_derived)
     payload: list[Spool] = []
-    # List endpoints should only evaluate fields configured for list/table surfaces.
+    # API exposure is field-level via include_in_api and is not coupled to UI surfaces.
     derived_fields = (
-        await get_derived_fields_for_surface(db, EntityType.spool, "list", api_enabled_only=True)
+        await get_derived_fields_for_surface(db, EntityType.spool, None, api_enabled_only=True)
         if include_derived_resolved
         else []
     )
@@ -391,10 +391,9 @@ async def get(
 ) -> Spool:
     db_item = await spool.get_by_id(db, spool_id)
     spool_payload = Spool.from_db(db_item)
-    include_derived_resolved = await resolve_include_derived_in_api(db, include_derived)
+    include_derived_resolved = await resolve_include_derived_in_api(db, include_derived=include_derived)
     if include_derived_resolved:
-        # Detail endpoints should evaluate show-surface formulas only.
-        derived_fields = await get_derived_fields_for_surface(db, EntityType.spool, "show", api_enabled_only=True)
+        derived_fields = await get_derived_fields_for_surface(db, EntityType.spool, None, api_enabled_only=True)
         if derived_fields:
             scope = build_formula_scope(spool_payload.model_dump(exclude_none=True))
             derived_values = evaluate_derived_fields_for_scope(

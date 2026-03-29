@@ -58,3 +58,56 @@ def test_preview_derived_json_logic_invalid_operator():
     )
     assert_httpx_code(result, 400)
     assert "not allowed" in result.json()["message"]
+
+
+def test_preview_derived_json_logic_unknown_reference():
+    """Preview should reject references that are not valid for the scoped entity."""
+    result = httpx.post(
+        f"{URL}/api/v1/field/derived/spool/preview",
+        json={
+            "expression_json": {"+": [{"var": "weight_typo"}, 1]},
+            "sample_values": {"weight_typo": 1},
+            "result_type": "number",
+        },
+    )
+    assert_httpx_code(result, 400)
+    assert "Unknown field reference" in result.json()["message"]
+
+
+def test_delete_extra_field_referenced_by_formula_is_blocked():
+    """Custom fields referenced by formulas must be removed from formulas before deletion."""
+    extra_key = "delete_guard_source"
+    formula_key = "delete_guard_formula"
+
+    create_extra_result = httpx.post(
+        f"{URL}/api/v1/field/spool/{extra_key}",
+        json={
+            "name": "Delete Guard Source",
+            "order": 1,
+            "field_type": "text",
+        },
+    )
+    assert_httpx_success(create_extra_result)
+
+    create_formula_result = httpx.post(
+        f"{URL}/api/v1/field/derived/spool/{formula_key}",
+        json={
+            "name": "Delete Guard Formula",
+            "description": "Created by integration test",
+            "result_type": "text",
+            "expression_json": {"cat": ["Value: ", {"var": f"extra.{extra_key}"}]},
+            "surfaces": ["show"],
+            "allow_list_column_toggle": False,
+        },
+    )
+    assert_httpx_success(create_formula_result)
+
+    try:
+        delete_extra_result = httpx.delete(f"{URL}/api/v1/field/spool/{extra_key}")
+        assert_httpx_code(delete_extra_result, 400)
+        assert formula_key in delete_extra_result.json()["message"]
+    finally:
+        delete_formula_result = httpx.delete(f"{URL}/api/v1/field/derived/spool/{formula_key}")
+        assert_httpx_success(delete_formula_result)
+        delete_extra_result = httpx.delete(f"{URL}/api/v1/field/spool/{extra_key}")
+        assert_httpx_success(delete_extra_result)

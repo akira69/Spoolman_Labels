@@ -47,6 +47,10 @@ export interface Field extends FieldParameters {
 export enum DerivedFieldType {
   number = "number",
   text = "text",
+  boolean = "boolean",
+  date = "date",
+  datetime = "datetime",
+  time = "time",
 }
 
 export interface DerivedFieldParameters {
@@ -234,9 +238,13 @@ export function usePreviewDerivedField(entity_type: EntityType) {
   return useMutation<
     DerivedFieldPreview,
     unknown,
-    { expression_json: Record<string, unknown>; sample_values: Record<string, unknown> }
+    {
+      expression_json: Record<string, unknown>;
+      sample_values: Record<string, unknown>;
+      result_type?: DerivedFieldType;
+    }
   >({
-    mutationFn: async ({ expression_json, sample_values }) => {
+    mutationFn: async ({ expression_json, sample_values, result_type }) => {
       const response = await fetch(`${getAPIURL()}/field/derived/${entity_type}/preview`, {
         method: "POST",
         headers: {
@@ -245,6 +253,7 @@ export function usePreviewDerivedField(entity_type: EntityType) {
         body: JSON.stringify({
           expression_json,
           sample_values,
+          result_type,
         }),
       });
 

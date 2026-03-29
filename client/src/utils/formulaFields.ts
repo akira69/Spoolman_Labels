@@ -20,26 +20,106 @@ export type FormulaHelperGroupDefinition = {
 
 export const FORMULA_HELPERS: FormulaHelperDefinition[] = [
   { name: "abs", description: "Returns the absolute value of a number.", category: "math", reference_kind: "number" },
-  { name: "min", description: "Returns the smallest value from the provided arguments.", category: "math", reference_kind: "number" },
-  { name: "max", description: "Returns the largest value from the provided arguments.", category: "math", reference_kind: "number" },
-  { name: "round", description: "Rounds a numeric value to the nearest integer.", category: "math", reference_kind: "number" },
-  { name: "coalesce", description: "Returns the first argument that is not null/undefined.", category: "math", reference_kind: "any" },
+  {
+    name: "min",
+    description: "Returns the smallest value from the provided arguments.",
+    category: "math",
+    reference_kind: "number",
+  },
+  {
+    name: "max",
+    description: "Returns the largest value from the provided arguments.",
+    category: "math",
+    reference_kind: "number",
+  },
+  {
+    name: "round",
+    description: "Rounds a numeric value to the nearest integer.",
+    category: "math",
+    reference_kind: "number",
+  },
+  {
+    name: "coalesce",
+    description: "Returns the first argument that is not null/undefined.",
+    category: "math",
+    reference_kind: "any",
+  },
   { name: "cat", description: "Concatenates values as text.", category: "text", reference_kind: "any" },
   { name: "upper", description: "Converts text to uppercase.", category: "text", reference_kind: "text" },
   { name: "lower", description: "Converts text to lowercase.", category: "text", reference_kind: "text" },
-  { name: "trim", description: "Removes leading/trailing whitespace from text.", category: "text", reference_kind: "text" },
+  {
+    name: "trim",
+    description: "Removes leading/trailing whitespace from text.",
+    category: "text",
+    reference_kind: "text",
+  },
   { name: "length", description: "Returns text length.", category: "text", reference_kind: "text" },
-  { name: "left", description: "Returns left-most text characters (optional count, default 1).", category: "text", reference_kind: "text" },
-  { name: "right", description: "Returns right-most text characters (optional count, default 1).", category: "text", reference_kind: "text" },
-  { name: "year", description: "Extracts UTC year from a date/datetime value.", category: "datetime", reference_kind: "datetime" },
-  { name: "month", description: "Extracts UTC month (1-12) from a date/datetime value.", category: "datetime", reference_kind: "datetime" },
-  { name: "day", description: "Extracts UTC day-of-month from a date/datetime value.", category: "datetime", reference_kind: "datetime" },
-  { name: "hour", description: "Extracts UTC hour from a date/datetime value.", category: "datetime", reference_kind: "datetime" },
-  { name: "minute", description: "Extracts UTC minute from a date/datetime value.", category: "datetime", reference_kind: "datetime" },
-  { name: "second", description: "Extracts UTC second from a date/datetime value.", category: "datetime", reference_kind: "datetime" },
-  { name: "timestamp", description: "Converts a date/datetime value to Unix timestamp seconds.", category: "datetime", reference_kind: "datetime" },
-  { name: "date_only", description: "Formats a date/datetime as YYYY-MM-DD (UTC).", category: "datetime", reference_kind: "datetime" },
-  { name: "time_only", description: "Formats a date/datetime as HH:MM:SS (UTC).", category: "datetime", reference_kind: "datetime" },
+  {
+    name: "left",
+    description: "Returns left-most text characters (optional count, default 1).",
+    category: "text",
+    reference_kind: "text",
+  },
+  {
+    name: "right",
+    description: "Returns right-most text characters (optional count, default 1).",
+    category: "text",
+    reference_kind: "text",
+  },
+  {
+    name: "year",
+    description: "Extracts UTC year from a date/datetime value.",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
+  {
+    name: "month",
+    description: "Extracts UTC month (1-12) from a date/datetime value.",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
+  {
+    name: "day",
+    description: "Extracts UTC day-of-month from a date/datetime value.",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
+  {
+    name: "hour",
+    description: "Extracts UTC hour from a date/datetime value.",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
+  {
+    name: "minute",
+    description: "Extracts UTC minute from a date/datetime value.",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
+  {
+    name: "second",
+    description: "Extracts UTC second from a date/datetime value.",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
+  {
+    name: "timestamp",
+    description: "Converts a date/datetime value to Unix timestamp seconds.",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
+  {
+    name: "date_only",
+    description: "Formats a date/datetime as YYYY-MM-DD (UTC).",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
+  {
+    name: "time_only",
+    description: "Formats a date/datetime as HH:MM:SS (UTC).",
+    category: "datetime",
+    reference_kind: "datetime",
+  },
   {
     name: "days_between",
     description: "Returns day difference between start and end date/datetime values.",
@@ -63,7 +143,14 @@ export const FORMULA_HELPERS: FormulaHelperDefinition[] = [
   { name: "today", description: "Returns current UTC date as YYYY-MM-DD.", category: "dynamic", insert_mode: "none" },
 ];
 
-export const FORMULA_HELPER_GROUP_ORDER: FormulaHelperCategory[] = ["math", "text", "datetime", "dynamic", "date_diff", "color"];
+export const FORMULA_HELPER_GROUP_ORDER: FormulaHelperCategory[] = [
+  "math",
+  "text",
+  "datetime",
+  "dynamic",
+  "date_diff",
+  "color",
+];
 
 export const FORMULA_HELPER_GROUPS: FormulaHelperGroupDefinition[] = FORMULA_HELPER_GROUP_ORDER.map((key) => ({
   key,
@@ -211,6 +298,14 @@ function normalizeFormulaScopeValue(value: unknown): unknown {
     }
     if ("created_at" in normalized && !("registered" in normalized)) {
       normalized.registered = normalized.created_at;
+    }
+    if (isRecord(normalized.filament)) {
+      if (!("weight" in normalized) && "weight" in normalized.filament) {
+        normalized.weight = normalized.filament.weight;
+      }
+      if ((!("price" in normalized) || normalized.price == null) && "price" in normalized.filament) {
+        normalized.price = normalized.filament.price;
+      }
     }
     return normalized;
   }

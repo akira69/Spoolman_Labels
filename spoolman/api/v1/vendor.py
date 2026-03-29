@@ -148,11 +148,11 @@ async def find(
         limit=limit,
         offset=offset,
     )
-    include_derived_resolved = await resolve_include_derived_in_api(db, include_derived)
+    include_derived_resolved = await resolve_include_derived_in_api(db, include_derived=include_derived)
     payload: list[Vendor] = []
-    # List endpoints should only evaluate fields configured for list/table surfaces.
+    # API exposure is field-level via include_in_api and is not coupled to UI surfaces.
     derived_fields = (
-        await get_derived_fields_for_surface(db, EntityType.vendor, "list", api_enabled_only=True)
+        await get_derived_fields_for_surface(db, EntityType.vendor, None, api_enabled_only=True)
         if include_derived_resolved
         else []
     )
@@ -223,10 +223,9 @@ async def get(
 ) -> Vendor:
     db_item = await vendor.get_by_id(db, vendor_id)
     vendor_payload = Vendor.from_db(db_item)
-    include_derived_resolved = await resolve_include_derived_in_api(db, include_derived)
+    include_derived_resolved = await resolve_include_derived_in_api(db, include_derived=include_derived)
     if include_derived_resolved:
-        # Detail endpoints should evaluate show-surface formulas only.
-        derived_fields = await get_derived_fields_for_surface(db, EntityType.vendor, "show", api_enabled_only=True)
+        derived_fields = await get_derived_fields_for_surface(db, EntityType.vendor, None, api_enabled_only=True)
         if derived_fields:
             scope = build_formula_scope(vendor_payload.model_dump(exclude_none=True))
             derived_values = evaluate_derived_fields_for_scope(

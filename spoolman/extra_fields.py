@@ -13,6 +13,7 @@ from spoolman.database import setting as db_setting
 from spoolman.database import spool as db_spool
 from spoolman.database import vendor as db_vendor
 from spoolman.exceptions import ItemNotFoundError
+from spoolman.formula_references import get_extra_field_references
 from spoolman.settings import parse_setting
 
 logger = logging.getLogger(__name__)
@@ -205,13 +206,37 @@ async def add_or_update_extra_field(db: AsyncSession, entity_type: EntityType, e
     logger.info("Added/updated extra field %s for entity type %s.", extra_field.key, entity_type.name)
 
 
-async def delete_extra_field(db: AsyncSession, entity_type: EntityType, key: str) -> None:
+async def delete_extra_field(db: AsyncSession, entity_type: EntityType, key: str) -> None:  # noqa: C901
     """Delete an extra field for a specific entity type."""
     extra_fields = await get_extra_fields(db, entity_type)
 
     # Check if the field exists
     if not any(field.key == key for field in extra_fields):
         raise ItemNotFoundError(f"Extra field with key {key} does not exist.")
+
+    derived_setting_def = parse_setting(f"derived_fields_{entity_type.name}")
+    try:
+        derived_setting = await db_setting.get(db, derived_setting_def)
+        derived_setting_value = derived_setting.value
+    except ItemNotFoundError:
+        derived_setting_value = derived_setting_def.default
+    derived_setting_array = json.loads(derived_setting_value)
+    dependent_derived_fields: list[str] = []
+    if isinstance(derived_setting_array, list):
+        for raw_field in derived_setting_array:
+            if not isinstance(raw_field, dict):
+                continue
+            expression_json = raw_field.get("expression_json")
+            if not isinstance(expression_json, dict):
+                continue
+            if key not in get_extra_field_references(expression_json):
+                continue
+            dependent_derived_fields.append(
+                f"{raw_field.get('name', raw_field.get('key', 'unknown'))} ({raw_field.get('key', 'unknown')})"
+            )
+    if dependent_derived_fields:
+        dependencies = ", ".join(dependent_derived_fields)
+        raise ValueError(f"Cannot delete extra field {key}; formula fields depend on it: {dependencies}.")
 
     extra_fields = [field for field in extra_fields if field.key != key]
 
