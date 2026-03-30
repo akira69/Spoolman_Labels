@@ -351,21 +351,28 @@ export const Help = () => {
           JSON Logic
         </Title>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          The editor is JSON-first. The reference area below the editor groups available field references, operators,
+          The editor is JSON-first. The reference-aid area below the editor groups available JSON references, operators,
           and helpers so you can search, inspect examples, and copy exact values while composing your expression.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          <Text strong>Field References</Text> expose the exact variable paths available to the selected entity. For
-          example, <Text code>{`weight`}</Text> maps to <Text code>{`{"var":"weight"}`}</Text> and{" "}
-          <Text code>{`extra.purchase_date`}</Text> maps to <Text code>{`{"var":"extra.purchase_date"}`}</Text>.
+          <Text strong>Field References</Text> expose the exact variable paths available to the selected entity. The
+          current entity includes both built-in fields and its own <Text code>extra.&lt;key&gt;</Text> fields. Related
+          entities contribute built-in paths only in this PR. For example, <Text code>{`weight`}</Text> maps to{" "}
+          <Text code>{`{"var":"weight"}`}</Text> and <Text code>{`extra.purchase_date`}</Text> maps to{" "}
+          <Text code>{`{"var":"extra.purchase_date"}`}</Text>.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          <Text strong>Operators</Text> and <Text strong>Helper Functions</Text> show valid JSON examples you can copy
-          into the editor, then adjust as needed for your formula.
+          In PR #2, the same panel also supports guided authoring. Clicking operators and helpers can start a pending
+          expression step, and clicking references can insert the next compatible value directly into the editor.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
-          Use the search box to filter references by short name or full path. Clicking an item copies its reference path
-          or JSON example so you can paste it into the raw editor without retyping.
+          Use the search box to filter references by short name or full path. When guided insertion is not active, the
+          same chips still work as quick JSON aids for copying paths or example snippets.
+        </Paragraph>
+        <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
+          <Text strong>Compatible Inputs</Text> appears when a guided operator/helper step is waiting for a value. It
+          narrows the field choices to the currently valid inputs so multi-step builders such as <Text code>if</Text>,{" "}
+          <Text code>coalesce</Text>, and date-diff helpers stay consistent.
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
           Formula-to-formula references are not supported. Build nested JSON Logic in a single formula instead of
@@ -374,6 +381,10 @@ export const Help = () => {
         </Paragraph>
         <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
           The grouped reference area can be collapsed if you want to focus only on the editor and preview panels.
+        </Paragraph>
+        <Paragraph type="secondary" style={{ ...sectionBodyStyle, ...nestedLevel6Style }}>
+          Guided insertion is an authoring aid, not a separate formula format. The saved result is still plain JSON
+          Logic in the expression editor, so you can mix guided steps with direct JSON edits at any time.
         </Paragraph>
         <Row gutter={[16, 16]} align="top" style={nestedLevel6Style}>
           <Col xs={24} xl={12}>
@@ -389,7 +400,7 @@ export const Help = () => {
               }}
             >
               <Paragraph type="secondary" style={{ ...sectionBodyStyle, marginBottom: 10 }}>
-                Operators
+                JSON Operators
               </Paragraph>
               <Row gutter={[8, 8]}>
                 {JSON_OPERATOR_GROUPS.map((group) => (
@@ -418,7 +429,7 @@ export const Help = () => {
               </Row>
               <Divider style={{ margin: "12px 0" }} />
               <Paragraph type="secondary" style={{ ...sectionBodyStyle, marginBottom: 10 }}>
-                Helper Functions
+                JSON Helpers
               </Paragraph>
               <Row gutter={[8, 8]}>
                 {FORMULA_HELPER_GROUPS.map((group) => (
@@ -452,7 +463,7 @@ export const Help = () => {
             </Title>
             <Paragraph type="secondary" style={{ ...sectionBodyStyle, marginBottom: 12 }}>
               Variables come from available field references for the selected entity, including built-in fields (for
-              example <Text code>{`created_at`}</Text>) and custom fields (for example{" "}
+              example <Text code>{`created_at`}</Text>) and current-entity custom fields (for example{" "}
               <Text code>{`extra.purchase_date`}</Text>).
             </Paragraph>
             <Space direction="vertical" size={10} style={{ width: "100%" }}>

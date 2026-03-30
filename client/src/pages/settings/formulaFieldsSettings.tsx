@@ -146,8 +146,8 @@ const SAMPLE_VALUE_PLACEHOLDERS: Record<EntityType, string> = {
 };
 const EXTRA_REFERENCE_PREFIXES: Record<EntityType, string[]> = {
   vendor: ["extra."],
-  filament: ["extra.", "vendor.extra."],
-  spool: ["extra.", "filament.extra.", "filament.vendor.extra."],
+  filament: ["extra."],
+  spool: ["extra."],
 };
 const JSON_LOGIC_OPERATOR_GROUPS: Array<{ key: string; operators: string[] }> = [
   { key: "logical", operators: ["if", "and", "or", "!"] },
@@ -322,16 +322,6 @@ const REFERENCE_PICKER_GROUPS: Record<EntityType, ReferencePickerGroupDefinition
       entityType: EntityType.vendor,
       source: "builtin",
       prefix: "vendor.",
-      excludedPrefixes: ["vendor.extra."],
-      defaultExpanded: false,
-      scope: "related",
-    },
-    {
-      key: "vendor-extra",
-      labelType: "extra",
-      entityType: EntityType.vendor,
-      source: "extra",
-      prefix: "vendor.extra.",
       defaultExpanded: false,
       scope: "related",
     },
@@ -361,16 +351,7 @@ const REFERENCE_PICKER_GROUPS: Record<EntityType, ReferencePickerGroupDefinition
       entityType: EntityType.filament,
       source: "builtin",
       prefix: "filament.",
-      excludedPrefixes: ["filament.extra.", "filament.vendor."],
-      defaultExpanded: false,
-      scope: "related",
-    },
-    {
-      key: "filament-extra",
-      labelType: "extra",
-      entityType: EntityType.filament,
-      source: "extra",
-      prefix: "filament.extra.",
+      excludedPrefixes: ["filament.vendor."],
       defaultExpanded: false,
       scope: "related",
     },
@@ -380,16 +361,6 @@ const REFERENCE_PICKER_GROUPS: Record<EntityType, ReferencePickerGroupDefinition
       entityType: EntityType.vendor,
       source: "builtin",
       prefix: "filament.vendor.",
-      excludedPrefixes: ["filament.vendor.extra."],
-      defaultExpanded: false,
-      scope: "related",
-    },
-    {
-      key: "vendor-extra",
-      labelType: "extra",
-      entityType: EntityType.vendor,
-      source: "extra",
-      prefix: "filament.vendor.extra.",
       defaultExpanded: false,
       scope: "related",
     },
@@ -1049,7 +1020,7 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
     expandedReferenceGroupsByEntity[selectedEntityType] ?? getDefaultExpandedReferenceGroups(selectedEntityType);
   const helperCompatiblePanelOpen = helperCompatiblePanelOpenByEntity[selectedEntityType] ?? false;
   const niceName = t(`${selectedEntityType}.${selectedEntityType}`);
-  const guidedInsertionEnabled = false;
+  const guidedInsertionEnabled = true;
   const sectionBodyStyle = { marginTop: 0, fontSize: token.fontSize, lineHeight: 1.7 };
   const tokenPanelStyle = useMemo(
     () => ({
@@ -1131,6 +1102,18 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
       alignSelf: "start",
     }),
     [],
+  );
+  const tooltipCodeStyle = useMemo<CSSProperties>(
+    () => ({
+      margin: 0,
+      fontFamily: token.fontFamilyCode || "monospace",
+      fontSize: Math.max(token.fontSizeSM - 1, 11),
+      lineHeight: 1.4,
+      whiteSpace: "pre-wrap",
+      color: token.colorTextLightSolid,
+      background: "transparent",
+    }),
+    [token.colorTextLightSolid, token.fontFamilyCode, token.fontSizeSM],
   );
   const isDesktopLayout = Boolean(screens.lg || screens.xl || screens.xxl);
   const expressionEditorHeight = INLINE_OPERATOR_PANEL_HEIGHT;
@@ -1319,10 +1302,6 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
     EXTRA_REFERENCE_PREFIXES[selectedEntityType].forEach((prefix) => {
       if (prefix === "extra.") {
         (configuredFields.data || []).forEach((field) => extraReferenceGroups.push(`${prefix}${field.key}`));
-      } else if (prefix === "filament.extra.") {
-        (filamentConfiguredFields.data || []).forEach((field) => extraReferenceGroups.push(`${prefix}${field.key}`));
-      } else if (prefix === "filament.vendor.extra." || prefix === "vendor.extra.") {
-        (vendorConfiguredFields.data || []).forEach((field) => extraReferenceGroups.push(`${prefix}${field.key}`));
       }
     });
     // Suggest both built-in fields and configured extra fields so users can compose formulas
@@ -1333,17 +1312,8 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
     () =>
       ({
         ...Object.fromEntries((configuredFields.data || []).map((field) => [`extra.${field.key}`, field] as const)),
-        ...Object.fromEntries(
-          (filamentConfiguredFields.data || []).map((field) => [`filament.extra.${field.key}`, field] as const),
-        ),
-        ...Object.fromEntries(
-          (vendorConfiguredFields.data || []).map((field) => [`vendor.extra.${field.key}`, field] as const),
-        ),
-        ...Object.fromEntries(
-          (vendorConfiguredFields.data || []).map((field) => [`filament.vendor.extra.${field.key}`, field] as const),
-        ),
       }) as Record<string, Field>,
-    [configuredFields.data, filamentConfiguredFields.data, vendorConfiguredFields.data],
+    [configuredFields.data],
   );
   const referenceGroups = useMemo<ReferencePickerGroup[]>(() => {
     const entityNames: Record<EntityType, string> = {
@@ -2013,28 +1983,12 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
     const tooltipContent =
       disabledReason ||
       (isOperator ? (
-        <pre
-          style={{
-            margin: 0,
-            fontFamily: token.fontFamilyCode,
-            fontSize: token.fontSizeSM,
-            lineHeight: 1.4,
-            whiteSpace: "pre-wrap",
-          }}
-        >
+        <pre style={tooltipCodeStyle}>
           {JSON_LOGIC_OPERATOR_SNIPPETS[tokenDefinition.name] ??
             JSON.stringify({ [tokenDefinition.name]: [] }, null, 2)}
         </pre>
       ) : helper ? (
-        <pre
-          style={{
-            margin: 0,
-            fontFamily: token.fontFamilyCode,
-            fontSize: token.fontSizeSM,
-            lineHeight: 1.4,
-            whiteSpace: "pre-wrap",
-          }}
-        >
+        <pre style={tooltipCodeStyle}>
           {JSON.stringify({ [helper.name]: buildHelperPlaceholderArguments(helper) }, null, 2)}
         </pre>
       ) : undefined);
@@ -3559,7 +3513,7 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
                                           disabledReason ? (
                                             tooltipTitle
                                           ) : (
-                                            <Typography.Text code>{reference.fullLabel}</Typography.Text>
+                                            <span style={tooltipCodeStyle}>{reference.fullLabel}</span>
                                           )
                                         }
                                       >
