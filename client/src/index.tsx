@@ -5,15 +5,16 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./i18n";
 
+const shouldBypassLoopbackPwaCache = import.meta.env["VITE_BYPASS_LOOPBACK_PWA_CACHE"] === "true";
 const normalizedHostname = window.location.hostname.replace(/^\[|\]$/g, "");
-const shouldBypassLocalPwaCache =
+const isLoopbackHost =
   normalizedHostname === "localhost" ||
   normalizedHostname === "::1" ||
   /^127(?:\.\d{1,3}){3}$/.test(normalizedHostname);
 
-if (shouldBypassLocalPwaCache) {
-  // Local PR validation should always reflect the newest bundle; clear service workers and
-  // their caches on localhost-style hosts to prevent stale UI from older test builds.
+if (shouldBypassLoopbackPwaCache && isLoopbackHost) {
+  // Opt-in local review builds can clear loopback-host PWA state before boot so stale assets
+  // from earlier test runs do not mask the current bundle.
   if ("serviceWorker" in navigator) {
     void navigator.serviceWorker.getRegistrations().then((registrations) => {
       registrations.forEach((registration) => {
