@@ -247,6 +247,46 @@ async def find(
             ),
         ),
     ] = None,
+    spool_id: Annotated[
+        str | None,
+        Query(alias="id", title="Spool ID", description="Partial match against spool ID values."),
+    ] = None,
+    price: Annotated[
+        str | None,
+        Query(title="Price", description="Partial match against spool price values as text."),
+    ] = None,
+    used_weight: Annotated[
+        str | None,
+        Query(title="Used Weight", description="Partial match against used weight values as text."),
+    ] = None,
+    remaining_weight: Annotated[
+        str | None,
+        Query(title="Remaining Weight", description="Partial match against remaining weight values as text."),
+    ] = None,
+    used_length: Annotated[
+        str | None,
+        Query(title="Used Length", description="Partial match against used length values as text."),
+    ] = None,
+    remaining_length: Annotated[
+        str | None,
+        Query(title="Remaining Length", description="Partial match against remaining length values as text."),
+    ] = None,
+    first_used: Annotated[
+        str | None,
+        Query(title="First Used", description="Partial match against first-used timestamps."),
+    ] = None,
+    last_used: Annotated[
+        str | None,
+        Query(title="Last Used", description="Partial match against last-used timestamps."),
+    ] = None,
+    registered: Annotated[
+        str | None,
+        Query(title="Registered", description="Partial match against registration timestamps."),
+    ] = None,
+    comment: Annotated[
+        str | None,
+        Query(title="Comment", description="Partial case-insensitive match against spool comments."),
+    ] = None,
     allow_archived: Annotated[
         bool,
         Query(title="Allow Archived", description="Whether to include archived spools in the search results."),
@@ -294,6 +334,16 @@ async def find(
         vendor_id=filament_vendor_ids,
         location=location,
         lot_nr=lot_nr,
+        spool_id=spool_id,
+        price=price,
+        used_weight=used_weight,
+        remaining_weight=remaining_weight,
+        used_length=used_length,
+        remaining_length=remaining_length,
+        first_used=first_used,
+        last_used=last_used,
+        registered=registered,
+        comment=comment,
         allow_archived=allow_archived,
         sort_by=sort_by,
         limit=limit,
