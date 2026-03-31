@@ -8,8 +8,25 @@ import { useNavigate } from "react-router";
 const QRCodeScannerModal = () => {
   const [visible, setVisible] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [scannerSession, setScannerSession] = useState(0);
   const t = useTranslate();
   const navigate = useNavigate();
+
+  // Force a fresh scanner instance after each open/close cycle so stale camera errors do not persist.
+  const resetScanner = () => {
+    setLastError(null);
+    setScannerSession((current) => current + 1);
+  };
+
+  const openScanner = () => {
+    resetScanner();
+    setVisible(true);
+  };
+
+  const closeScanner = () => {
+    setVisible(false);
+    resetScanner();
+  };
 
   const onScan = (detectedCodes: IDetectedBarcode[]) => {
     if (detectedCodes.length === 0) {
@@ -18,25 +35,45 @@ const QRCodeScannerModal = () => {
     const result = detectedCodes[0].rawValue;
 
     // Check for the spoolman ID format
-    const match = result.match(/^web\+spoolman:s-(?<id>[0-9]+)$/i);
-    if (match && match.groups) {
-      setVisible(false);
-      navigate(`/spool/show/${match.groups.id}`);
+    const spoolMatch = result.match(/^web\+spoolman:s-(?<id>[0-9]+)$/i);
+    if (spoolMatch && spoolMatch.groups) {
+      closeScanner();
+      navigate(`/spool/show/${spoolMatch.groups.id}`);
+      return;
     }
-    const fullURLmatch = result.match(/^https?:\/\/[^/]+\/spool\/show\/(?<id>[0-9]+)$/i);
-    if (fullURLmatch && fullURLmatch.groups) {
-      setVisible(false);
-      navigate(`/spool/show/${fullURLmatch.groups.id}`);
+    const filamentMatch = result.match(/^web\+spoolman:f-(?<id>[0-9]+)$/i);
+    if (filamentMatch && filamentMatch.groups) {
+      closeScanner();
+      navigate(`/filament/show/${filamentMatch.groups.id}`);
+      return;
+    }
+    const spoolURLmatch = result.match(/^https?:\/\/[^/]+(?:\/[^/]+)*\/spool\/show\/(?<id>[0-9]+)$/i);
+    if (spoolURLmatch && spoolURLmatch.groups) {
+      closeScanner();
+      navigate(`/spool/show/${spoolURLmatch.groups.id}`);
+      return;
+    }
+    const filamentURLmatch = result.match(/^https?:\/\/[^/]+(?:\/[^/]+)*\/filament\/show\/(?<id>[0-9]+)$/i);
+    if (filamentURLmatch && filamentURLmatch.groups) {
+      closeScanner();
+      navigate(`/filament/show/${filamentURLmatch.groups.id}`);
     }
   };
 
   return (
     <>
-      <FloatButton type="primary" onClick={() => setVisible(true)} icon={<CameraOutlined />} shape="circle" />
-      <Modal open={visible} destroyOnHidden onCancel={() => setVisible(false)} footer={null} title={t("scanner.title")}>
+      <FloatButton
+        type="primary"
+        onClick={openScanner}
+        icon={<CameraOutlined />}
+        shape="circle"
+        style={{ right: "var(--camera-button-right)", bottom: "var(--camera-button-bottom)" }}
+      />
+      <Modal open={visible} destroyOnHidden onCancel={closeScanner} footer={null} title={t("scanner.title")}>
         <Space direction="vertical" style={{ width: "100%" }}>
           <p>{t("scanner.description")}</p>
           <Scanner
+            key={scannerSession}
             constraints={{
               facingMode: "environment",
             }}

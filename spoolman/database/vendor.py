@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from spoolman.api.v1.models import EventType, Vendor, VendorEvent
 from spoolman.database import models
-from spoolman.database.utils import SortOrder, add_where_clause_str, add_where_clause_str_opt
+from spoolman.database.utils import SortOrder, add_where_clause_number_opt, add_where_clause_str, add_where_clause_str_opt
 from spoolman.exceptions import ItemNotFoundError
 from spoolman.ws import websocket_manager
 
@@ -53,6 +53,10 @@ async def find(
     db: AsyncSession,
     name: str | None = None,
     external_id: str | None = None,
+    vendor_id: str | None = None,
+    registered: str | None = None,
+    empty_spool_weight: str | None = None,
+    comment: str | None = None,
     sort_by: dict[str, SortOrder] | None = None,
     limit: int | None = None,
     offset: int = 0,
@@ -65,6 +69,10 @@ async def find(
 
     stmt = add_where_clause_str(stmt, models.Vendor.name, name)
     stmt = add_where_clause_str_opt(stmt, models.Vendor.external_id, external_id)
+    stmt = add_where_clause_number_opt(stmt, models.Vendor.id, vendor_id)
+    stmt = add_where_clause_number_opt(stmt, models.Vendor.registered, registered)
+    stmt = add_where_clause_number_opt(stmt, models.Vendor.empty_spool_weight, empty_spool_weight)
+    stmt = add_where_clause_str_opt(stmt, models.Vendor.comment, comment)
 
     total_count = None
 

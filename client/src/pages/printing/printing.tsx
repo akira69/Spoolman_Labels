@@ -1,7 +1,6 @@
 import { ReactElement } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useGetSetting, useSetSetting } from "../../utils/querySettings";
-import { ISpool } from "../spools/model";
 
 export interface PrintSettings {
   id: string;
@@ -16,22 +15,66 @@ export interface PrintSettings {
   paperSize?: string;
   customPaperSize?: { width: number; height: number };
   borderShowMode?: "none" | "border" | "grid";
+  amlLabelSize?: { width: number; height: number };
+  exportDpi?: number;
+  exportFormat?: "png" | "aml";
+  exportAsZip?: boolean;
 }
 
 export interface QRCodePrintSettings {
   showContent?: boolean;
   showQRCodeMode?: "no" | "simple" | "withIcon";
   textSize?: number;
+  showManufacturerLogo?: boolean;
+  logoHeightMm?: number;
+  logoAlign?: "left" | "center" | "right";
+  showTitle?: boolean;
+  titleAreaHeightMm?: number; // Legacy field; no longer used.
+  titleTextSize?: number; // Legacy field; migrated to titleMaxTextSize.
+  titleMaxTextSize?: number;
+  titleFitToWidth?: boolean;
+  titleAlign?: "left" | "center" | "right";
+  qrCodeSizeMm?: number;
+  qrCodePosition?: "left" | "right";
+  qrCodeAlign?: "top" | "center" | "bottom";
+  infoAlign?: "left" | "center" | "right";
+  infoVerticalAlign?: "top" | "center" | "bottom";
   printSettings: PrintSettings;
 }
 
 export interface SpoolQRCodePrintSettings {
   template?: string;
+  titleTemplate?: string;
+  filenameTemplate?: string;
   labelSettings: QRCodePrintSettings;
 }
 
-export function useGetPrintSettings(): SpoolQRCodePrintSettings[] | undefined {
-  const { data } = useGetSetting("print_presets");
+export function mergePrintPresets(
+  ...presetLists: Array<SpoolQRCodePrintSettings[] | undefined>
+): SpoolQRCodePrintSettings[] | undefined {
+  const merged: SpoolQRCodePrintSettings[] = [];
+  const seenIds = new Set<string>();
+  const hasUnloadedList = presetLists.some((list) => list === undefined);
+
+  for (const list of presetLists) {
+    if (!list) continue;
+    for (const preset of list) {
+      const id = preset.labelSettings?.printSettings?.id;
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
+      merged.push(preset);
+    }
+  }
+
+  if (merged.length === 0 && hasUnloadedList) {
+    return undefined;
+  }
+
+  return merged;
+}
+
+export function useGetPrintSettings(settingKey = "print_presets"): SpoolQRCodePrintSettings[] | undefined {
+  const { data } = useGetSetting(settingKey);
   if (!data) return;
   const parsed: SpoolQRCodePrintSettings[] =
     data && data.value ? JSON.parse(data.value) : ([] as SpoolQRCodePrintSettings[]);
@@ -44,11 +87,13 @@ export function useGetPrintSettings(): SpoolQRCodePrintSettings[] | undefined {
   });
 }
 
-export function useSetPrintSettings(): (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => void {
-  const mut = useSetSetting("print_presets");
+export function useSetPrintSettings(
+  settingKey = "print_presets",
+): (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => Promise<unknown> {
+  const mut = useSetSetting(settingKey);
 
   return (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => {
-    mut.mutate(spoolQRCodePrintSettings);
+    return mut.mutateAsync(spoolQRCodePrintSettings);
   };
 }
 
@@ -88,40 +133,67 @@ function applyNewline(text: string): ReactElement[] {
 }
 
 function applyTextFormatting(text: string): ReactElement[] {
-  const regex = /\*\*([\w\W]*?)\*\*/g;
+  // Supports **bold** and ==inverted== blocks (can be mixed in one template).
+  const regex = /(\*\*[\w\W]*?\*\*|==[\w\W]*?==)/g;
   const parts = text.split(regex);
-  // Map over the parts and wrap matched text with <b> tags
   const elements = parts.map((part, index) => {
-    // Even index: outside asterisks, odd index: inside asterisks (to be bolded)
+    if (part.startsWith("**") && part.endsWith("**")) {
+      const content = part.slice(2, -2);
+      const node = applyTextFormatting(content);
+      return <b key={index}>{node}</b>;
+    }
+
+    if (part.startsWith("==") && part.endsWith("==")) {
+      const content = part.slice(2, -2);
+      const node = applyTextFormatting(content);
+      return (
+        <span
+          key={index}
+          style={{
+            backgroundColor: "#000",
+            color: "#fff",
+            padding: "0 0.6mm",
+            display: "inline-block",
+          }}
+        >
+          {node}
+        </span>
+      );
+    }
+
     const node = applyNewline(part);
-    return index % 2 === 0 ? <span key={index}>{node}</span> : <b key={index}>{node}</b>;
+    return <span key={index}>{node}</span>;
   });
   return elements;
 }
 
-export function renderLabelContents(template: string, spool: ISpool): ReactElement {
+export function renderTemplateText(template: string, obj: GenericObject): string {
   // Find all {tags} in the template string and loop over them
   const matches = [...template.matchAll(/{(?:[^}{]|{[^}{]*})*}/gs)];
-  let label_text = template;
+  let renderedText = template;
   matches.forEach((match) => {
     if ((match[0].match(/{/g) || []).length == 1) {
       const tag = match[0].replace(/[{}]/g, "");
-      const tagValue = getTagValue(tag, spool);
-      label_text = label_text.replace(match[0], tagValue);
+      const tagValue = getTagValue(tag, obj);
+      renderedText = renderedText.replace(match[0], String(tagValue));
     } else if ((match[0].match(/{/g) || []).length == 2) {
       const structure = match[0].match(/{(.*?){(.*?)}(.*?)}/);
       if (structure != null) {
         const tag = structure[2];
-        const tagValue = getTagValue(tag, spool);
-        if (tagValue == "?") {
-          label_text = label_text.replace(match[0], "");
+        const tagValue = getTagValue(tag, obj);
+        if (tagValue === "?") {
+          renderedText = renderedText.replace(match[0], "");
         } else {
-          label_text = label_text.replace(match[0], structure[1] + tagValue + structure[3]);
+          renderedText = renderedText.replace(match[0], structure[1] + tagValue + structure[3]);
         }
       }
     }
   });
+  return renderedText;
+}
 
+export function renderLabelContents(template: string, obj: GenericObject): ReactElement {
+  const renderedText = renderTemplateText(template, obj);
   // Split string on \n into individual lines
-  return <>{applyTextFormatting(label_text)}</>;
+  return <>{applyTextFormatting(renderedText)}</>;
 }
