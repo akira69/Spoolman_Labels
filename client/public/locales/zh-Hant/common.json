@@ -28,7 +28,7 @@
         "hideArchived": "隱藏已封存",
         "showArchived": "檢視已封存",
         "notAccessTitle": "您沒有存取的權限",
-        "hideColumns": "欄",
+        "hideColumns": "隱藏欄",
         "clearFilters": "清除篩選"
     },
     "warnWhenUnsavedChanges": "您確定要離開嗎？您尚有未儲存的變更。",

@@ -28,7 +28,7 @@
         "hideArchived": "Paslėpti archyvuotus",
         "showArchived": "Rodyti archyvuotus",
         "notAccessTitle": "Nepakanka teisių",
-        "hideColumns": "Stulpeliai",
+        "hideColumns": "Slėpti stulpelius",
         "clearFilters": "Valyti filtrus"
     },
     "warnWhenUnsavedChanges": "Ar tikrai norite išeiti? Yra neišsaugotų pakeitimų.",
