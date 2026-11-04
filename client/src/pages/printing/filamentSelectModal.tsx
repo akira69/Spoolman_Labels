@@ -30,7 +30,7 @@ const MIN_TABLE_SCROLL_Y = 180;
 const TABLE_BOTTOM_GAP = 16;
 
 // Combine server-side paging with lightweight local selection so the print flow can stay inside one dialog.
-const FilamentSelectModal = ({ description, onPrint, onExport, initialSelectedIds, searchPlaceholder }: Props) => {
+const FilamentSelectModal = ({ description, initialSelectedIds, onExport, onPrint, searchPlaceholder }: Props) => {
   const [selectedItems, setSelectedItems] = useState<number[]>(initialSelectedIds ?? []);
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
@@ -261,42 +261,38 @@ const FilamentSelectModal = ({ description, onPrint, onExport, initialSelectedId
                   count: selectedItems.length,
                 })}
               </div>
-              <Space>
-                {onPrint && (
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      if (selectedItems.length === 0) {
-                        messageApi.open({
-                          type: "error",
-                          content: t("printing.filamentSelect.noFilamentsSelected"),
-                        });
-                        return;
-                      }
-                      onPrint(selectedItems);
-                    }}
-                  >
-                    {t("printing.qrcode.button")}
-                  </Button>
-                )}
-                {onExport && (
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      if (selectedItems.length === 0) {
-                        messageApi.open({
-                          type: "error",
-                          content: t("printing.filamentSelect.noFilamentsSelected"),
-                        });
-                        return;
-                      }
-                      onExport(selectedItems);
-                    }}
-                  >
-                    {t("printing.qrcode.exportButton")}
-                  </Button>
-                )}
-              </Space>
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (selectedItems.length === 0) {
+                    messageApi.open({
+                      type: "error",
+                      content: t("printing.filamentSelect.noFilamentsSelected"),
+                    });
+                    return;
+                  }
+                  onPrint(selectedItems);
+                }}
+              >
+                {t("printing.qrcode.button")}
+              </Button>
+              {onExport && (
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (selectedItems.length === 0) {
+                      messageApi.open({
+                        type: "error",
+                        content: t("printing.filamentSelect.noFilamentsSelected"),
+                      });
+                      return;
+                    }
+                    onExport(selectedItems);
+                  }}
+                >
+                  {t("printing.qrcode.exportButton")}
+                </Button>
+              )}
             </div>
           </Col>
         </Row>

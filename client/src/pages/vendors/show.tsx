@@ -4,6 +4,7 @@ import { Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { ExtraFieldDisplay } from "../../components/extraFields";
+import VendorLogo from "../../components/vendorLogo";
 import { enrichText } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { IVendor } from "./model";
@@ -39,12 +40,30 @@ export const VendorShow = () => {
       />
       <Title level={5}>{t("vendor.fields.name")}</Title>
       <TextField value={record?.name} />
+      <div style={{ maxWidth: "360px", marginBottom: 16 }}>
+        <VendorLogo
+          vendor={record}
+          showFallbackText
+          imgStyle={{ display: "block", width: "100%", maxHeight: "64px", objectFit: "contain" }}
+          fallbackStyle={{ fontWeight: 700, fontSize: "24px", lineHeight: 1.1 }}
+        />
+      </div>
       <Title level={5}>{t("vendor.fields.comment")}</Title>
       <TextField value={enrichText(record?.comment)} />
       <Title level={5}>{t("vendor.fields.empty_spool_weight")}</Title>
       <TextField value={record?.empty_spool_weight} />
       <Title level={5}>{t("vendor.fields.external_id")}</Title>
       <TextField value={record?.external_id} />
+      <Title level={5}>{t("vendor.fields.print_logo_url")}</Title>
+      <div style={{ maxWidth: "360px", marginBottom: 16 }}>
+        <VendorLogo
+          vendor={record}
+          usePrintLogo
+          showFallbackText
+          imgStyle={{ display: "block", width: "100%", maxHeight: "64px", objectFit: "contain" }}
+          fallbackStyle={{ fontWeight: 700, fontSize: "24px", lineHeight: 1.1 }}
+        />
+      </div>
       <Title level={4}>{t("settings.extra_fields.tab")}</Title>
       {extraFields?.data?.map((field, index) => (
         <ExtraFieldDisplay key={index} field={field} value={record?.extra[field.key]} />

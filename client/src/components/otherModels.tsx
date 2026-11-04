@@ -3,7 +3,7 @@ import { Tooltip } from "antd";
 import { ColumnFilterItem } from "antd/es/table/interface";
 import { IFilament } from "../pages/filaments/model";
 import { IVendor } from "../pages/vendors/model";
-import { getAPIURL } from "../utils/url";
+import { getAPIURL, getBasePath } from "../utils/url";
 
 /**
  * Factory function to create a reusable query hook for fetching and sorting string arrays from API endpoints.
@@ -160,6 +160,29 @@ export function useSpoolmanVendors(enabled: boolean = false) {
   });
 }
 
+export function useSpoolmanVendorExternalIds(enabled: boolean = false) {
+  return useQuery<IVendor[], unknown, string[]>({
+    enabled: enabled,
+    queryKey: ["vendorExternalIds"],
+    queryFn: async () => {
+      const response = await fetch(getAPIURL() + "/vendor");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
+    select: (data) => {
+      const externalIds = data
+        .map((vendor) => vendor.external_id)
+        .filter(
+          (externalId): externalId is string => externalId !== null && externalId !== undefined && externalId !== "",
+        )
+        .sort();
+      return [...new Set(externalIds)];
+    },
+  });
+}
+
 export function useSpoolmanMaterials(enabled: boolean = false) {
   return useSimpleSortedArrayQuery<string>(["materials"], "/material", enabled);
 }
@@ -174,4 +197,23 @@ export function useSpoolmanLotNumbers(enabled: boolean = false) {
 
 export function useSpoolmanLocations(enabled: boolean = false) {
   return useSimpleSortedArrayQuery<string>(["locations"], "/location", enabled);
+}
+
+interface VendorLogoManifest {
+  web_files?: string[];
+  print_files?: string[];
+}
+
+export function useVendorLogoManifest(enabled: boolean = true) {
+  return useQuery<VendorLogoManifest>({
+    enabled,
+    queryKey: ["vendor-logo-manifest"],
+    queryFn: async () => {
+      const response = await fetch(`${getBasePath()}/vendor-logos/manifest.json`, { cache: "no-store" });
+      if (!response.ok) {
+        return { web_files: [], print_files: [] };
+      }
+      return response.json();
+    },
+  });
 }
