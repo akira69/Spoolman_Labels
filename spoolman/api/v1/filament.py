@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -207,6 +207,7 @@ class FilamentUpdateParameters(FilamentParameters):
 )
 async def find(
     *,
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db_session)],
     vendor_name_old: Annotated[
         str | None,
@@ -358,19 +359,28 @@ async def find(
     else:
         filter_by_ids = None
 
-    db_items, total_count = await filament.find(
-        db=db,
-        ids=filter_by_ids,
-        vendor_name=vendor_name if vendor_name is not None else vendor_name_old,
-        vendor_id=vendor_ids,
-        name=name,
-        material=material,
-        article_number=article_number,
-        external_id=external_id,
-        sort_by=sort_by,
-        limit=limit,
-        offset=offset,
-    )
+    extra_field_filters = {
+        key[6:]: value for key, value in request.query_params.items() if key.startswith("extra.")
+    }
+
+    try:
+        db_items, total_count = await filament.find(
+            db=db,
+            ids=filter_by_ids,
+            vendor_name=vendor_name if vendor_name is not None else vendor_name_old,
+            vendor_id=vendor_ids,
+            name=name,
+            material=material,
+            article_number=article_number,
+            external_id=external_id,
+            extra_field_filters=extra_field_filters or None,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=Message(message=str(e)).dict())
+
     include_derived_resolved = await resolve_include_derived_in_api(db, include_derived=include_derived)
     payload: list[Filament] = []
     # API exposure is field-level via include_in_api and is not coupled to UI surfaces.
@@ -392,7 +402,6 @@ async def find(
             )
             filament_payload = filament_payload.model_copy(update={"derived": derived_values or None})
         payload.append(filament_payload)
-
     # Set x-total-count header for pagination
     return JSONResponse(
         content=jsonable_encoder(

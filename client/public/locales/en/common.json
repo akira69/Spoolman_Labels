@@ -53,6 +53,12 @@
     "unknown": "Unknown",
     "yes": "Yes",
     "no": "No",
+    "theme": {
+        "label": "Theme",
+        "system": "System",
+        "light": "Light",
+        "dark": "Dark"
+    },
     "tags": {
         "clone": "Clone"
     },
@@ -334,6 +340,7 @@
                 "description_intro": "Custom extra fields are fields you define directly",
                 "description_immutability": "In custom extra fields, key and type are immutable after creation. For choice fields, existing choices and the multi-choice mode are also immutable to protect stored data. Deleting a field removes its data from all records."
             },
+            "description": "<p>Here you can add extra custom fields to your entities.</p><p>Once a field is added, you can not change its key or type, and for choice type fields you can not remove choices or change the multi choice state. If you remove a field, the associated data for all entities will be deleted.</p><p>The key is what other programs read/write the data as, so if your custom field is supposed to integrate with a third-party program, make sure to set it correctly. Default value is only applied to new items.</p><p>Extra fields can be shown and sorted in the table views. Choice and boolean fields expose filter options there as well, and all extra field types support filtering for empty values.</p>",
             "params": {
                 "key": "Key",
                 "name": "Name",

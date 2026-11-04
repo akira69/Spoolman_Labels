@@ -25,7 +25,7 @@ import {
   useSpoolmanMaterials,
   useSpoolmanVendors,
 } from "../../components/otherModels";
-import { removeUndefined } from "../../utils/filtering";
+import { hasMeaningfulFilters, removeUndefined } from "../../utils/filtering";
 import { FormulaFieldSurface, EntityType, useGetDerivedFields, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useSavedState, useStoreInitialState } from "../../utils/saveload";
 import { useCurrencyFormatter } from "../../utils/settings";
@@ -200,6 +200,8 @@ export const FilamentList = () => {
     tableState,
     sorter: true,
   };
+  // Ignore empty filter shells so the Clear Filters button only lights up for filters that would affect results.
+  const hasActiveFilters = hasMeaningfulFilters(filters);
 
   const updateColumnSelections = (selectedKeys: string[]) => {
     // Persist core column visibility separately from derived-column visibility so
@@ -213,7 +215,7 @@ export const FilamentList = () => {
       headerButtons={({ defaultButtons }) => (
         <>
           <Button
-            type="primary"
+            type={hasActiveFilters ? "primary" : "default"}
             icon={<FilterOutlined />}
             onClick={() => {
               setFilters([], "replace");

@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
@@ -133,6 +133,7 @@ class SpoolMeasureParameters(BaseModel):
 )
 async def find(
     *,
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db_session)],
     filament_name_old: Annotated[
         str | None,
@@ -301,20 +302,29 @@ async def find(
     else:
         filament_vendor_ids = None
 
-    db_items, total_count = await spool.find(
-        db=db,
-        filament_name=filament_name if filament_name is not None else filament_name_old,
-        filament_id=filament_ids,
-        filament_material=filament_material if filament_material is not None else filament_material_old,
-        vendor_name=filament_vendor_name if filament_vendor_name is not None else vendor_name_old,
-        vendor_id=filament_vendor_ids,
-        location=location,
-        lot_nr=lot_nr,
-        allow_archived=allow_archived,
-        sort_by=sort_by,
-        limit=limit,
-        offset=offset,
-    )
+    extra_field_filters = {
+        key[6:]: value for key, value in request.query_params.items() if key.startswith("extra.")
+    }
+
+    try:
+        db_items, total_count = await spool.find(
+            db=db,
+            filament_name=filament_name if filament_name is not None else filament_name_old,
+            filament_id=filament_ids,
+            filament_material=filament_material if filament_material is not None else filament_material_old,
+            vendor_name=filament_vendor_name if filament_vendor_name is not None else vendor_name_old,
+            vendor_id=filament_vendor_ids,
+            location=location,
+            lot_nr=lot_nr,
+            allow_archived=allow_archived,
+            extra_field_filters=extra_field_filters or None,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=Message(message=str(e)).dict())
+
     include_derived_resolved = await resolve_include_derived_in_api(db, include_derived=include_derived)
     payload: list[Spool] = []
     # API exposure is field-level via include_in_api and is not coupled to UI surfaces.
@@ -336,7 +346,6 @@ async def find(
             )
             spool_payload = spool_payload.model_copy(update={"derived": derived_values or None})
         payload.append(spool_payload)
-
     # Set x-total-count header for pagination
     return JSONResponse(
         content=jsonable_encoder(
