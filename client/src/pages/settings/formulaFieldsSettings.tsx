@@ -1021,7 +1021,7 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
     expandedReferenceGroupsByEntity[selectedEntityType] ?? getDefaultExpandedReferenceGroups(selectedEntityType);
   const helperCompatiblePanelOpen = helperCompatiblePanelOpenByEntity[selectedEntityType] ?? false;
   const niceName = t(`${selectedEntityType}.${selectedEntityType}`);
-  const guidedInsertionEnabled = false;
+  const guidedInsertionEnabled = true;
   const sectionBodyStyle = { marginTop: 0, fontSize: token.fontSize, lineHeight: 1.7 };
   const tokenPanelStyle = useMemo(
     () => ({
@@ -1071,18 +1071,6 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
     }),
     [],
   );
-  const tooltipCodeStyle = useMemo<CSSProperties>(
-    () => ({
-      margin: 0,
-      fontFamily: token.fontFamilyCode || "monospace",
-      fontSize: Math.max(token.fontSizeSM - 1, 11),
-      lineHeight: 1.4,
-      whiteSpace: "pre-wrap",
-      color: token.colorTextLightSolid,
-      background: "transparent",
-    }),
-    [token.colorTextLightSolid, token.fontFamilyCode, token.fontSizeSM],
-  );
   const referenceGroupTokenListStyle = useMemo<CSSProperties>(
     () => ({
       display: "flex",
@@ -1115,6 +1103,18 @@ export function FormulaFieldsSettings({ editRequest, onEditRequestHandled }: For
       alignSelf: "start",
     }),
     [],
+  );
+  const tooltipCodeStyle = useMemo<CSSProperties>(
+    () => ({
+      margin: 0,
+      fontFamily: token.fontFamilyCode || "monospace",
+      fontSize: Math.max(token.fontSizeSM - 1, 11),
+      lineHeight: 1.4,
+      whiteSpace: "pre-wrap",
+      color: token.colorTextLightSolid,
+      background: "transparent",
+    }),
+    [token.colorTextLightSolid, token.fontFamilyCode, token.fontSizeSM],
   );
   const isDesktopLayout = Boolean(screens.lg || screens.xl || screens.xxl);
   const expressionEditorHeight = INLINE_OPERATOR_PANEL_HEIGHT;
