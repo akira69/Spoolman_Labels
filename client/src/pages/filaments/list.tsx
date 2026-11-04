@@ -9,6 +9,7 @@ import {
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
 import { Button, Dropdown } from "antd";
+import { ColumnType } from "antd/es/table";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useMemo, useState } from "react";
@@ -25,6 +26,7 @@ import {
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
 import ResizableTable from "../../components/resizableTable";
+import { buildFormulaValues, formatFormulaValue, getFormulaFieldsForSurface } from "../../utils/formulaFields";
 import {
   useSpoolmanArticleNumbers,
   useSpoolmanFilamentNames,
@@ -33,8 +35,8 @@ import {
   useSpoolmanVendors,
 } from "../../components/otherModels";
 import { hasMeaningfulFilters, removeUndefined } from "../../utils/filtering";
-import { EntityType, useGetFields } from "../../utils/queryFields";
-import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
+import { FormulaFieldSurface, EntityType, useGetDerivedFields, useGetFields } from "../../utils/queryFields";
+import { TableState, useInitialTableState, useSavedState, useStoreInitialState } from "../../utils/saveload";
 import { useCurrencyFormatter } from "../../utils/settings";
 import { IFilament } from "./model";
 
@@ -42,6 +44,7 @@ dayjs.extend(utc);
 
 interface IFilamentCollapsed extends Omit<IFilament, "vendor"> {
   "vendor.name": string | null;
+  derived?: Record<string, unknown>;
 }
 
 function collapseFilament(element: IFilament): IFilamentCollapsed {
@@ -87,13 +90,14 @@ export const FilamentList = () => {
   const invalidate = useInvalidate();
   const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.filament);
+  const formulaFields = useGetDerivedFields(EntityType.filament);
   const currencyFormatter = useCurrencyFormatter();
   const querySpoolCounts = useSpoolmanSpoolCounts(true);
 
-  const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
-
   // Load initial state
   const initialState = useInitialTableState(namespace);
+  // Track formula-column hides separately so newly enabled toggleable fields still default to visible.
+  const [hiddenDerivedColumns, setHiddenDerivedColumns] = useSavedState<string[]>(`${namespace}-hiddenDerivedColumns`, []);
 
   // Fetch data from the API
   // To provide the live updates, we use a custom solution (useLiveify) instead of the built-in refine "liveMode" feature.
@@ -152,7 +156,39 @@ export const FilamentList = () => {
     () => (tableProps.dataSource || []).map((record) => ({ ...record })),
     [tableProps.dataSource],
   );
-  const dataSource = useLiveify("filament", queryDataSource, collapseFilament);
+  const liveDataSource = useLiveify("filament", queryDataSource, collapseFilament);
+  const listFormulaFields = useMemo(
+    () => getFormulaFieldsForSurface(formulaFields.data, FormulaFieldSurface.list),
+    [formulaFields.data],
+  );
+  // All list-surface formula fields are eligible for hide/show in the column picker,
+  // so we map every list formula to its derived column key here.
+  const toggleableDerivedColumnKeys = useMemo(
+    () => listFormulaFields.map((field) => `derived.${field.key}`),
+    [listFormulaFields],
+  );
+  const allColumnsWithExtraFields = useMemo(
+    () => [
+      ...allColumns,
+      ...(extraFields.data?.map((field) => `extra.${field.key}`) ?? []),
+      ...toggleableDerivedColumnKeys,
+    ],
+    [extraFields.data, toggleableDerivedColumnKeys],
+  );
+  const selectedColumnKeys = useMemo(
+    () => [...showColumns, ...toggleableDerivedColumnKeys.filter((key) => !hiddenDerivedColumns.includes(key))],
+    [hiddenDerivedColumns, showColumns, toggleableDerivedColumnKeys],
+  );
+  const dataSource = useMemo<IFilamentCollapsed[]>(
+    () =>
+      liveDataSource.map((record) => ({
+        ...record,
+        // Formula values are computed client-side from the fetched row and are not persisted
+        // server-side fields, so they update on reload/live row updates and remain display-only.
+        derived: buildFormulaValues(record, listFormulaFields),
+      })),
+    [liveDataSource, listFormulaFields],
+  );
 
   if (tableProps.pagination) {
     tableProps.pagination.showSizeChanger = true;
@@ -177,6 +213,13 @@ export const FilamentList = () => {
   };
   // Ignore empty filter shells so the Clear Filters button only lights up for filters that would affect results.
   const hasActiveFilters = hasMeaningfulFilters(filters);
+
+  const updateColumnSelections = (selectedKeys: string[]) => {
+    // Persist core column visibility separately from derived-column visibility so
+    // derived keys can be toggled without rewriting the base showColumns state.
+    setShowColumns(selectedKeys.filter((key) => !toggleableDerivedColumnKeys.includes(key)));
+    setHiddenDerivedColumns(toggleableDerivedColumnKeys.filter((key) => !selectedKeys.includes(key)));
+  };
 
   return (
     <List
@@ -213,20 +256,27 @@ export const FilamentList = () => {
                     label: extraField?.name ?? column_id,
                   };
                 }
+                if (column_id.indexOf("derived.") === 0) {
+                  const formulaField = listFormulaFields.find((field) => `derived.${field.key}` === column_id);
+                  return {
+                    key: column_id,
+                    label: formulaField?.name ?? column_id,
+                  };
+                }
 
                 return {
                   key: column_id,
                   label: t(translateColumnI18nKey(column_id)),
                 };
               }),
-              selectedKeys: showColumns,
+              selectedKeys: selectedColumnKeys,
               selectable: true,
               multiple: true,
               onDeselect: (keys) => {
-                setShowColumns(keys.selectedKeys);
+                updateColumnSelections(keys.selectedKeys.map(String));
               },
               onSelect: (keys) => {
-                setShowColumns(keys.selectedKeys);
+                updateColumnSelections(keys.selectedKeys.map(String));
               },
             }}
           >
@@ -368,6 +418,21 @@ export const FilamentList = () => {
               field,
             });
           }) ?? []),
+          ...listFormulaFields.map(
+            (field) => {
+              const derivedColumnKey = `derived.${field.key}`;
+              if (hiddenDerivedColumns.includes(derivedColumnKey)) {
+                return undefined;
+              }
+
+              return {
+                key: derivedColumnKey,
+                title: field.name,
+                width: 140,
+                render: (_: unknown, record: IFilamentCollapsed) => formatFormulaValue(record.derived?.[field.key]),
+              } as ColumnType<IFilamentCollapsed>;
+            },
+          ),
           RichColumn({
             ...commonProps,
             id: "comment",

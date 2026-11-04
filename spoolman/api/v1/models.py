@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Any, Annotated, Literal
 
 from pydantic import BaseModel, Field, PlainSerializer
 
@@ -90,9 +90,13 @@ class Vendor(BaseModel):
     extra: dict[str, str] = Field(
         description=_extra_fields_description("vendor"),
     )
+    derived: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional derived values computed from formula extra fields.",
+    )
 
     @staticmethod
-    def from_db(item: models.Vendor) -> "Vendor":
+    def from_db(item: models.Vendor, derived: dict[str, Any] | None = None) -> "Vendor":
         """Create a new Pydantic vendor object from a database vendor object."""
         return Vendor(
             id=item.id,
@@ -102,6 +106,7 @@ class Vendor(BaseModel):
             empty_spool_weight=item.empty_spool_weight,
             external_id=item.external_id,
             extra={field.key: field.value for field in item.extra},
+            derived=derived,
         )
 
 
@@ -212,9 +217,13 @@ class Filament(BaseModel):
     extra: dict[str, str] = Field(
         description=_extra_fields_description("filament"),
     )
+    derived: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional derived values computed from formula extra fields.",
+    )
 
     @staticmethod
-    def from_db(item: models.Filament) -> "Filament":
+    def from_db(item: models.Filament, derived: dict[str, Any] | None = None) -> "Filament":
         """Create a new Pydantic filament object from a database filament object."""
         return Filament(
             id=item.id,
@@ -239,6 +248,7 @@ class Filament(BaseModel):
             ),
             external_id=item.external_id,
             extra={field.key: field.value for field in item.extra},
+            derived=derived,
         )
 
 
@@ -322,9 +332,13 @@ class Spool(BaseModel):
     extra: dict[str, str] = Field(
         description=_extra_fields_description("spool"),
     )
+    derived: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional derived values computed from formula extra fields.",
+    )
 
     @staticmethod
-    def from_db(item: models.Spool) -> "Spool":
+    def from_db(item: models.Spool, derived: dict[str, Any] | None = None) -> "Spool":
         """Create a new Pydantic spool object from a database spool object."""
         filament = Filament.from_db(item.filament)
 
@@ -370,6 +384,7 @@ class Spool(BaseModel):
             comment=item.comment,
             archived=item.archived if item.archived is not None else False,
             extra={field.key: field.value for field in item.extra},
+            derived=derived,
         )
 
 

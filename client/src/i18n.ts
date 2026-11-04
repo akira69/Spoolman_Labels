@@ -134,6 +134,11 @@ export const languages: { [key: string]: Language } = {
     fullCode: "pt-BR",
     djs: () => import("dayjs/locale/pt-br"),
   },
+  ["sl"]: {
+    name: "Slovenščina",
+    fullCode: "sl-SI",
+    djs: () => import("dayjs/locale/sl"),
+  },
   ["ta"]: {
     name: "தமிழ்",
     fullCode: "ta-IN",
@@ -148,11 +153,6 @@ export const languages: { [key: string]: Language } = {
     name: "Lietuvių",
     fullCode: "lt-LT",
     djs: () => import("dayjs/locale/lt"),
-  },
-  ["sl"]: {
-    name: "Slovenščina",
-    fullCode: "sl-SI",
-    djs: () => import("dayjs/locale/sl"),
   },
   ["tr"]: {
     name: "Türkçe",

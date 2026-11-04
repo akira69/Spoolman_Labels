@@ -2,6 +2,7 @@ import { DeleteOutlined, EditOutlined, InboxOutlined, PrinterOutlined, ToTopOutl
 import { DateField, Show, TextField } from "@refinedev/antd";
 import { useDelete, useInvalidate, useShow, useTranslate } from "@refinedev/core";
 import { Button, Col, Modal, Row, Typography } from "antd";
+import { Fragment, useMemo } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useNavigate } from "react-router";
@@ -9,8 +10,9 @@ import { ExtraFieldDisplay } from "../../components/extraFields";
 import ColorHexPreview from "../../components/colorHexPreview";
 import { NumberFieldUnit } from "../../components/numberField";
 import VendorLogo from "../../components/vendorLogo";
+import { buildFormulaValues, formatFormulaValue, getFormulaFieldsForSurface } from "../../utils/formulaFields";
 import { enrichText } from "../../utils/parsing";
-import { EntityType, useGetFields } from "../../utils/queryFields";
+import { FormulaFieldSurface, EntityType, useGetDerivedFields, useGetFields } from "../../utils/queryFields";
 import { useCurrencyFormatter } from "../../utils/settings";
 import { getBasePath, stripBasePath } from "../../utils/url";
 import { IFilament } from "../filaments/model";
@@ -26,6 +28,7 @@ export const SpoolShow = () => {
   const t = useTranslate();
   const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.spool);
+  const formulaFields = useGetDerivedFields(EntityType.spool);
   const currencyFormatter = useCurrencyFormatter();
   const invalidate = useInvalidate();
   const { mutate: deleteSpoolMutation } = useDelete();
@@ -36,6 +39,14 @@ export const SpoolShow = () => {
   const { data, isLoading } = query;
 
   const record = data?.data;
+  const showFormulaFields = useMemo(
+    () => getFormulaFieldsForSurface(formulaFields.data, FormulaFieldSurface.show),
+    [formulaFields.data],
+  );
+  const derivedValues = useMemo(
+    () => (record ? buildFormulaValues(record, showFormulaFields) : {}),
+    [record, showFormulaFields],
+  );
 
   const spoolPrice = (item?: ISpool) => {
     const price = item?.price ?? item?.filament.price;
@@ -321,6 +332,13 @@ export const SpoolShow = () => {
       <Title level={4}>{t("settings.extra_fields.tab")}</Title>
       {extraFields?.data?.map((field, index) => (
         <ExtraFieldDisplay key={index} field={field} value={record?.extra[field.key]} />
+      ))}
+      {showFormulaFields.length > 0 && <Title level={4}>{t("settings.formula_fields.formula.header")}</Title>}
+      {showFormulaFields.map((field) => (
+        <Fragment key={field.key}>
+          <Title level={5}>{field.name}</Title>
+          <TextField value={formatFormulaValue(derivedValues[field.key])} />
+        </Fragment>
       ))}
     </Show>
   );
