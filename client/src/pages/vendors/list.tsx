@@ -11,7 +11,6 @@ import {
   ActionsColumn,
   CustomFieldColumn,
   DateColumn,
-  FilteredQueryColumn,
   NumberColumn,
   RichColumn,
   SortedColumn,
@@ -28,7 +27,7 @@ dayjs.extend(utc);
 
 const namespace = "vendorList-v2";
 
-const allColumns: string[] = ["id", "logo", "name", "registered", "external_id", "comment", "empty_spool_weight"];
+const allColumns: string[] = ["id", "logo", "name", "registered", "comment", "empty_spool_weight"];
 
 export const VendorList = () => {
   const t = useTranslate();
@@ -254,24 +253,16 @@ export const VendorList = () => {
                 },
               }
             : undefined,
-          FilteredQueryColumn({
+          SortedColumn({
             ...commonProps,
             id: "name",
             i18ncat: "vendor",
-            filterValueQuery: useSpoolmanVendors(),
           }),
           DateColumn({
             ...commonProps,
             id: "registered",
             i18ncat: "vendor",
             width: 200,
-          }),
-          FilteredQueryColumn({
-            ...commonProps,
-            id: "external_id",
-            i18ncat: "vendor",
-            filterValueQuery: useSpoolmanVendorExternalIds(),
-            width: 160,
           }),
           NumberColumn({
             ...commonProps,

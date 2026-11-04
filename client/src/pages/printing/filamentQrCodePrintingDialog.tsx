@@ -24,6 +24,8 @@ interface FilamentQRCodePrintingDialogProps {
   filamentIds: number[];
 }
 
+// Adapt filament records into the generic QR print dialog and keep filament label
+// presets isolated from the spool-oriented default preset bucket.
 const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDialogProps) => {
   const t = useTranslate();
   const currentPresetType = "filament";
@@ -206,15 +208,16 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
     JSON.stringify(localCurrentPresets) !== JSON.stringify(remoteCurrentPresets ?? []);
 
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
-  const titleTemplate = curPreset.titleTemplate ?? `==**{name}**== {color_hex}`;
-  const infoTemplate =
+  const template =
     curPreset.template ??
-    `{material} ({article_number})
+    `**{vendor.name} - {name}
+#{id} - {material}**
 {Diameter: {diameter} mm}
 {Weight: {weight} g}
 {Spool Weight: {spool_weight} g}
 {ET: {settings_extruder_temp} °C}
 {BT: {settings_bed_temp} °C}
+{Article: {article_number}}
 {{comment}}
 {comment}
 {vendor.comment}`;
@@ -259,6 +262,8 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
     });
   }
 
+  // Expose both filament and vendor placeholders because the same tag picker drives
+  // preview text and printed label templates.
   const templateTags = [...filamentTags, ...vendorTags];
 
   return (
@@ -267,8 +272,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
       <QRCodePrintingDialog
         printSettings={curPreset.labelSettings}
         setPrintSettings={(newSettings) => {
-          curPreset.labelSettings = newSettings;
-          updateCurrentPreset(curPreset);
+          updateCurrentPreset({ ...curPreset, labelSettings: newSettings });
         }}
         baseUrlRoot={baseUrlRoot}
         useHTTPUrl={useHTTPUrl}
@@ -360,8 +364,15 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
               <Input
                 value={curPreset.labelSettings.printSettings?.name}
                 onChange={(e) => {
-                  curPreset.labelSettings.printSettings.name = e.target.value;
-                  updateCurrentPreset(curPreset);
+                  // Triple-spread: name is 3 levels deep; each level must be copied to
+                  // avoid mutating the preset array element referenced by curPreset.
+                  updateCurrentPreset({
+                    ...curPreset,
+                    labelSettings: {
+                      ...curPreset.labelSettings,
+                      printSettings: { ...curPreset.labelSettings.printSettings, name: e.target.value },
+                    },
+                  });
                 }}
               />
               <div style={{ minHeight: 22, paddingTop: 4 }}>
@@ -372,10 +383,17 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
         }
         items={items.map((filament) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/filament/show/${filament.id}` : `WEB+SPOOLMAN:F-${filament.id}`,
-          amlName: `filament-${filament.id}`,
-          vendor: filament.vendor,
-          title: <>{renderLabelContents(titleTemplate, filament)}</>,
-          label: <>{renderLabelContents(infoTemplate, filament)}</>,
+          label: (
+            <p
+              style={{
+                padding: "1mm 1mm 1mm 0",
+                margin: 0,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {renderLabelContents(template, filament)}
+            </p>
+          ),
           errorLevel: "H",
         }))}
         extraTitleSettings={
@@ -387,21 +405,19 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
               value={titleTemplate}
               rows={4}
               onChange={(newValue) => {
-                curPreset.titleTemplate = newValue.target.value;
-                updateCurrentPreset(curPreset);
+                updateCurrentPreset({ ...curPreset, titleTemplate: newValue.target.value });
               }}
             />
           </Form.Item>
         }
         extraInfoSettings={
           <>
-            <Form.Item label={t("printing.qrcode.infoTemplate")}>
+            <Form.Item label={t("printing.qrcode.template")}>
               <TextArea
-                value={infoTemplate}
+                value={template}
                 rows={8}
                 onChange={(newValue) => {
-                  curPreset.template = newValue.target.value;
-                  updateCurrentPreset(curPreset);
+                  updateCurrentPreset({ ...curPreset, template: newValue.target.value });
                 }}
               />
             </Form.Item>
@@ -429,13 +445,9 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
               type="primary"
               size="large"
               icon={<SaveOutlined />}
-              onClick={async () => {
-                try {
-                  await savePresetsRemote();
-                  messageApi.success(t("notifications.saveSuccessful"));
-                } catch (error) {
-                  messageApi.error(error instanceof Error ? error.message : "Save failed");
-                }
+              onClick={() => {
+                savePresetsRemote();
+                messageApi.success(t("notifications.saveSuccessful"));
               }}
             >
               {t("printing.generic.saveSetting")}

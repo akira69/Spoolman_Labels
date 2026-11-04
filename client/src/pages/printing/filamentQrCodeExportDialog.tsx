@@ -101,13 +101,11 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
     undefined,
   );
 
-  const [localCurrentPresets, setLocalCurrentPresets] = useState<SpoolQRCodePrintSettings[] | undefined>();
-  const remoteSpoolPresets = useGetPrintPresets("image_presets");
-  const remoteFilamentPresets = useGetPrintPresets("image_presets_filament");
-  const setRemoteFilamentPresets = useSetPrintPresets("image_presets_filament");
-
-  const currentPresets = localCurrentPresets ?? remoteFilamentPresets;
-  const otherPresets = remoteSpoolPresets ?? [];
+  const [localPresets, setLocalPresets] = useState<SpoolQRCodePrintSettings[] | undefined>();
+  // Export presets stay in their own bucket so filename/DPI/export-format choices do not
+  // mutate the simpler print-only presets used by the non-export dialog.
+  const remotePresets = useGetPrintPresets("image_presets_filament");
+  const setRemotePresets = useSetPrintPresets("image_presets_filament");
 
   // Keep edits local until the user explicitly saves so imported spool presets can be tried without immediate persistence.
   const savePresetsRemote = async () => {
@@ -161,36 +159,23 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
   };
   // Duplicates get a fresh id so the cloned export preset can diverge from its source immediately.
   const duplicateCurrentPreset = () => {
-    if (!currentPresets) return;
+    if (!localOrRemotePresets) return;
     const newPreset = {
       ...curPreset,
       labelSettings: { ...curPreset.labelSettings, printSettings: { ...curPreset.labelSettings.printSettings } },
     };
     newPreset.labelSettings.printSettings.id = uuidv4();
-    setLocalCurrentPresets([...currentPresets, newPreset]);
-    setSelectedPresetState(toPresetValue(currentPresetType, newPreset.labelSettings.printSettings.id));
+    setLocalPresets([...localOrRemotePresets, newPreset]);
+    setSelectedPresetState(newPreset.labelSettings.printSettings.id);
   };
   // Edits to a spool-derived preset first promote it into the filament bucket before any persistence is possible.
   const updateCurrentPreset = (newSettings: SpoolQRCodePrintSettings) => {
-    if (!currentPresets) return;
-    const parsed = parsePresetValue(selectedPresetState);
-    if (!parsed || parsed.type !== currentPresetType) {
-      promotePresetToCurrentType(newSettings);
-      return;
-    }
-
-    let foundPreset = false;
-    const nextPresets = currentPresets.map((presets) => {
-      if (presets.labelSettings.printSettings.id === parsed.id) {
-        foundPreset = true;
-        return newSettings;
-      }
-      return presets;
-    });
-    setLocalCurrentPresets(nextPresets);
-    if (!foundPreset) {
-      promotePresetToCurrentType(newSettings);
-    }
+    if (!localOrRemotePresets) return;
+    setLocalPresets(
+      localOrRemotePresets.map((presets) =>
+        presets.labelSettings.printSettings.id === newSettings.labelSettings.printSettings.id ? newSettings : presets,
+      ),
+    );
   };
   const deleteCurrentPreset = () => {
     if (!currentPresets) return;
@@ -207,7 +192,7 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
       labelSettings: {
         printSettings: {
           id: "TEMP",
-          name: defaultPresetName,
+          name: t("printing.generic.newSetting"),
         },
       },
     };
@@ -234,36 +219,25 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
         if (foundSetting) {
           curPreset = foundSetting;
         } else {
-          const preferredPreset =
-            currentPresets.find((settings) => isDefaultPresetName(settings.labelSettings.printSettings?.name)) ??
-            currentPresets[0];
-          curPreset = preferredPreset;
-          setSelectedPresetState(toPresetValue(currentPresetType, preferredPreset.labelSettings.printSettings.id));
+          // Recover to the first saved preset when the remembered selection no longer exists.
+          curPreset = localOrRemotePresets[0];
+          setSelectedPresetState(localOrRemotePresets[0].labelSettings.printSettings.id);
         }
-      } else {
-        const preferredPreset =
-          currentPresets.find((settings) => isDefaultPresetName(settings.labelSettings.printSettings?.name)) ??
-          currentPresets[0];
-        curPreset = preferredPreset;
-        setSelectedPresetState(toPresetValue(currentPresetType, preferredPreset.labelSettings.printSettings.id));
       }
     }
   }
 
-  const hasUnsavedChanges =
-    localCurrentPresets !== undefined &&
-    JSON.stringify(localCurrentPresets) !== JSON.stringify(remoteFilamentPresets ?? []);
-
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
-  const titleTemplate = curPreset.titleTemplate ?? `==**{name}**== {color_hex}`;
-  const infoTemplate =
+  const template =
     curPreset.template ??
-    `{material} ({article_number})
+    `**{vendor.name} - {name}
+#{id} - {material}**
 {Diameter: {diameter} mm}
 {Weight: {weight} g}
 {Spool Weight: {spool_weight} g}
 {ET: {settings_extruder_temp} °C}
 {BT: {settings_bed_temp} °C}
+{Article: {article_number}}
 {{comment}}
 {comment}
 {vendor.comment}`;
@@ -334,13 +308,7 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
             <Form.Item label={t("printing.generic.filamentImagePresets")}>
               <Flex gap={8}>
                 <Select
-                  value={
-                    selectedPresetState
-                      ? selectedPresetState.includes(":")
-                        ? selectedPresetState
-                        : toPresetValue(currentPresetType, selectedPresetState)
-                      : undefined
-                  }
+                  value={selectedPresetState}
                   onChange={(value) => {
                     const parsed = parsePresetValue(value);
                     if (!parsed) return;
@@ -390,7 +358,7 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
                   title={t("printing.generic.duplicateSettings")}
                   onClick={duplicateCurrentPreset}
                 />
-                {currentPresets && currentPresets.length > 1 && (
+                {localOrRemotePresets && localOrRemotePresets.length > 1 && (
                   <Popconfirm
                     title={t("printing.generic.deleteSettings")}
                     description={t("printing.generic.deleteSettingsConfirm")}
@@ -425,9 +393,17 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
         items={items.map((filament) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/filament/show/${filament.id}` : `WEB+SPOOLMAN:F-${filament.id}`,
           amlName: renderTemplateText(filenameTemplate, filament),
-          vendor: filament.vendor,
-          title: <>{renderLabelContents(titleTemplate, filament)}</>,
-          label: <>{renderLabelContents(infoTemplate, filament)}</>,
+          label: (
+            <p
+              style={{
+                padding: "1mm 1mm 1mm 0",
+                margin: 0,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {renderLabelContents(template, filament)}
+            </p>
+          ),
           errorLevel: "H",
         }))}
         extraExportSettings={
@@ -461,9 +437,9 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
         }
         extraInfoSettings={
           <>
-            <Form.Item label={t("printing.qrcode.infoTemplate")}>
+            <Form.Item label={t("printing.qrcode.template")}>
               <TextArea
-                value={infoTemplate}
+                value={template}
                 rows={8}
                 onChange={(newValue) => {
                   curPreset.template = newValue.target.value;
@@ -492,20 +468,15 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
         extraButtons={
           <>
             <Button
-              type={hasUnsavedChanges ? "primary" : "default"}
+              type="primary"
               size="large"
               icon={<SaveOutlined />}
-              disabled={!hasUnsavedChanges}
-              onClick={async () => {
-                try {
-                  await savePresetsRemote();
-                  messageApi.success(t("notifications.saveSuccessful"));
-                } catch (error) {
-                  messageApi.error(error instanceof Error ? error.message : "Save failed");
-                }
+              onClick={() => {
+                savePresetsRemote();
+                messageApi.success(t("notifications.saveSuccessful"));
               }}
             >
-              {t("printing.generic.savePreset")}
+              {t("printing.generic.saveSetting")}
             </Button>
           </>
         }

@@ -144,19 +144,14 @@ function applyNewline(text: string): ReactElement[] {
 }
 
 function applyTextFormatting(text: string): ReactElement[] {
-  // Supports **bold** and ==inverted== blocks (can be mixed in one template).
   const regex = /(\*\*[\w\W]*?\*\*|==[\w\W]*?==)/g;
   const parts = text.split(regex);
   const elements = parts.map((part, index) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      const content = part.slice(2, -2);
-      const node = applyTextFormatting(content);
-      return <b key={index}>{node}</b>;
+      return <b key={index}>{applyTextFormatting(part.slice(2, -2))}</b>;
     }
 
     if (part.startsWith("==") && part.endsWith("==")) {
-      const content = part.slice(2, -2);
-      const node = applyTextFormatting(content);
       return (
         <span
           key={index}
@@ -167,7 +162,7 @@ function applyTextFormatting(text: string): ReactElement[] {
             display: "inline-block",
           }}
         >
-          {node}
+          {applyTextFormatting(part.slice(2, -2))}
         </span>
       );
     }
