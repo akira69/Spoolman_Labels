@@ -12,7 +12,6 @@ import {
   Popconfirm,
   Select,
   Space,
-  Table,
   Tooltip,
   Typography,
   message,
@@ -27,6 +26,7 @@ import utc from "dayjs/plugin/utc";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { DateTimePicker } from "../../components/dateTimePicker";
+import ResizableTable from "../../components/resizableTable";
 import { InputNumberRange } from "../../components/inputNumberRange";
 import { getExtraFieldReferences } from "../../utils/formulaFields";
 import { FormulaFieldsSettings } from "./formulaFieldsSettings";
@@ -747,7 +747,8 @@ export function ExtraFieldsSettings() {
         <Typography.Text code>choice</Typography.Text>). {t("settings.extra_fields.custom.description_immutability")}
       </Typography.Paragraph>
       <Form form={form} component={false} disabled={isSubmitting}>
-        <Table
+        <ResizableTable
+          columnResizeKey={`extra-fields-${entityType}`}
           components={{
             body: {
               cell: EditableCell,

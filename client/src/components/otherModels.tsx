@@ -3,7 +3,7 @@ import { Tooltip } from "antd";
 import { ColumnFilterItem } from "antd/es/table/interface";
 import { IFilament } from "../pages/filaments/model";
 import { IVendor } from "../pages/vendors/model";
-import { getAPIURL } from "../utils/url";
+import { getAPIURL, getBasePath } from "../utils/url";
 
 export function useSpoolmanFilamentFilter(enabled: boolean = false) {
   return useQuery<IFilament[], unknown, ColumnFilterItem[]>({
@@ -86,29 +86,18 @@ export function useSpoolmanFilamentFilter(enabled: boolean = false) {
 }
 
 export function useSpoolmanFilamentNames(enabled: boolean = false) {
-  return useQuery<IFilament[], unknown, string[]>({
-    enabled: enabled,
-    queryKey: ["filaments"],
+  return useQuery<string[]>({
+    enabled,
+    queryKey: ["filamentNames"],
     queryFn: async () => {
-      const response = await fetch(getAPIURL() + "/filament");
+      const response = await fetch(getAPIURL() + "/filament/name");
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
       return response.json();
     },
     select: (data) => {
-      // Concatenate vendor name and filament name
-      let names = data
-        .filter((filament) => {
-          return filament.name !== null && filament.name !== undefined && filament.name !== "";
-        })
-        .map((filament) => {
-          return filament.name ?? "<unknown>";
-        })
-        .sort();
-      // Remove duplicates
-      names = [...new Set(names)];
-      return names;
+      return data.filter((name) => name !== "").sort();
     },
   });
 }
@@ -130,6 +119,27 @@ export function useSpoolmanVendors(enabled: boolean = false) {
           return vendor.name ?? `ID ${vendor.id}`;
         })
         .sort();
+    },
+  });
+}
+
+export function useSpoolmanVendorExternalIds(enabled: boolean = false) {
+  return useQuery<IVendor[], unknown, string[]>({
+    enabled: enabled,
+    queryKey: ["vendorExternalIds"],
+    queryFn: async () => {
+      const response = await fetch(getAPIURL() + "/vendor");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
+    select: (data) => {
+      const externalIds = data
+        .map((vendor) => vendor.external_id)
+        .filter((externalId): externalId is string => externalId !== null && externalId !== undefined && externalId !== "")
+        .sort();
+      return [...new Set(externalIds)];
     },
   });
 }
@@ -168,6 +178,28 @@ export function useSpoolmanArticleNumbers(enabled: boolean = false) {
   });
 }
 
+export function useSpoolmanSpoolCounts(enabled: boolean = false) {
+  return useQuery<number[], unknown, ColumnFilterItem[]>({
+    enabled,
+    queryKey: ["filamentSpoolCounts"],
+    queryFn: async () => {
+      const response = await fetch(getAPIURL() + "/filament/spool-count");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
+    select: (data) => {
+      return data
+        .sort((a, b) => a - b)
+        .map((count) => ({
+          text: String(count),
+          value: count,
+        }));
+    },
+  });
+}
+
 export function useSpoolmanLotNumbers(enabled: boolean = false) {
   return useQuery<string[]>({
     enabled: enabled,
@@ -198,6 +230,25 @@ export function useSpoolmanLocations(enabled: boolean = false) {
     },
     select: (data) => {
       return data.sort();
+    },
+  });
+}
+
+interface VendorLogoManifest {
+  web_files?: string[];
+  print_files?: string[];
+}
+
+export function useVendorLogoManifest(enabled: boolean = true) {
+  return useQuery<VendorLogoManifest>({
+    enabled,
+    queryKey: ["vendor-logo-manifest"],
+    queryFn: async () => {
+      const response = await fetch(`${getBasePath()}/vendor-logos/manifest.json`, { cache: "no-store" });
+      if (!response.ok) {
+        return { web_files: [], print_files: [] };
+      }
+      return response.json();
     },
   });
 }

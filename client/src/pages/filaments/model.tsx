@@ -11,6 +11,7 @@ export interface IFilament {
   diameter: number;
   weight?: number;
   spool_weight?: number;
+  spool_count?: number;
   article_number?: string;
   comment?: string;
   settings_extruder_temp?: number;
@@ -26,9 +27,9 @@ export interface IFilament {
 export type IFilamentParsedExtras = Omit<IFilament, "extra"> & { extra?: { [key: string]: unknown } };
 
 // IFilamentEditForm is the shape of the filament edit form — only user-editable fields.
-// id and registered are system-managed; vendor is replaced by vendor_id.
+// id, registered, and spool_count are system-managed; vendor is replaced by vendor_id.
 // Adding a new editable field to IFilament should also be added here;
 // comparableDefaults in filaments/edit.tsx is typed against this.
-export type IFilamentEditForm = Omit<IFilamentParsedExtras, "id" | "registered" | "vendor"> & {
+export type IFilamentEditForm = Omit<IFilamentParsedExtras, "id" | "registered" | "spool_count" | "vendor"> & {
   vendor_id: number | null;
 };

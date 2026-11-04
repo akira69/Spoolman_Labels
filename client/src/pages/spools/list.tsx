@@ -10,7 +10,7 @@ import {
 } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown, Modal, Table } from "antd";
+import { Button, Dropdown, Modal } from "antd";
 import { ColumnType } from "antd/es/table";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -28,6 +28,7 @@ import {
   SpoolIconColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
+import ResizableTable from "../../components/resizableTable";
 import { buildFormulaValues, formatFormulaValue, getFormulaFieldsForSurface } from "../../utils/formulaFields";
 import {
   useSpoolmanFilamentFilter,
@@ -312,10 +313,10 @@ export const SpoolList = () => {
             type="primary"
             icon={<PrinterOutlined />}
             onClick={() => {
-              navigate("print");
+              navigate("labels");
             }}
           >
-            {t("printing.qrcode.button")}
+            {t("printing.qrcode.selectButton")}
           </Button>
           <Button
             type="primary"
@@ -381,7 +382,8 @@ export const SpoolList = () => {
       )}
     >
       {spoolAdjustModal}
-      <Table
+      <ResizableTable
+        columnResizeKey="spool-list-table"
         {...tableProps}
         sticky
         tableLayout="auto"
@@ -482,6 +484,7 @@ export const SpoolList = () => {
             id: "location",
             i18ncat: "spool",
             filterValueQuery: useSpoolmanLocations(),
+            emptyFilterLabel: "",
             width: 120,
           }),
           FilteredQueryColumn({

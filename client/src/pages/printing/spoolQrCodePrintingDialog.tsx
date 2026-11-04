@@ -1,7 +1,8 @@
 import { CopyOutlined, DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
-import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Table, Typography, message } from "antd";
+import { Button, Flex, Form, Input, Modal, Popconfirm, Select, Typography, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
+import ResizableTable from "../../components/resizableTable";
 import { useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { buildFormulaValues, getTemplateFormulaFields } from "../../utils/formulaFields";
@@ -198,10 +199,11 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
   const currentLabelSettings = useMemo(() => clonePreset(curPreset).labelSettings, [curPreset]);
 
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
-  const template =
+  const titleTemplate = curPreset.titleTemplate ?? `==**{filament.name}**== {filament.color_hex}`;
+  const infoTemplate =
     curPreset.template ??
-    `**{filament.vendor.name} - {filament.name}
-#{id} - {filament.material}**
+    `{filament.material} ({filament.article_number})
+Spool ID: #{id}
 Spool Weight: {filament.spool_weight} g
 {ET: {filament.settings_extruder_temp} °C}
 {BT: {filament.settings_bed_temp} °C}
@@ -327,6 +329,10 @@ Spool Weight: {filament.spool_weight} g
         baseUrlRoot={baseUrlRoot}
         useHTTPUrl={useHTTPUrl}
         setUseHTTPUrl={setUseHTTPUrl}
+        previewValues={{
+          default: "WEB+SPOOLMAN:S-{id}",
+          url: `${baseUrlRoot}/spool/show/{id}`,
+        }}
         extraSettingsStart={
           <>
             <Form.Item label={t("printing.generic.settings")}>
@@ -395,24 +401,31 @@ Spool Weight: {filament.spool_weight} g
         }
         items={templateReadySpools.map((spool) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/spool/show/${spool.id}` : `WEB+SPOOLMAN:S-${spool.id}`,
-          label: (
-            <p
-              style={{
-                padding: "1mm 1mm 1mm 0",
-                margin: 0,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {renderLabelContents(template, spool)}
-            </p>
-          ),
+          amlName: `spool-${spool.id}`,
+          vendor: spool.filament.vendor,
+          title: <>{renderLabelContents(titleTemplate, spool)}</>,
+          label: <>{renderLabelContents(infoTemplate, spool)}</>,
           errorLevel: "H",
         }))}
-        extraSettings={
+        extraTitleSettings={
+          <Form.Item label={t("printing.qrcode.titleTemplate")} tooltip={t("printing.qrcode.titleTemplateTooltipSpool")}>
+            <TextArea
+              value={titleTemplate}
+              rows={4}
+              onChange={(newValue) => {
+                updateCurrentPreset((preset) => ({
+                  ...preset,
+                  titleTemplate: newValue.target.value,
+                }));
+              }}
+            />
+          </Form.Item>
+        }
+        extraInfoSettings={
           <>
-            <Form.Item label={t("printing.qrcode.template")}>
+            <Form.Item label={t("printing.qrcode.infoTemplate")}>
               <TextArea
-                value={template}
+                value={infoTemplate}
                 rows={8}
                 onChange={(newValue) => {
                   updateCurrentPreset((preset) => ({
@@ -423,7 +436,8 @@ Spool Weight: {filament.spool_weight} g
               />
             </Form.Item>
             <Modal open={templateHelpOpen} footer={null} onCancel={() => setTemplateHelpOpen(false)}>
-              <Table
+              <ResizableTable
+                columnResizeKey="spool-print-template-tags"
                 size="small"
                 showHeader={false}
                 pagination={false}

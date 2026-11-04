@@ -1,7 +1,14 @@
-import { EditOutlined, EyeOutlined, FileOutlined, FilterOutlined, PlusSquareOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  EyeOutlined,
+  FileOutlined,
+  FilterOutlined,
+  PlusSquareOutlined,
+  PrinterOutlined,
+} from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown, Table } from "antd";
+import { Button, Dropdown } from "antd";
 import { ColumnType } from "antd/es/table";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -18,11 +25,13 @@ import {
   SpoolIconColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
+import ResizableTable from "../../components/resizableTable";
 import { buildFormulaValues, formatFormulaValue, getFormulaFieldsForSurface } from "../../utils/formulaFields";
 import {
   useSpoolmanArticleNumbers,
   useSpoolmanFilamentNames,
   useSpoolmanMaterials,
+  useSpoolmanSpoolCounts,
   useSpoolmanVendors,
 } from "../../components/otherModels";
 import { hasMeaningfulFilters, removeUndefined } from "../../utils/filtering";
@@ -57,6 +66,7 @@ const namespace = "filamentList-v2";
 
 const allColumns: (keyof IFilamentCollapsed & string)[] = [
   "id",
+  "spool_count",
   "vendor.name",
   "name",
   "material",
@@ -82,6 +92,7 @@ export const FilamentList = () => {
   const extraFields = useGetFields(EntityType.filament);
   const formulaFields = useGetDerivedFields(EntityType.filament);
   const currencyFormatter = useCurrencyFormatter();
+  const querySpoolCounts = useSpoolmanSpoolCounts(true);
 
   // Load initial state
   const initialState = useInitialTableState(namespace);
@@ -215,6 +226,15 @@ export const FilamentList = () => {
       headerButtons={({ defaultButtons }) => (
         <>
           <Button
+            type="primary"
+            icon={<PrinterOutlined />}
+            onClick={() => {
+              navigate("labels");
+            }}
+          >
+            {t("printing.qrcode.selectButton")}
+          </Button>
+          <Button
             type={hasActiveFilters ? "primary" : "default"}
             icon={<FilterOutlined />}
             onClick={() => {
@@ -268,7 +288,8 @@ export const FilamentList = () => {
         </>
       )}
     >
-      <Table<IFilamentCollapsed>
+      <ResizableTable<IFilamentCollapsed>
+        columnResizeKey="filament-list-table"
         {...tableProps}
         sticky
         tableLayout="auto"
@@ -281,6 +302,16 @@ export const FilamentList = () => {
             id: "id",
             i18ncat: "filament",
             width: 70,
+          }),
+          FilteredQueryColumn({
+            ...commonProps,
+            id: "spool_count",
+            dataId: "spool_count",
+            i18ncat: "filament",
+            filterValueQuery: querySpoolCounts,
+            includeEmptyFilter: false,
+            width: 120,
+            transform: (value) => value ?? 0,
           }),
           FilteredQueryColumn({
             ...commonProps,

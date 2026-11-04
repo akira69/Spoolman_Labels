@@ -111,7 +111,7 @@ export function enrichText(text: string | undefined) {
   const elements = parts.map((part, index) => {
     if (part.match(urlRegex)) {
       return (
-        <a href={part} key={index} target="_blank" rel="noopener noreferrer">
+        <a className="app-link" href={part} key={index} target="_blank" rel="noopener noreferrer">
           {part}
         </a>
       );
