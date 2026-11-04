@@ -9,8 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from spoolman.api.v1.models import EventType, Vendor, VendorEvent
 from spoolman.database import models
-from spoolman.database.utils import SortOrder, add_where_clause_number_opt, add_where_clause_str, add_where_clause_str_opt
+from spoolman.database.extra_field_query import apply_extra_field_filters_and_sort
+from spoolman.database.utils import SortOrder, add_where_clause_str, add_where_clause_str_opt
 from spoolman.exceptions import ItemNotFoundError
+from spoolman.extra_field_registry import EntityType
 from spoolman.ws import websocket_manager
 
 logger = logging.getLogger(__name__)
@@ -53,10 +55,7 @@ async def find(
     db: AsyncSession,
     name: str | None = None,
     external_id: str | None = None,
-    vendor_id: str | None = None,
-    registered: str | None = None,
-    empty_spool_weight: str | None = None,
-    comment: str | None = None,
+    extra_field_filters: dict[str, str] | None = None,
     sort_by: dict[str, SortOrder] | None = None,
     limit: int | None = None,
     offset: int = 0,
@@ -69,26 +68,34 @@ async def find(
 
     stmt = add_where_clause_str(stmt, models.Vendor.name, name)
     stmt = add_where_clause_str_opt(stmt, models.Vendor.external_id, external_id)
-    stmt = add_where_clause_number_opt(stmt, models.Vendor.id, vendor_id)
-    stmt = add_where_clause_number_opt(stmt, models.Vendor.registered, registered)
-    stmt = add_where_clause_number_opt(stmt, models.Vendor.empty_spool_weight, empty_spool_weight)
-    stmt = add_where_clause_str_opt(stmt, models.Vendor.comment, comment)
 
     total_count = None
 
-    if limit is not None:
-        total_count_stmt = stmt.with_only_columns(func.count(), maintain_column_froms=True)
-        total_count = (await db.execute(total_count_stmt)).scalar()
-
-        stmt = stmt.offset(offset).limit(limit)
+    stmt = await apply_extra_field_filters_and_sort(
+        db=db,
+        stmt=stmt,
+        base_obj=models.Vendor,
+        entity_type=EntityType.vendor,
+        extra_field_filters=extra_field_filters,
+        sort_by=sort_by,
+    )
 
     if sort_by is not None:
         for fieldstr, order in sort_by.items():
+            # Check if this is a custom field sort
+            if fieldstr.startswith("extra."):
+                continue
+
             field = getattr(models.Vendor, fieldstr)
             if order == SortOrder.ASC:
                 stmt = stmt.order_by(field.asc())
             elif order == SortOrder.DESC:
                 stmt = stmt.order_by(field.desc())
+
+    if limit is not None:
+        total_count_stmt = stmt.with_only_columns(func.count(), maintain_column_froms=True).order_by(None)
+        total_count = (await db.execute(total_count_stmt)).scalar()
+        stmt = stmt.offset(offset).limit(limit)
 
     rows = await db.execute(
         stmt,
@@ -123,6 +130,9 @@ async def delete(db: AsyncSession, vendor_id: int) -> None:
     """Delete a vendor object."""
     vendor = await get_by_id(db, vendor_id)
     await db.delete(vendor)
+    # Commit before notifying so the deletion is durable and visible to subsequent
+    # requests; post-commit notification must be the last, infallible step.
+    await db.commit()
     await vendor_changed(vendor, EventType.DELETED)
 
 
@@ -131,6 +141,7 @@ async def clear_extra_field(db: AsyncSession, key: str) -> None:
     await db.execute(
         sqlalchemy.delete(models.VendorField).where(models.VendorField.key == key),
     )
+    await db.commit()
 
 
 async def vendor_changed(vendor: models.Vendor, typ: EventType) -> None:

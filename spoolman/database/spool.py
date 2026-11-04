@@ -13,16 +13,17 @@ from sqlalchemy.sql.functions import coalesce
 
 from spoolman.api.v1.models import EventType, Spool, SpoolEvent
 from spoolman.database import filament, models
+from spoolman.database.extra_field_query import apply_extra_field_filters_and_sort
 from spoolman.database.utils import (
     SortOrder,
     add_where_clause_int,
-    add_where_clause_number_opt,
     add_where_clause_int_opt,
     add_where_clause_str,
     add_where_clause_str_opt,
     parse_nested_field,
 )
 from spoolman.exceptions import ItemCreateError, ItemNotFoundError, SpoolMeasureError
+from spoolman.extra_field_registry import EntityType
 from spoolman.math import weight_from_length
 from spoolman.ws import websocket_manager
 
@@ -122,17 +123,8 @@ async def find(  # noqa: C901, PLR0912
     vendor_id: int | Sequence[int] | None = None,
     location: str | None = None,
     lot_nr: str | None = None,
-    spool_id: str | None = None,
-    price: str | None = None,
-    used_weight: str | None = None,
-    remaining_weight: str | None = None,
-    used_length: str | None = None,
-    remaining_length: str | None = None,
-    first_used: str | None = None,
-    last_used: str | None = None,
-    registered: str | None = None,
-    comment: str | None = None,
     allow_archived: bool = False,
+    extra_field_filters: dict[str, str] | None = None,
     sort_by: dict[str, SortOrder] | None = None,
     limit: int | None = None,
     offset: int = 0,
@@ -151,19 +143,6 @@ async def find(  # noqa: C901, PLR0912
         .options(contains_eager(models.Spool.filament).contains_eager(models.Filament.vendor))
     )
 
-    price_expr = coalesce(models.Spool.price, models.Filament.price)
-    remaining_weight_expr = coalesce(models.Spool.initial_weight, models.Filament.weight) - models.Spool.used_weight
-    remaining_length_expr = (
-        remaining_weight_expr
-        / models.Filament.density
-        / (models.Filament.diameter * models.Filament.diameter)
-    )
-    used_length_expr = (
-        models.Spool.used_weight
-        / models.Filament.density
-        / (models.Filament.diameter * models.Filament.diameter)
-    )
-
     stmt = add_where_clause_int(stmt, models.Spool.filament_id, filament_id)
     stmt = add_where_clause_int_opt(stmt, models.Filament.vendor_id, vendor_id)
     stmt = add_where_clause_str(stmt, models.Vendor.name, vendor_name)
@@ -171,16 +150,6 @@ async def find(  # noqa: C901, PLR0912
     stmt = add_where_clause_str_opt(stmt, models.Filament.material, filament_material)
     stmt = add_where_clause_str_opt(stmt, models.Spool.location, location)
     stmt = add_where_clause_str_opt(stmt, models.Spool.lot_nr, lot_nr)
-    stmt = add_where_clause_number_opt(stmt, models.Spool.id, spool_id)
-    stmt = add_where_clause_number_opt(stmt, price_expr, price)
-    stmt = add_where_clause_number_opt(stmt, models.Spool.used_weight, used_weight)
-    stmt = add_where_clause_number_opt(stmt, remaining_weight_expr, remaining_weight)
-    stmt = add_where_clause_number_opt(stmt, used_length_expr, used_length)
-    stmt = add_where_clause_number_opt(stmt, remaining_length_expr, remaining_length)
-    stmt = add_where_clause_number_opt(stmt, models.Spool.first_used, first_used)
-    stmt = add_where_clause_number_opt(stmt, models.Spool.last_used, last_used)
-    stmt = add_where_clause_number_opt(stmt, models.Spool.registered, registered)
-    stmt = add_where_clause_str_opt(stmt, models.Spool.comment, comment)
 
     if not allow_archived:
         # Since the archived field is nullable, and default is false, we need to check for both false or null
@@ -193,26 +162,45 @@ async def find(  # noqa: C901, PLR0912
 
     total_count = None
 
-    if limit is not None:
-        total_count_stmt = stmt.with_only_columns(func.count(), maintain_column_froms=True)
-        total_count = (await db.execute(total_count_stmt)).scalar()
-
-        stmt = stmt.offset(offset).limit(limit)
+    stmt = await apply_extra_field_filters_and_sort(
+        db=db,
+        stmt=stmt,
+        base_obj=models.Spool,
+        entity_type=EntityType.spool,
+        extra_field_filters=extra_field_filters,
+        sort_by=sort_by,
+    )
 
     if sort_by is not None:
         for fieldstr, order in sort_by.items():
+            # Check if this is a custom field sort
+            if fieldstr.startswith("extra."):
+                continue
+
             sorts = []
             if fieldstr == "remaining_weight":
-                sorts.append(remaining_weight_expr)
+                sorts.append(
+                    coalesce(models.Spool.initial_weight, models.Filament.weight) - models.Spool.used_weight,
+                )
             elif fieldstr == "remaining_length":
-                sorts.append(remaining_length_expr)
+                # Simplified weight -> length formula. Absolute value is not correct but the proportionality
+                # is still kept, which means the sort order is correct.
+                sorts.append(
+                    (coalesce(models.Spool.initial_weight, models.Filament.weight) - models.Spool.used_weight)
+                    / models.Filament.density
+                    / (models.Filament.diameter * models.Filament.diameter),
+                )
             elif fieldstr == "used_length":
-                sorts.append(used_length_expr)
+                sorts.append(
+                    models.Spool.used_weight
+                    / models.Filament.density
+                    / (models.Filament.diameter * models.Filament.diameter),
+                )
             elif fieldstr == "filament.combined_name":
                 sorts.append(models.Vendor.name)
                 sorts.append(models.Filament.name)
             elif fieldstr == "price":
-                sorts.append(price_expr)
+                sorts.append(coalesce(models.Spool.price, models.Filament.price))
             else:
                 sorts.append(parse_nested_field(models.Spool, fieldstr))
 
@@ -220,6 +208,11 @@ async def find(  # noqa: C901, PLR0912
                 stmt = stmt.order_by(*(f.asc() for f in sorts))
             elif order == SortOrder.DESC:
                 stmt = stmt.order_by(*(f.desc() for f in sorts))
+
+    if limit is not None:
+        total_count_stmt = stmt.with_only_columns(func.count(), maintain_column_froms=True).order_by(None)
+        total_count = (await db.execute(total_count_stmt)).scalar()
+        stmt = stmt.offset(offset).limit(limit)
 
     rows = await db.execute(
         stmt,
@@ -266,8 +259,11 @@ async def update(
 async def delete(db: AsyncSession, spool_id: int) -> None:
     """Delete a spool object."""
     spool = await get_by_id(db, spool_id)
-    await spool_changed(spool, EventType.DELETED)
     await db.delete(spool)
+    # Commit before notifying so the deletion is durable and visible to subsequent
+    # requests; post-commit notification must be the last, infallible step.
+    await db.commit()
+    await spool_changed(spool, EventType.DELETED)
 
 
 async def clear_extra_field(db: AsyncSession, key: str) -> None:
@@ -275,6 +271,7 @@ async def clear_extra_field(db: AsyncSession, key: str) -> None:
     await db.execute(
         sqlalchemy.delete(models.SpoolField).where(models.SpoolField.key == key),
     )
+    await db.commit()
 
 
 async def use_weight_safe(db: AsyncSession, spool_id: int, weight: float) -> None:
@@ -498,3 +495,4 @@ async def rename_location(
     await db.execute(
         sqlalchemy.update(models.Spool).where(models.Spool.location == current_name).values(location=new_name),
     )
+    await db.commit()

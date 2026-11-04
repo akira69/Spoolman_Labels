@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
@@ -127,6 +127,7 @@ class SpoolMeasureParameters(BaseModel):
 )
 async def find(
     *,
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db_session)],
     filament_name_old: Annotated[
         str | None,
@@ -247,46 +248,6 @@ async def find(
             ),
         ),
     ] = None,
-    spool_id: Annotated[
-        str | None,
-        Query(alias="id", title="Spool ID", description="Partial match against spool ID values."),
-    ] = None,
-    price: Annotated[
-        str | None,
-        Query(title="Price", description="Partial match against spool price values as text."),
-    ] = None,
-    used_weight: Annotated[
-        str | None,
-        Query(title="Used Weight", description="Partial match against used weight values as text."),
-    ] = None,
-    remaining_weight: Annotated[
-        str | None,
-        Query(title="Remaining Weight", description="Partial match against remaining weight values as text."),
-    ] = None,
-    used_length: Annotated[
-        str | None,
-        Query(title="Used Length", description="Partial match against used length values as text."),
-    ] = None,
-    remaining_length: Annotated[
-        str | None,
-        Query(title="Remaining Length", description="Partial match against remaining length values as text."),
-    ] = None,
-    first_used: Annotated[
-        str | None,
-        Query(title="First Used", description="Partial match against first-used timestamps."),
-    ] = None,
-    last_used: Annotated[
-        str | None,
-        Query(title="Last Used", description="Partial match against last-used timestamps."),
-    ] = None,
-    registered: Annotated[
-        str | None,
-        Query(title="Registered", description="Partial match against registration timestamps."),
-    ] = None,
-    comment: Annotated[
-        str | None,
-        Query(title="Comment", description="Partial case-insensitive match against spool comments."),
-    ] = None,
     allow_archived: Annotated[
         bool,
         Query(title="Allow Archived", description="Whether to include archived spools in the search results."),
@@ -325,30 +286,32 @@ async def find(
     else:
         filament_vendor_ids = None
 
-    db_items, total_count = await spool.find(
-        db=db,
-        filament_name=filament_name if filament_name is not None else filament_name_old,
-        filament_id=filament_ids,
-        filament_material=filament_material if filament_material is not None else filament_material_old,
-        vendor_name=filament_vendor_name if filament_vendor_name is not None else vendor_name_old,
-        vendor_id=filament_vendor_ids,
-        location=location,
-        lot_nr=lot_nr,
-        spool_id=spool_id,
-        price=price,
-        used_weight=used_weight,
-        remaining_weight=remaining_weight,
-        used_length=used_length,
-        remaining_length=remaining_length,
-        first_used=first_used,
-        last_used=last_used,
-        registered=registered,
-        comment=comment,
-        allow_archived=allow_archived,
-        sort_by=sort_by,
-        limit=limit,
-        offset=offset,
-    )
+    # Extract custom field filters from query parameters
+    extra_field_filters = {}
+    query_params = request.query_params
+    for key, value in query_params.items():
+        if key.startswith("extra."):
+            field_key = key[6:]  # Remove "extra." prefix
+            extra_field_filters[field_key] = value
+
+    try:
+        db_items, total_count = await spool.find(
+            db=db,
+            filament_name=filament_name if filament_name is not None else filament_name_old,
+            filament_id=filament_ids,
+            filament_material=filament_material if filament_material is not None else filament_material_old,
+            vendor_name=filament_vendor_name if filament_vendor_name is not None else vendor_name_old,
+            vendor_id=filament_vendor_ids,
+            location=location,
+            lot_nr=lot_nr,
+            allow_archived=allow_archived,
+            extra_field_filters=extra_field_filters if extra_field_filters else None,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=Message(message=str(e)).dict())
 
     # Set x-total-count header for pagination
     return JSONResponse(

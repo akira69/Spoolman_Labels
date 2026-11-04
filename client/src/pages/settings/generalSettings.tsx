@@ -1,35 +1,23 @@
-import { useInvalidate, useTranslate, useUpdate } from "@refinedev/core";
-import { Button, Checkbox, Divider, Form, Input, Space, Typography, message } from "antd";
-import { useEffect, useState } from "react";
-import { useVendorLogoManifest } from "../../components/otherModels";
+import { useTranslate } from "@refinedev/core";
+import { Button, Checkbox, Form, Input, message } from "antd";
+import { useEffect, useMemo } from "react";
+import { toComparableState } from "../../utils/formState";
 import { useGetSettings, useSetSetting } from "../../utils/querySettings";
-import { getAPIURL } from "../../utils/url";
-import { parseExtraString, suggestVendorLogoPaths } from "../../utils/vendorLogo";
-import { IVendor } from "../vendors/model";
 
-const { Text, Paragraph, Link } = Typography;
-
-interface LogoPackSyncResponse {
-  updated: boolean;
-  source_repo: string;
-  source_ref: string;
-  source_url: string;
-  web_logo_count: number;
-  print_logo_count: number;
-}
+const comparableDefaults = {
+  currency: "",
+  base_url: "",
+  round_prices: false,
+} as const;
+// This list is the source of truth for which inputs participate in the Save-button dirty check.
 
 export function GeneralSettings() {
   const settings = useGetSettings();
   const setBaseUrl = useSetSetting("base_url");
   const setCurrency = useSetSetting("currency");
   const setRoundPrices = useSetSetting("round_prices");
-  const logoManifestQuery = useVendorLogoManifest();
-  const invalidate = useInvalidate();
-  const { mutateAsync: updateVendor } = useUpdate();
-  const [isSyncingLogos, setIsSyncingLogos] = useState(false);
-  const [isSyncingLogoPack, setIsSyncingLogoPack] = useState(false);
-  const [logoSourceUrl, setLogoSourceUrl] = useState<string>("https://github.com/MarksMakerSpace/filament-profiles");
   const [form] = Form.useForm();
+  const watchedAllValues = Form.useWatch([], form);
   const [messageApi, contextHolder] = message.useMessage();
   const t = useTranslate();
 
@@ -68,100 +56,31 @@ export function GeneralSettings() {
     }
   };
 
-  const syncVendorLogos = async () => {
-    const manifest = logoManifestQuery.data;
-    if (!manifest) {
-      messageApi.warning(t("settings.general.logo_sync.not_ready"));
-      return;
+  const initialComparableState = useMemo(() => {
+    if (!settings.data) {
+      return null;
     }
+    // Compare the parsed values the form actually edits, not the JSON-encoded storage shape from settings rows.
+    return toComparableState(
+      {
+        currency: JSON.parse(settings.data.currency.value),
+        base_url: JSON.parse(settings.data.base_url.value),
+        round_prices: JSON.parse(settings.data.round_prices.value),
+      },
+      comparableDefaults,
+    );
+  }, [settings.data]);
 
-    setIsSyncingLogos(true);
-    try {
-      const response = await fetch(getAPIURL() + "/vendor");
-      if (!response.ok) {
-        throw new Error(t("settings.general.logo_sync.load_error"));
-      }
+  const watchedComparableState = useMemo(() => {
+    return toComparableState(watchedAllValues, comparableDefaults);
+  }, [watchedAllValues]);
 
-      const vendors = (await response.json()) as IVendor[];
-      let updatedCount = 0;
-      let matchedCount = 0;
-
-      for (const vendor of vendors) {
-        const { webPath, printPath } = suggestVendorLogoPaths(vendor.name, manifest);
-        if (!webPath && !printPath) continue;
-        matchedCount += 1;
-
-        const existingLogo = parseExtraString(vendor.extra?.logo_url);
-        const existingPrintLogo = parseExtraString(vendor.extra?.print_logo_url);
-        if (existingLogo && existingPrintLogo) continue;
-
-        const mergedExtra = { ...(vendor.extra ?? {}) };
-        if (!existingLogo && webPath) mergedExtra.logo_url = JSON.stringify(webPath);
-        if (!existingPrintLogo && printPath) mergedExtra.print_logo_url = JSON.stringify(printPath);
-
-        if (mergedExtra.logo_url === vendor.extra?.logo_url && mergedExtra.print_logo_url === vendor.extra?.print_logo_url) {
-          continue;
-        }
-
-        await updateVendor({
-          resource: "vendor",
-          id: vendor.id,
-          values: { ...vendor, extra: mergedExtra },
-        });
-        updatedCount += 1;
-      }
-
-      if (updatedCount > 0) {
-        invalidate({ resource: "vendor", invalidates: ["list"] });
-      }
-
-      messageApi.success(
-        t("settings.general.logo_sync.done", {
-          matched: matchedCount,
-          updated: updatedCount,
-        }),
-      );
-    } catch (error) {
-      messageApi.error(error instanceof Error ? error.message : t("settings.general.logo_sync.load_error"));
-    } finally {
-      setIsSyncingLogos(false);
-    }
-  };
-
-  const syncLogoPackFromGithub = async () => {
-    setIsSyncingLogoPack(true);
-    try {
-      const response = await fetch(getAPIURL() + "/vendor/logo-pack/sync-from-github", {
-        method: "POST",
-      });
-      const body = (await response.json()) as LogoPackSyncResponse & { message?: string };
-
-      if (!response.ok) {
-        throw new Error(body.message ?? t("settings.general.logo_sync.github_load_error"));
-      }
-
-      if (body.source_url) {
-        setLogoSourceUrl(body.source_url);
-      }
-
-      await logoManifestQuery.refetch();
-      messageApi.success(
-        body.updated
-          ? t("settings.general.logo_sync.github_done_updated", {
-              web: body.web_logo_count,
-              print: body.print_logo_count,
-            })
-          : t("settings.general.logo_sync.github_done_no_changes", {
-              web: body.web_logo_count,
-              print: body.print_logo_count,
-            }),
-      );
-    } catch (error) {
-      messageApi.error(error instanceof Error ? error.message : t("settings.general.logo_sync.github_load_error"));
-    } finally {
-      setIsSyncingLogoPack(false);
-    }
-  };
+  const hasFormChanges =
+    initialComparableState !== null &&
+    watchedComparableState !== null &&
+    initialComparableState !== watchedComparableState;
+  // Treat in-flight saves and initial settings fetches the same way so the button never advertises stale availability.
+  const isSaving = settings.isFetching || setCurrency.isPending || setBaseUrl.isPending || setRoundPrices.isPending;
 
   return (
     <>
@@ -221,48 +140,16 @@ export function GeneralSettings() {
         </Form.Item>
 
         <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-          <Button type="primary" htmlType="submit" loading={settings.isFetching || setCurrency.isPending}>
+          <Button
+            type={hasFormChanges ? "primary" : "default"}
+            htmlType="submit"
+            loading={isSaving}
+            disabled={isSaving || !hasFormChanges}
+          >
             {t("buttons.save")}
           </Button>
         </Form.Item>
       </Form>
-      <div
-        style={{
-          maxWidth: "600px",
-          margin: "1.5rem auto 0",
-        }}
-      >
-        <Divider />
-        <Space direction="vertical" size={4}>
-          <Text strong>{t("settings.general.logo_sync.title")}</Text>
-          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {t("settings.general.logo_sync.description")}
-          </Paragraph>
-          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {t("settings.general.logo_sync.where")}
-          </Paragraph>
-          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {t("settings.general.logo_sync.scope_note")}
-          </Paragraph>
-          <Button type="primary" onClick={() => void syncVendorLogos()} loading={isSyncingLogos}>
-            {t("settings.general.logo_sync.button")}
-          </Button>
-          <Divider style={{ margin: "10px 0" }} />
-          <Text strong>{t("settings.general.logo_sync.github_title")}</Text>
-          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {t("settings.general.logo_sync.github_description")}
-          </Paragraph>
-          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {t("settings.general.logo_sync.github_source")}{" "}
-            <Link href={logoSourceUrl} target="_blank" rel="noreferrer">
-              {logoSourceUrl}
-            </Link>
-          </Paragraph>
-          <Button onClick={() => void syncLogoPackFromGithub()} loading={isSyncingLogoPack}>
-            {t("settings.general.logo_sync.github_button")}
-          </Button>
-        </Space>
-      </div>
       {contextHolder}
     </>
   );
