@@ -12,6 +12,7 @@ from sqlalchemy.orm import contains_eager, joinedload
 
 from spoolman.api.v1.models import EventType, Filament, FilamentEvent, MultiColorDirection
 from spoolman.database import models, vendor
+from spoolman.database.extra_field_query import apply_extra_field_filters_and_sort
 from spoolman.database.utils import (
     SortOrder,
     add_where_clause_int_in,
@@ -22,6 +23,7 @@ from spoolman.database.utils import (
     parse_nested_field,
 )
 from spoolman.exceptions import ItemDeleteError, ItemNotFoundError
+from spoolman.extra_field_registry import EntityType
 from spoolman.math import delta_e, hex_to_rgb, rgb_to_lab
 from spoolman.ws import websocket_manager
 
@@ -115,6 +117,7 @@ async def find(
     registered: str | None = None,
     external_id: str | None = None,
     comment: str | None = None,
+    extra_field_filters: dict[str, str] | None = None,
     sort_by: dict[str, SortOrder] | None = None,
     limit: int | None = None,
     offset: int = 0,
@@ -166,8 +169,19 @@ async def find(
 
     total_count = None
 
+    stmt = await apply_extra_field_filters_and_sort(
+        db=db,
+        stmt=stmt,
+        base_obj=models.Filament,
+        entity_type=EntityType.filament,
+        extra_field_filters=extra_field_filters,
+        sort_by=sort_by,
+    )
+
     if sort_by is not None:
         for fieldstr, order in sort_by.items():
+            if fieldstr.startswith("extra."):
+                continue
             if fieldstr == "spool_count":
                 field = spool_count_expr
             else:
@@ -178,48 +192,7 @@ async def find(
                 stmt = stmt.order_by(field.desc())
 
     if limit is not None:
-        total_count_stmt = select(func.count(models.Filament.id)).select_from(models.Filament)
-        if vendor_name is not None:
-            total_count_stmt = total_count_stmt.join(models.Filament.vendor, isouter=True)
-
-        total_count_stmt = add_where_clause_int_in(total_count_stmt, models.Filament.id, ids)
-        total_count_stmt = add_where_clause_int_opt(total_count_stmt, models.Filament.vendor_id, vendor_id)
-        total_count_stmt = add_where_clause_str(total_count_stmt, models.Vendor.name, vendor_name)
-        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.id, filament_id)
-        total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.name, name)
-        total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.material, material)
-        total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.article_number, article_number)
-        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.price, price)
-        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.density, density)
-        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.diameter, diameter)
-        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.weight, weight)
-        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.spool_weight, spool_weight)
-        total_count_stmt = add_where_clause_number_opt(
-            total_count_stmt,
-            models.Filament.settings_extruder_temp,
-            settings_extruder_temp,
-        )
-        total_count_stmt = add_where_clause_number_opt(
-            total_count_stmt,
-            models.Filament.settings_bed_temp,
-            settings_bed_temp,
-        )
-        total_count_stmt = add_where_clause_number_opt(total_count_stmt, models.Filament.registered, registered)
-        total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.external_id, external_id)
-        total_count_stmt = add_where_clause_str_opt(total_count_stmt, models.Filament.comment, comment)
-
-        if has_spools is not None:
-            has_spool_subquery = select(models.Spool.id).where(models.Spool.filament_id == models.Filament.id).exists()
-            total_count_stmt = total_count_stmt.where(has_spool_subquery if has_spools else ~has_spool_subquery)
-
-        if spool_count is not None:
-            spool_count_scalar_subquery = (
-                select(func.count(models.Spool.id))
-                .where(models.Spool.filament_id == models.Filament.id)
-                .scalar_subquery()
-            )
-            total_count_stmt = total_count_stmt.where(spool_count_scalar_subquery.in_(spool_count))
-
+        total_count_stmt = stmt.with_only_columns(func.count(), maintain_column_froms=True).order_by(None)
         total_count = (await db.execute(total_count_stmt)).scalar()
         stmt = stmt.offset(offset).limit(limit)
 
@@ -280,6 +253,7 @@ async def clear_extra_field(db: AsyncSession, key: str) -> None:
     await db.execute(
         sqlalchemy.delete(models.FilamentField).where(models.FilamentField.key == key),
     )
+    await db.commit()
 
 
 logger = logging.getLogger(__name__)

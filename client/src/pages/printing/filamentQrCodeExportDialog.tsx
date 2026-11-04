@@ -107,7 +107,7 @@ const FilamentQRCodeExportDialog = ({ filamentIds }: FilamentQRCodeExportDialogP
 
   const savePresetsRemote = async () => {
     if (!localCurrentPresets) return;
-    await setRemoteFilamentPresets(localCurrentPresets);
+    await setRemoteFilamentPresets.mutateAsync(localCurrentPresets);
     setLocalCurrentPresets(undefined);
   };
 

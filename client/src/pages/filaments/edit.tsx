@@ -7,11 +7,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { MultiColorPicker } from "../../components/multiColorPicker";
 import VendorLogo from "../../components/vendorLogo";
+import { toComparableState } from "../../utils/formState";
 import { formatNumberOnUserInput, numberParser, numberParserAllowEmpty } from "../../utils/parsing";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { getCurrencySymbol, useCurrency } from "../../utils/settings";
 import { IVendor } from "../vendors/model";
-import { IFilament, IFilamentParsedExtras } from "./model";
+import { IFilament, IFilamentEditForm, IFilamentParsedExtras } from "./model";
 
 /*
 The API returns the extra fields as JSON values, but we need to parse them into their real types
@@ -19,6 +20,29 @@ in order for Ant design's form to work properly. ParsedExtras does this for us.
 We also need to stringify them again before sending them back to the API, which is done by overriding
 the form's onFinish method. Form.Item's normalize should do this, but it doesn't seem to work.
 */
+
+// comparableDefaults is typed against IFilamentEditForm so TypeScript will report a compile
+// error here if a new editable field is added to the model without updating this list.
+const comparableDefaults: Record<keyof IFilamentEditForm, unknown> = {
+  name: "",
+  vendor_id: null,
+  material: "",
+  price: null,
+  density: null,
+  diameter: null,
+  weight: null,
+  spool_weight: null,
+  settings_extruder_temp: null,
+  settings_bed_temp: null,
+  article_number: "",
+  external_id: "",
+  comment: "",
+  color_hex: "",
+  multi_color_direction: "",
+  multi_color_hexes: "",
+  extra: {},
+};
+// This list is the source of truth for which inputs participate in the Save-button dirty check.
 
 export const FilamentEdit = () => {
   const { Text } = Typography;
@@ -68,13 +92,16 @@ export const FilamentEdit = () => {
       : undefined;
   const watchedAllValues = Form.useWatch([], formProps.form);
 
-  // Add the vendor_id field to the form
-  if (formProps.initialValues) {
-    formProps.initialValues["vendor_id"] = formProps.initialValues["vendor"]?.id;
-
-    // Parse the extra fields from string values into real types
-    formProps.initialValues = ParsedExtras(formProps.initialValues);
-  }
+  // Initialize form fields and parse extra fields
+  useEffect(() => {
+    if (formProps.initialValues && formProps.form) {
+      const parsed = ParsedExtras(formProps.initialValues);
+      formProps.form.setFieldsValue({
+        ...parsed,
+        vendor_id: formProps.initialValues.vendor?.id,
+      } as unknown as IFilament);
+    }
+  }, [formProps.form, formProps.initialValues?.id, formProps.initialValues?.vendor?.id]);
 
   // Update colorType state
   useEffect(() => {
@@ -101,64 +128,38 @@ export const FilamentEdit = () => {
     }
   };
 
-
-  const normalizeForCompare = (value: unknown): unknown => {
-    if (dayjs.isDayjs(value)) {
-      return value.toISOString();
-    }
-    if (Array.isArray(value)) {
-      return value.map(normalizeForCompare);
-    }
-    if (value && typeof value === "object") {
-      const objectValue = value as Record<string, unknown>;
-      return Object.keys(objectValue)
-        .sort()
-        .reduce<Record<string, unknown>>((acc, key) => {
-          const normalizedValue = normalizeForCompare(objectValue[key]);
-          if (normalizedValue !== undefined) {
-            acc[key] = normalizedValue;
-          }
-          return acc;
-        }, {});
-    }
-    return value;
-  };
-
-  const toComparableState = (value: unknown): string => {
-    const normalized = normalizeForCompare(value) as Record<string, unknown> | undefined;
-    const normalizedExtra = { ...(normalized?.extra as Record<string, unknown> | undefined) };
-
-    return JSON.stringify({
-      name: normalized?.name ?? "",
-      vendor_id: normalized?.vendor_id ?? null,
-      material: normalized?.material ?? "",
-      price: normalized?.price ?? null,
-      density: normalized?.density ?? null,
-      diameter: normalized?.diameter ?? null,
-      weight: normalized?.weight ?? null,
-      spool_weight: normalized?.spool_weight ?? null,
-      settings_extruder_temp: normalized?.settings_extruder_temp ?? null,
-      settings_bed_temp: normalized?.settings_bed_temp ?? null,
-      article_number: normalized?.article_number ?? "",
-      external_id: normalized?.external_id ?? "",
-      comment: normalized?.comment ?? "",
-      color_hex: normalized?.color_hex ?? "",
-      multi_color_direction: normalized?.multi_color_direction ?? "",
-      multi_color_hexes: colorType === "single" ? "" : (normalized?.multi_color_hexes ?? ""),
-      extra: normalizedExtra,
-    });
-  };
-
   const initialComparableState = useMemo(
-    () => (formProps.initialValues ? toComparableState(formProps.initialValues) : null),
-    [formProps.initialValues, colorType],
+    // ParsedExtras normalizes extra-field values from raw API JSON strings to their actual
+    // types so the initial snapshot matches the form state that setFieldsValue produces.
+    () =>
+      toComparableState(
+        formProps.initialValues
+          ? {
+              ...ParsedExtras(formProps.initialValues),
+              vendor_id: formProps.initialValues.vendor?.id ?? null,
+            }
+          : formProps.initialValues,
+        comparableDefaults,
+        {
+          // Single-color mode should ignore any dormant multi-color payload when deciding whether Save is needed.
+          multi_color_hexes: (normalized: Record<string, unknown>) =>
+            colorType === "single" ? "" : ((normalized.multi_color_hexes as string | undefined) ?? ""),
+        },
+      ),
+    [formProps.initialValues, formProps.initialValues?.vendor?.id, colorType],
   );
   const watchedComparableState = useMemo(
-    () => (watchedAllValues ? toComparableState(watchedAllValues) : null),
+    () =>
+      toComparableState(watchedAllValues, comparableDefaults, {
+        multi_color_hexes: (normalized: Record<string, unknown>) =>
+          colorType === "single" ? "" : ((normalized.multi_color_hexes as string | undefined) ?? ""),
+      }),
     [watchedAllValues, colorType],
   );
   const hasFormChanges =
-    initialComparableState !== null && watchedComparableState !== null && initialComparableState !== watchedComparableState;
+    initialComparableState !== null &&
+    watchedComparableState !== null &&
+    initialComparableState !== watchedComparableState;
   const saveButtonState = {
     ...saveButtonProps,
     type: hasFormChanges ? ("primary" as const) : ("default" as const),

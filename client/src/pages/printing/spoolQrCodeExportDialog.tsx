@@ -107,7 +107,7 @@ const SpoolQRCodeExportDialog = ({ spoolIds }: SpoolQRCodeExportDialog) => {
 
   const savePresetsRemote = async () => {
     if (!localCurrentPresets) return;
-    await setRemoteSpoolPresets(localCurrentPresets);
+    await setRemoteSpoolPresets.mutateAsync(localCurrentPresets);
     setLocalCurrentPresets(undefined);
   };
 

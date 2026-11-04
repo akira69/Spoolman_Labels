@@ -34,7 +34,7 @@ import {
   useSpoolmanLotNumbers,
   useSpoolmanMaterials,
 } from "../../components/otherModels";
-import { removeUndefined } from "../../utils/filtering";
+import { hasMeaningfulFilters, removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useSavedState, useStoreInitialState } from "../../utils/saveload";
 import { useCurrencyFormatter } from "../../utils/settings";
@@ -58,7 +58,10 @@ function collapseSpool(element: ISpool): ISpoolCollapsed {
   } else {
     filament_name = element.filament.name ?? element.filament.id.toString();
   }
-  if (element.price === undefined) {
+  // The REST list omits `price` when unset (response_model_exclude_none), but websocket
+  // live updates send it as `null`. Fall back to the filament price for both cases,
+  // otherwise a live update (e.g. after a weight adjust) blanks the price column until reload.
+  if (element.price === undefined || element.price === null) {
     element.price = element.filament.price;
   }
   return {
@@ -256,7 +259,8 @@ export const SpoolList = () => {
     tableState,
     sorter: true,
   };
-  const hasActiveFilters = (filters?.length ?? 0) > 0;
+  // Ignore empty filter shells so the Clear Filters button only lights up for filters that would affect results.
+  const hasActiveFilters = hasMeaningfulFilters(filters);
 
   return (
     <List
@@ -384,7 +388,7 @@ export const SpoolList = () => {
             align: "right",
             width: 80,
             render: (_, obj: ISpoolCollapsed) => {
-              if (obj.price === undefined) {
+              if (obj.price === undefined || obj.price === null) {
                 return "";
               }
               return currencyFormatter.format(obj.price);

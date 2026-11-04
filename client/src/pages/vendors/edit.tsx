@@ -22,10 +22,11 @@ import { useEffect, useMemo, useState } from "react";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { useVendorLogoManifest } from "../../components/otherModels";
 import VendorLogo from "../../components/vendorLogo";
+import { toComparableState } from "../../utils/formState";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { getAPIURL } from "../../utils/url";
 import { suggestVendorLogoOptions, suggestVendorLogoPaths } from "../../utils/vendorLogo";
-import { IVendor, IVendorParsedExtras } from "./model";
+import { IVendor, IVendorEditForm, IVendorParsedExtras } from "./model";
 
 /*
 The API returns the extra fields as JSON values, but we need to parse them into their real types
@@ -33,6 +34,17 @@ in order for Ant design's form to work properly. ParsedExtras does this for us.
 We also need to stringify them again before sending them back to the API, which is done by overriding
 the form's onFinish method. Form.Item's normalize should do this, but it doesn't seem to work.
 */
+
+// comparableDefaults is typed against IVendorEditForm so TypeScript will report a compile
+// error here if a new editable field is added to the model without updating this list.
+const comparableDefaults: Record<keyof IVendorEditForm, unknown> = {
+  name: "",
+  comment: "",
+  empty_spool_weight: null,
+  external_id: "",
+  extra: {},
+};
+// This list is the source of truth for which inputs participate in the Save-button dirty check.
 
 export const VendorEdit = () => {
   const { Text } = Typography;
@@ -60,11 +72,15 @@ export const VendorEdit = () => {
       }
     },
   });
+  const watchedAllValues = Form.useWatch([], formProps.form);
 
-  // Parse the extra fields from string values into real types
-  if (formProps.initialValues) {
-    formProps.initialValues = ParsedExtras(formProps.initialValues);
-  }
+  // Initialize form fields and parse extra fields
+  useEffect(() => {
+    if (formProps.initialValues && formProps.form) {
+      const parsed = ParsedExtras(formProps.initialValues);
+      formProps.form.setFieldsValue(parsed as unknown as IVendor);
+    }
+  }, [formProps.form, formProps.initialValues?.id]);
 
   // Override the form's onFinish method to stringify the extra fields
   const originalOnFinish = formProps.onFinish;
@@ -93,10 +109,12 @@ export const VendorEdit = () => {
         extra: {},
         ...stringifiedAllValues,
       });
+      // Clear the live-update warning: user has seen and chosen to save over the conflict.
+      // Dismissed on submit intent (not on server confirm) — useForm handles server errors separately.
+      setHasChanged(false);
     }
   };
 
-  const watchedAllValues = Form.useWatch([], formProps.form);
   const watchedName = Form.useWatch(["name"], formProps.form);
   const watchedExtra = Form.useWatch(["extra"], formProps.form) as { [key: string]: unknown } | undefined;
   const logoUrlValue = typeof watchedExtra?.logo_url === "string" ? watchedExtra.logo_url.trim() : "";
@@ -164,65 +182,31 @@ export const VendorEdit = () => {
     formProps.form?.setFieldValue(["extra", field], "");
   };
 
-  const normalizeForCompare = (value: unknown): unknown => {
-    if (dayjs.isDayjs(value)) {
-      return value.toISOString();
+  const normalizeVendorComparableValues = (value: unknown): unknown => {
+    if (!value || typeof value !== "object") {
+      return value;
     }
-    if (Array.isArray(value)) {
-      return value.map(normalizeForCompare);
-    }
-    if (value && typeof value === "object") {
-      const objValue = value as Record<string, unknown>;
-      return Object.keys(objValue)
-        .sort()
-        .reduce<Record<string, unknown>>((acc, key) => {
-          const normalizedValue = normalizeForCompare(objValue[key]);
-          if (normalizedValue !== undefined) {
-            acc[key] = normalizedValue;
-          }
-          return acc;
-        }, {});
-    }
-    return value;
-  };
-
-  const toComparableState = (value: unknown): string => {
-    const normalized = normalizeForCompare(value) as Record<string, unknown> | undefined;
-    const normalizedExtra = { ...(normalized?.extra as Record<string, unknown> | undefined) };
-    const normalizeLogoValue = (logoValue: unknown): string | undefined => {
-      if (typeof logoValue !== "string") {
-        return undefined;
+    const normalized = value as Record<string, unknown>;
+    const extra = { ...(normalized.extra as Record<string, unknown> | undefined) };
+    for (const key of ["logo_url", "print_logo_url"]) {
+      const logoValue = extra[key];
+      if (typeof logoValue !== "string" || logoValue.trim() === "") {
+        delete extra[key];
+      } else {
+        extra[key] = logoValue.trim();
       }
-      const trimmed = logoValue.trim();
-      return trimmed === "" ? undefined : trimmed;
-    };
-    const cleanedLogo = normalizeLogoValue(normalizedExtra.logo_url);
-    const cleanedPrintLogo = normalizeLogoValue(normalizedExtra.print_logo_url);
-    if (cleanedLogo === undefined) {
-      delete normalizedExtra.logo_url;
-    } else {
-      normalizedExtra.logo_url = cleanedLogo;
     }
-    if (cleanedPrintLogo === undefined) {
-      delete normalizedExtra.print_logo_url;
-    } else {
-      normalizedExtra.print_logo_url = cleanedPrintLogo;
-    }
-
-    return JSON.stringify({
-      name: normalized?.name ?? "",
-      comment: normalized?.comment ?? "",
-      empty_spool_weight: normalized?.empty_spool_weight ?? null,
-      external_id: normalized?.external_id ?? "",
-      extra: normalizedExtra,
-    });
+    return { ...normalized, extra };
   };
 
   const initialComparableState = useMemo(() => {
     if (!formProps.initialValues) {
       return null;
     }
-    return toComparableState(formProps.initialValues);
+    return toComparableState(
+      normalizeVendorComparableValues(ParsedExtras(formProps.initialValues)),
+      comparableDefaults,
+    );
   }, [formProps.initialValues]);
 
   const convertWebLogoToPrint = async () => {
@@ -273,7 +257,7 @@ export const VendorEdit = () => {
     if (!watchedAllValues) {
       return null;
     }
-    return toComparableState(watchedAllValues);
+    return toComparableState(normalizeVendorComparableValues(watchedAllValues), comparableDefaults);
   }, [watchedAllValues]);
 
   const hasFormChanges = useMemo(() => {
