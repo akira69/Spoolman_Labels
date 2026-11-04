@@ -124,10 +124,20 @@ export const languages: { [key: string]: Language } = {
     fullCode: "ja-JP",
     djs: () => import("dayjs/locale/ja"),
   },
+  ["ko"]: {
+    name: "한국어",
+    fullCode: "ko-KR",
+    djs: () => import("dayjs/locale/ko"),
+  },
   ["pt-BR"]: {
     name: "Português (Brasil)",
     fullCode: "pt-BR",
     djs: () => import("dayjs/locale/pt-br"),
+  },
+  ["sl"]: {
+    name: "Slovenščina",
+    fullCode: "sl-SI",
+    djs: () => import("dayjs/locale/sl"),
   },
   ["ta"]: {
     name: "தமிழ்",
