@@ -24,6 +24,8 @@ interface SpoolQRCodePrintingDialog {
   spoolIds: number[];
 }
 
+// Adapt spool records into the generic QR print dialog while keeping spool print
+// presets isolated from the export-specific preset buckets.
 const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
   const t = useTranslate();
   const currentPresetType = "spool";
@@ -87,7 +89,6 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     })
     .filter((item) => item !== null) as ISpool[];
 
-  // Selected preset state
   const [selectedPresetState, setSelectedPresetState] = useSavedState<string | undefined>("selectedPreset", undefined);
 
   // Keep a local copy of the settings which is what's actually displayed. Use the remote state only for saving.
@@ -102,7 +103,7 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
 
   const savePresetsRemote = () => {
     if (!localCurrentPresets) return;
-    setRemotePresets(localCurrentPresets);
+    setRemotePresets.mutate(localCurrentPresets);
   };
 
   useEffect(() => {
@@ -161,7 +162,6 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     setSelectedPresetState(undefined);
   };
 
-  // Initialize presets
   let curPreset: SpoolQRCodePrintSettings;
   if (currentPresets === undefined) {
     // DB not loaded yet, use a temporary one
@@ -216,11 +216,10 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
     JSON.stringify(localCurrentPresets) !== JSON.stringify(remoteCurrentPresets ?? []);
 
   const [templateHelpOpen, setTemplateHelpOpen] = useState(false);
-  const titleTemplate = curPreset.titleTemplate ?? `==**{filament.name}**== {filament.color_hex}`;
-  const infoTemplate =
+  const template =
     curPreset.template ??
-    `{filament.material} ({filament.article_number})
-Spool ID: #{id}
+    `**{filament.vendor.name} - {filament.name}
+#{id} - {filament.material}**
 Spool Weight: {filament.spool_weight} g
 {ET: {filament.settings_extruder_temp} °C}
 {BT: {filament.settings_bed_temp} °C}
@@ -292,6 +291,8 @@ Spool Weight: {filament.spool_weight} g
     });
   }
 
+  // Expose spool, filament, and vendor placeholders because the same tag picker drives
+  // preview text and printed label templates.
   const templateTags = [...spoolTags, ...filamentTags, ...vendorTags];
 
   return (
@@ -411,10 +412,17 @@ Spool Weight: {filament.spool_weight} g
         }
         items={items.map((spool) => ({
           value: useHTTPUrl ? `${baseUrlRoot}/spool/show/${spool.id}` : `WEB+SPOOLMAN:S-${spool.id}`,
-          amlName: `spool-${spool.id}`,
-          vendor: spool.filament.vendor,
-          title: <>{renderLabelContents(titleTemplate, spool)}</>,
-          label: <>{renderLabelContents(infoTemplate, spool)}</>,
+          label: (
+            <p
+              style={{
+                padding: "1mm 1mm 1mm 0",
+                margin: 0,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {renderLabelContents(template, spool)}
+            </p>
+          ),
           errorLevel: "H",
         }))}
         extraTitleSettings={
@@ -433,9 +441,9 @@ Spool Weight: {filament.spool_weight} g
         }
         extraInfoSettings={
           <>
-            <Form.Item label={t("printing.qrcode.infoTemplate")}>
+            <Form.Item label={t("printing.qrcode.template")}>
               <TextArea
-                value={infoTemplate}
+                value={template}
                 rows={8}
                 onChange={(newValue) => {
                   updateCurrentPreset({ ...curPreset, template: newValue.target.value });

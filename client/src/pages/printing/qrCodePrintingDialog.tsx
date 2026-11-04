@@ -120,6 +120,7 @@ const QRCodePrintingDialog = ({
                 </Radio.Group>
               </Form.Item>
               <Form.Item label={t("printing.qrcode.useHTTPUrl.preview")}>
+                {/* Mirror the encoded payload so users can confirm which QR format the preset will emit. */}
                 <Text> {useHTTPUrl ? preview.url : preview.default}</Text>
               </Form.Item>
             </>

@@ -1,5 +1,5 @@
 import { useTable } from "@refinedev/antd";
-import { Button, Checkbox, Col, Input, message, Pagination, Row, Table } from "antd";
+import { Button, Checkbox, Col, Input, message, Pagination, Row, Space, Table } from "antd";
 import { t } from "i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -11,9 +11,9 @@ import { IFilament } from "../filaments/model";
 
 interface Props {
   description?: string;
+  onPrint?: (selectedFilamentIds: number[]) => void;
+  onExport?: (selectedFilamentIds: number[]) => void;
   initialSelectedIds?: number[];
-  onExport?: (selectedIds: number[]) => void;
-  onPrint: (selectedFilamentIds: number[]) => void;
   searchPlaceholder?: string;
 }
 

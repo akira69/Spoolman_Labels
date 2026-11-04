@@ -109,7 +109,6 @@ def get_vendor_logo_asset(asset_path: str) -> FileResponse:
         raise HTTPException(status_code=404, detail="Logo asset not found.")
     return FileResponse(path=resolved)
 
-
 # Mount the client side app
 app.mount(base_path, app=SinglePageApplication(directory="client/dist", base_path=env.get_base_path()))
 

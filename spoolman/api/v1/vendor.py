@@ -86,7 +86,6 @@ class VendorLogoConvertResult(BaseModel):
     print_logo_url: str = Field(description="Generated print logo URL.")
     message: str = Field(description="Result summary.")
 
-
 @router.get(
     "",
     name="Find vendor",
@@ -208,7 +207,6 @@ async def convert_web_logo_to_print(body: VendorLogoConvertRequest) -> VendorLog
         print_logo_url=print_logo_url,
         message="Generated print logo from web logo.",
     )
-
 
 @router.get(
     "/{vendor_id}",

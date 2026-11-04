@@ -42,17 +42,14 @@ export const FilamentShow = () => {
     });
   };
 
-  const gotoSpools = (): undefined => {
-    const URL = `/spool#filters=[{"field":"filament.id","operator":"in","value":[${record?.id}]}]`;
+  const gotoVendor = (): undefined => {
+    const URL = `/vendor/show/${record?.vendor?.id}`;
     navigate(URL);
   };
 
-  const vendorURL = (item: IFilament) => {
-    if (!item.vendor) {
-      return null;
-    }
-    const url = `/vendor/show/${item.vendor.id}`;
-    return <a href={url}>{item.vendor.name}</a>;
+  const gotoSpools = (): undefined => {
+    const URL = `/spool#filters=[{"field":"filament.id","operator":"in","value":[${record?.id}]}]`;
+    navigate(URL);
   };
 
   const colorObj = record?.multi_color_hexes
@@ -168,7 +165,12 @@ export const FilamentShow = () => {
         </Col>
         <Col xs={24} lg={8}>
           <Title level={5}>{t("filament.fields.vendor")}</Title>
-          <TextField value={record ? vendorURL(record) : ""} />
+          <button
+            onClick={gotoVendor}
+            style={{ background: "none", border: "none", color: "blue", cursor: "pointer", paddingLeft: 0 }}
+          >
+            {record ? record.vendor?.name : ""}
+          </button>
           {record?.vendor && (
             <div style={{ marginTop: 12 }}>
               <VendorLogo

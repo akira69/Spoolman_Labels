@@ -112,6 +112,7 @@ const SpoolSelectModal = ({ description, initialSelectedIds, onExport, onPrint }
     );
   }, []);
 
+  // State for the select/unselect all checkbox
   // Memoised Set for O(1) membership checks — avoids O(n²) when dataSource and
   // selectedItems are both large (many loaded spools, many already selected).
   const selectedSet = useMemo(() => new Set(selectedItems), [selectedItems]);
