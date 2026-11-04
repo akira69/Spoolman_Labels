@@ -17,6 +17,8 @@ interface QRCodePrintingDialogProps {
   items: QRCodeData[];
   printSettings: QRCodePrintSettings;
   setPrintSettings: (setPrintSettings: QRCodePrintSettings) => void;
+  extraTitleSettings?: ReactElement;
+  extraInfoSettings?: ReactElement;
   extraSettings?: ReactElement;
   extraSettingsStart?: ReactElement;
   extraButtons?: ReactElement;
@@ -26,11 +28,14 @@ interface QRCodePrintingDialogProps {
   previewValues?: { default: string; url: string };
 }
 
-// Layer QR-specific controls on top of the shared sheet-printing dialog used by spool and filament labels.
+// Wrap the generic print-sheet layout with QR-specific controls so spool and filament
+// print flows can share one renderer without forking the label layout logic.
 const QRCodePrintingDialog = ({
   items,
   printSettings,
   setPrintSettings,
+  extraTitleSettings,
+  extraInfoSettings,
   extraSettings,
   extraSettingsStart,
   extraButtons,
@@ -46,7 +51,8 @@ const QRCodePrintingDialog = ({
   const textSize = printSettings?.textSize || 3;
   const preview = previewValues ?? ({ default: `WEB+SPOOLMAN:S-{id}`, url: `${baseUrlRoot}/spool/show/{id}` } as const);
 
-  // Build the printable QR blocks here; the underlying dialog handles page layout and export mechanics.
+  // Build the same per-label structure used by the export flow so print previews and
+  // exported files stay visually aligned.
   const elements = items.map((item, idx) => {
     return (
       <div className="print-qrcode-item" key={idx}>
@@ -158,6 +164,8 @@ const QRCodePrintingDialog = ({
             </Row>
           </Form.Item>
 
+          {extraTitleSettings}
+          {extraInfoSettings}
           {extraSettings}
         </>
       }

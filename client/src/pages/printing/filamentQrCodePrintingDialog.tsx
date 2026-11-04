@@ -5,11 +5,12 @@ import TextArea from "antd/es/input/TextArea";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { EntityType, useGetFields } from "../../utils/queryFields";
-import { parseStringSettingValue, useGetSetting } from "../../utils/querySettings";
+import { useGetSetting } from "../../utils/querySettings";
 import { useSavedState } from "../../utils/saveload";
 import { useGetFilamentsByIds } from "../filaments/functions";
 import { IFilament } from "../filaments/model";
 import {
+  getConfiguredBaseUrl,
   SpoolQRCodePrintSettings,
   renderLabelContents,
   useGetPrintSettings as useGetPrintPresets,
@@ -23,11 +24,13 @@ interface FilamentQRCodePrintingDialogProps {
   filamentIds: number[];
 }
 
+// Adapt filament records into the generic QR print dialog and keep filament label
+// presets isolated from the spool-oriented default preset bucket.
 const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDialogProps) => {
   const t = useTranslate();
   const baseUrlSetting = useGetSetting("base_url");
-  const baseUrl = parseStringSettingValue(baseUrlSetting.data?.value);
-  const baseUrlRoot = baseUrl !== "" ? baseUrl : window.location.origin;
+  // Accept both JSON-backed settings and legacy plain strings so old `base_url` values do not crash the dialog.
+  const baseUrlRoot = getConfiguredBaseUrl(baseUrlSetting.data?.value, window.location.origin);
   const [messageApi, contextHolder] = message.useMessage();
   const [useHTTPUrl, setUseHTTPUrl] = useSavedState("print-useHTTPUrl-filament", false);
 
@@ -51,7 +54,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
 
   const savePresetsRemote = () => {
     if (!localPresets) return;
-    setRemotePresets(localPresets);
+    setRemotePresets.mutate(localPresets);
   };
 
   const addNewPreset = () => {
@@ -125,14 +128,9 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
         if (foundSetting) {
           curPreset = foundSetting;
         } else {
-          curPreset = {
-            labelSettings: {
-              printSettings: {
-                id: "TEMP",
-                name: t("printing.generic.newSetting"),
-              },
-            },
-          };
+          // Recover to the first saved preset when the remembered selection no longer exists.
+          curPreset = localOrRemotePresets[0];
+          setSelectedPresetState(localOrRemotePresets[0].labelSettings.printSettings.id);
         }
       }
     }
@@ -193,6 +191,8 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
     });
   }
 
+  // Expose both filament and vendor placeholders because the same tag picker drives
+  // preview text and printed label templates.
   const templateTags = [...filamentTags, ...vendorTags];
 
   return (
@@ -212,7 +212,7 @@ const FilamentQRCodePrintingDialog = ({ filamentIds }: FilamentQRCodePrintingDia
         }}
         extraSettingsStart={
           <>
-            <Form.Item label={t("printing.generic.settings")}>
+            <Form.Item label={t("printing.generic.filamentPrintPresets")}>
               <Flex gap={8}>
                 <Select
                   value={selectedPresetState}
