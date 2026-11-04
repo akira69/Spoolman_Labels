@@ -2,39 +2,29 @@ import { PageHeader } from "@refinedev/antd";
 import { useTranslate } from "@refinedev/core";
 import { theme } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useEffect, useMemo } from "react";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { useNavigate, useSearchParams } from "react-router";
 import SpoolQRCodePrintingDialog from "./spoolQrCodePrintingDialog";
+import SpoolSelectModal from "./spoolSelectModal";
+
+dayjs.extend(utc);
 
 const { useToken } = theme;
 
 export const Printing = () => {
   const { token } = useToken();
   const t = useTranslate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const spoolIds = searchParams.getAll("spools").map(Number);
-  const returnUrl = searchParams.get("return");
-  const selectionPath = useMemo(() => {
-    const params = new URLSearchParams();
-    if (returnUrl) {
-      params.set("return", returnUrl);
-    }
-    const query = params.toString();
-    return `/spool/labels${query ? `?${query}` : ""}`;
-  }, [returnUrl]);
-
-  useEffect(() => {
-    if (spoolIds.length === 0) {
-      navigate(selectionPath, { replace: true });
-    }
-  }, [navigate, selectionPath, spoolIds.length]);
+  const step = spoolIds.length > 0 ? 1 : 0;
 
   return (
     <>
       <PageHeader
-        title={t("printing.qrcode.printSpoolTitle")}
+        title={t("printing.qrcode.button")}
         onBack={() => {
           const returnUrl = searchParams.get("return");
           if (returnUrl) {
@@ -57,7 +47,21 @@ export const Printing = () => {
             lineHeight: 1.5,
           }}
         >
-          {spoolIds.length > 0 && <SpoolQRCodePrintingDialog spoolIds={spoolIds} />}
+          {step === 0 && (
+            <SpoolSelectModal
+              description={t("printing.spoolSelect.description")}
+              onContinue={(spools) => {
+                setSearchParams((prev) => {
+                  const newParams = new URLSearchParams(prev);
+                  newParams.delete("spools");
+                  spools.forEach((spool) => newParams.append("spools", spool.id.toString()));
+                  newParams.set("return", "/spool/print");
+                  return newParams;
+                });
+              }}
+            />
+          )}
+          {step === 1 && <SpoolQRCodePrintingDialog spoolIds={spoolIds} />}
         </Content>
       </PageHeader>
     </>

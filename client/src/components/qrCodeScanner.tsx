@@ -35,40 +35,21 @@ const QRCodeScannerModal = () => {
     const result = detectedCodes[0].rawValue;
 
     // Check for the spoolman ID format
-    const spoolMatch = result.match(/^web\+spoolman:s-(?<id>[0-9]+)$/i);
-    if (spoolMatch && spoolMatch.groups) {
+    const match = result.match(/^web\+spoolman:s-(?<id>[0-9]+)$/i);
+    if (match && match.groups) {
       closeScanner();
-      navigate(`/spool/show/${spoolMatch.groups.id}`);
-      return;
+      navigate(`/spool/show/${match.groups.id}`);
     }
-    const filamentMatch = result.match(/^web\+spoolman:f-(?<id>[0-9]+)$/i);
-    if (filamentMatch && filamentMatch.groups) {
+    const fullURLmatch = result.match(/^https?:\/\/[^/]+\/spool\/show\/(?<id>[0-9]+)$/i);
+    if (fullURLmatch && fullURLmatch.groups) {
       closeScanner();
-      navigate(`/filament/show/${filamentMatch.groups.id}`);
-      return;
-    }
-    const spoolURLmatch = result.match(/^https?:\/\/[^/]+(?:\/[^/]+)*\/spool\/show\/(?<id>[0-9]+)$/i);
-    if (spoolURLmatch && spoolURLmatch.groups) {
-      closeScanner();
-      navigate(`/spool/show/${spoolURLmatch.groups.id}`);
-      return;
-    }
-    const filamentURLmatch = result.match(/^https?:\/\/[^/]+(?:\/[^/]+)*\/filament\/show\/(?<id>[0-9]+)$/i);
-    if (filamentURLmatch && filamentURLmatch.groups) {
-      closeScanner();
-      navigate(`/filament/show/${filamentURLmatch.groups.id}`);
+      navigate(`/spool/show/${fullURLmatch.groups.id}`);
     }
   };
 
   return (
     <>
-      <FloatButton
-        type="primary"
-        onClick={openScanner}
-        icon={<CameraOutlined />}
-        shape="circle"
-        style={{ right: "var(--camera-button-right)", bottom: "var(--camera-button-bottom)" }}
-      />
+      <FloatButton type="primary" onClick={openScanner} icon={<CameraOutlined />} shape="circle" />
       <Modal open={visible} destroyOnHidden onCancel={closeScanner} footer={null} title={t("scanner.title")}>
         <Space direction="vertical" style={{ width: "100%" }}>
           <p>{t("scanner.description")}</p>

@@ -8,7 +8,6 @@ import { formatLength, formatWeight } from "../../utils/parsing";
 import { SpoolType, useGetExternalDBFilaments } from "../../utils/queryExternalDB";
 import { getAPIURL } from "../../utils/url";
 import { IFilament } from "../filaments/model";
-import { IVendor } from "../vendors/model";
 import { ISpool } from "./model";
 
 export async function setSpoolArchived(spool: ISpool, archived: boolean) {
@@ -122,8 +121,6 @@ interface SelectOption {
   weight?: number;
   spool_weight?: number;
   is_internal: boolean;
-  vendor?: IVendor;
-  vendor_name?: string;
 }
 
 export function useGetFilamentSelectOptions() {
@@ -151,7 +148,6 @@ export function useGetFilamentSelectOptions() {
           weight: item.weight,
           spool_weight: item.spool_weight,
           is_internal: true,
-          vendor: item.vendor,
         };
       }) ?? [];
     data.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
@@ -175,7 +171,6 @@ export function useGetFilamentSelectOptions() {
           weight: item.weight,
           spool_weight: item.spool_weight || undefined,
           is_internal: false,
-          vendor_name: item.manufacturer,
         };
       }) ?? [];
     data.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
