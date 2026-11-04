@@ -322,6 +322,7 @@ const REFERENCE_PICKER_GROUPS: Record<EntityType, ReferencePickerGroupDefinition
       entityType: EntityType.vendor,
       source: "builtin",
       prefix: "vendor.",
+      excludedPrefixes: ["vendor.extra."],
       defaultExpanded: false,
       scope: "related",
     },
