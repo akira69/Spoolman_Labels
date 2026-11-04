@@ -229,6 +229,8 @@ const ExportDialog = ({
     const pagePreviewName = sanitizeFilename(pageRawPreviewName) || `label-${pageIdx + 1}`;
 
     const itemDivs = pageItems.map((item, itemIdx) => {
+      const rawPreviewName = (item.props as { "data-aml-name"?: string })["data-aml-name"] ?? `label-${itemIdx + 1}`;
+      const previewName = sanitizeFilename(rawPreviewName) || `label-${itemIdx + 1}`;
       return (
         <div
           key={itemIdx}
@@ -243,6 +245,9 @@ const ExportDialog = ({
             paddingBottom: `${Math.max(printerMargin.bottom - margin.bottom, 0)}mm`,
           }}
         >
+          <div className="print-page-filename">
+            {previewName}.{exportFormat}
+          </div>
           {item}
         </div>
       );
@@ -251,33 +256,23 @@ const ExportDialog = ({
     return (
       <div className="print-preview-page" key={pageIdx}>
         <div
-          className="print-page"
+          className="print-page-area"
           style={{
-            width: `${paperWidth}mm`,
-            height: `${paperHeight}mm`,
-            backgroundColor: "#FFF",
-            overflow: "hidden",
+            height: `${paperHeight - margin.top - margin.bottom}mm`,
+            width: `${paperWidth - margin.left - margin.right}mm`,
+            marginTop: `${margin.top}mm`,
+            marginLeft: `${margin.left}mm`,
+            marginRight: `${margin.right}mm`,
+            marginBottom: `${margin.bottom}mm`,
           }}
         >
           <div
-            className="print-page-area"
             style={{
-              height: `${paperHeight - margin.top - margin.bottom}mm`,
-              width: `${paperWidth - margin.left - margin.right}mm`,
-              marginTop: `${margin.top}mm`,
-              marginLeft: `${margin.left}mm`,
-              marginRight: `${margin.right}mm`,
-              marginBottom: `${margin.bottom}mm`,
+              display: "flex",
+              flexWrap: "wrap",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-              }}
-            >
-              {itemDivs}
-            </div>
+            {itemDivs}
           </div>
         </div>
         {/* Keep preview filenames outside the white label canvas so they stay readable in the
@@ -427,8 +422,9 @@ const ExportDialog = ({
     const uniqueItems: { item: Element; safeName: string }[] = [];
     let idx = 1;
 
+    // Repeated copies share the same DOM shape, but export should still emit one file per unique label design.
     for (const item of itemsToPrint) {
-      // Prevent printing copies
+      // Prevent duplicate exports when the preview contains repeated copies.
       let isDuplicate = false;
       for (let i = 0; i < hasPrinted.length; i += 1) {
         if (item.isEqualNode(hasPrinted[i])) {

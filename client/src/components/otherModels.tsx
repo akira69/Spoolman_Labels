@@ -43,13 +43,13 @@ export function useSpoolmanFilamentFilter(enabled: boolean = false) {
       return response.json();
     },
     select: (data) => {
-      // Concatenate vendor name and filament name
+      // Concatenate vendor name and filament name.
       const names = data
-        // Remove empty names
+        // Remove empty names before building filter entries.
         .filter((filament) => {
           return filament.name !== null && filament.name !== undefined && filament.name !== "";
         })
-        // Transform to ColumnFilterItem
+        // Transform each filament into the table filter shape.
         .map((filament) => {
           let name = "";
           if (filament.vendor?.name) {
@@ -99,12 +99,13 @@ export function useSpoolmanFilamentFilter(enabled: boolean = false) {
               </Tooltip>
             ),
             value: filament.id,
+            // Keep a plain string sort key because the rendered label itself is wrapped in JSX.
             sortId: name,
           };
         })
-        // Remove duplicates
+        // Remove duplicates so each filament only appears once in the filter dropdown.
         .filter((item, index, self) => self.findIndex((t) => t.value === item.value) === index)
-        // Sort by name
+        // Sort by the plain string key instead of the JSX label.
         .sort((a, b) => a.sortId.localeCompare(b.sortId));
       return names;
     },
@@ -204,6 +205,7 @@ interface VendorLogoManifest {
   print_files?: string[];
 }
 
+// Missing bundled/runtime logo packs should degrade to empty suggestions instead of breaking vendor forms.
 export function useVendorLogoManifest(enabled: boolean = true) {
   return useQuery<VendorLogoManifest>({
     enabled,

@@ -16,6 +16,7 @@ import {
   SortedColumn,
 } from "../../components/column";
 import { useLiveify } from "../../components/liveify";
+import { useSpoolmanVendorExternalIds, useSpoolmanVendors } from "../../components/otherModels";
 import VendorLogo from "../../components/vendorLogo";
 import { removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
@@ -150,7 +151,7 @@ export const VendorList = () => {
 
                 return {
                   key: column_id,
-                  label: t(`vendor.fields.${column_id}`),
+                  label: column_id === "logo" ? t("vendor.fields.logo") : t(`vendor.fields.${column_id}`),
                 };
               }),
               selectedKeys: showColumns,

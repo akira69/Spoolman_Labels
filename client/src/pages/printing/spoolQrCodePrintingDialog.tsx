@@ -103,7 +103,7 @@ const SpoolQRCodePrintingDialog = ({ spoolIds }: SpoolQRCodePrintingDialog) => {
 
   const savePresetsRemote = () => {
     if (!localCurrentPresets) return;
-    setRemotePresets.mutate(localCurrentPresets);
+    setRemotePresets(localCurrentPresets);
   };
 
   useEffect(() => {

@@ -18,10 +18,10 @@ interface QRCodeExportDialogProps {
   items: QRCodeData[];
   printSettings: QRCodePrintSettings;
   setPrintSettings: (setPrintSettings: QRCodePrintSettings) => void;
+  extraSettings?: ReactElement;
   extraTitleSettings?: ReactElement;
   extraInfoSettings?: ReactElement;
   extraExportSettings?: ReactElement;
-  extraSettings?: ReactElement;
   extraSettingsStart?: ReactElement;
   extraFormatSettings?: ReactElement;
   extraButtons?: ReactElement;
@@ -39,12 +39,12 @@ const QRCodeExportDialog = ({
   printSettings,
   setPrintSettings,
   extraSettings,
-  extraSettingsStart,
-  extraFormatSettings,
-  extraButtons,
   extraTitleSettings,
   extraInfoSettings,
   extraExportSettings,
+  extraSettingsStart,
+  extraFormatSettings,
+  extraButtons,
   baseUrlRoot,
   useHTTPUrl,
   setUseHTTPUrl,
@@ -93,7 +93,7 @@ const QRCodeExportDialog = ({
         setPrintSettings({ ...printSettings, printSettings: newSettings });
       }}
       extraButtons={extraButtons}
-      extraFormatSettings={extraFormatSettings}
+      extraFormatSettings={extraFormatSettings ?? extraExportSettings}
       zipFileTypeName={zipFileTypeName}
       extraSettingsStart={extraSettingsStart}
       extraSettings={
@@ -174,7 +174,6 @@ const QRCodeExportDialog = ({
 
           {extraTitleSettings}
           {extraInfoSettings}
-          {extraExportSettings}
           {extraSettings}
         </>
       }

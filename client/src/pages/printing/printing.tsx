@@ -104,11 +104,17 @@ export function useGetPrintSettings(settingKey = "print_presets"): SpoolQRCodePr
   });
 }
 
-export function useSetPrintSettings(settingKey = "print_presets") {
-  return useSetSetting<SpoolQRCodePrintSettings[]>(settingKey);
+export function useSetPrintSettings(
+  settingKey = "print_presets",
+): (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => void {
+  const mut = useSetSetting(settingKey);
+
+  return (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => {
+    mut.mutate(spoolQRCodePrintSettings);
+  };
 }
 
-// Resolve dot-path placeholders, including JSON-backed extra fields, for label templates.
+// Resolve dot-path placeholders, including JSON-backed extra fields, for title/label/filename templates.
 function getTagValue(tag: string, obj: object): unknown {
   const record = obj as { [key: string]: unknown; extra?: { [key: string]: string } };
   const tagParts = tag.split(".");
