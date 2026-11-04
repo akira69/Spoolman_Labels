@@ -8,8 +8,25 @@ import { useNavigate } from "react-router";
 const QRCodeScannerModal = () => {
   const [visible, setVisible] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [scannerSession, setScannerSession] = useState(0);
   const t = useTranslate();
   const navigate = useNavigate();
+
+  // Force a fresh scanner instance after each open/close cycle so stale camera errors do not persist.
+  const resetScanner = () => {
+    setLastError(null);
+    setScannerSession((current) => current + 1);
+  };
+
+  const openScanner = () => {
+    resetScanner();
+    setVisible(true);
+  };
+
+  const closeScanner = () => {
+    setVisible(false);
+    resetScanner();
+  };
 
   const onScan = (detectedCodes: IDetectedBarcode[]) => {
     if (detectedCodes.length === 0) {
@@ -20,23 +37,24 @@ const QRCodeScannerModal = () => {
     // Check for the spoolman ID format
     const match = result.match(/^web\+spoolman:s-(?<id>[0-9]+)$/i);
     if (match && match.groups) {
-      setVisible(false);
+      closeScanner();
       navigate(`/spool/show/${match.groups.id}`);
     }
     const fullURLmatch = result.match(/^https?:\/\/[^/]+\/spool\/show\/(?<id>[0-9]+)$/i);
     if (fullURLmatch && fullURLmatch.groups) {
-      setVisible(false);
+      closeScanner();
       navigate(`/spool/show/${fullURLmatch.groups.id}`);
     }
   };
 
   return (
     <>
-      <FloatButton type="primary" onClick={() => setVisible(true)} icon={<CameraOutlined />} shape="circle" />
-      <Modal open={visible} destroyOnHidden onCancel={() => setVisible(false)} footer={null} title={t("scanner.title")}>
+      <FloatButton type="primary" onClick={openScanner} icon={<CameraOutlined />} shape="circle" />
+      <Modal open={visible} destroyOnHidden onCancel={closeScanner} footer={null} title={t("scanner.title")}>
         <Space direction="vertical" style={{ width: "100%" }}>
           <p>{t("scanner.description")}</p>
           <Scanner
+            key={scannerSession}
             constraints={{
               facingMode: "environment",
             }}
